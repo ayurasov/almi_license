@@ -1,7 +1,6 @@
 """Admin API views: parse, call the domain, shape the response (AGENTS.md, rule 2)."""
 
 from dataclasses import asdict
-from typing import Any
 from uuid import UUID
 
 from django.contrib.auth import login, logout
@@ -13,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.api_admin.api.common import actor_of, valid
 from apps.api_admin.api.permissions import ConsoleSession, IsOperator
 from apps.api_admin.api.serializers import (
     CustomerPageSerializer,
@@ -32,20 +32,6 @@ LOCKED = {
     "ru": "Слишком много неудачных попыток. Повторите вход через 15 минут.",
     "en": "Too many failed attempts. Try again in 15 minutes.",
 }
-
-
-def _valid(serializer: Any) -> dict[str, Any]:
-    if not serializer.is_valid():
-        fields = {key: [str(m) for m in messages] for key, messages in serializer.errors.items()}
-        raise Problem(
-            "invalid_request", "request does not match the schema", data={"fields": fields}
-        )
-    data: dict[str, Any] = serializer.validated_data
-    return data
-
-
-def _actor(request: Request) -> str:
-    return f"user:{request.user.get_username()}"
 
 
 @method_decorator(ensure_csrf_cookie, name="get")
@@ -71,7 +57,7 @@ class SessionView(APIView):
         operation_id="session_create",
     )
     def post(self, request: Request) -> Response:
-        data = _valid(SessionRequestSerializer(data=request.data))
+        data = valid(SessionRequestSerializer(data=request.data))
         try:
             user = sign_in(
                 data["username"],
@@ -110,7 +96,7 @@ class CustomersView(APIView):
         operation_id="customers_list",
     )
     def get(self, request: Request) -> Response:
-        query = _valid(CustomerQuerySerializer(data=request.query_params))
+        query = valid(CustomerQuerySerializer(data=request.query_params))
         page = list_customers(**query)
         return Response({"count": page.count, "results": [asdict(c) for c in page.results]})
 
@@ -120,10 +106,10 @@ class CustomersView(APIView):
         operation_id="customers_create",
     )
     def post(self, request: Request) -> Response:
-        data = _valid(CustomerWriteSerializer(data=request.data))
+        data = valid(CustomerWriteSerializer(data=request.data))
         customer = create_customer(
             data,
-            actor=_actor(request),
+            actor=actor_of(request),
             now=current_clock().now(),
             ip=request.META.get("REMOTE_ADDR"),
         )
@@ -149,11 +135,11 @@ class CustomerView(APIView):
         operation_id="customers_update",
     )
     def patch(self, request: Request, customer_id: UUID) -> Response:
-        data = _valid(CustomerWriteSerializer(data=request.data, partial=True))
+        data = valid(CustomerWriteSerializer(data=request.data, partial=True))
         customer = update_customer(
             customer_id,
             data,
-            actor=_actor(request),
+            actor=actor_of(request),
             now=current_clock().now(),
             ip=request.META.get("REMOTE_ADDR"),
         )

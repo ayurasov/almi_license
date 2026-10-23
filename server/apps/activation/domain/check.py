@@ -57,7 +57,7 @@ def _check_locked(request: CheckRequest, now: datetime, issuer: str) -> Activati
     activation = Activation.objects.select_for_update().get(external_id=request.activation_id)
     if activation.status not in (ActivationStatus.ACTIVE, ActivationStatus.REVOKED):
         raise DomainError("activation_released")
-    terms = load_terms(license_)
+    terms = load_terms(license_, now)
 
     if activation.status == ActivationStatus.REVOKED or license_.status == "revoked":
         token, _ = issue_lease(activation, terms, now, issuer, revoked=True)

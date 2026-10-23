@@ -21,6 +21,7 @@ class LicenseRecord:
     support_until: datetime | None
     policy_profile_code: str
     enforcement: str
+    monitor_until: datetime | None
     extra_capabilities: tuple[str, ...]
     customer_id: UUID
     customer_name: str
@@ -51,6 +52,7 @@ def lock_license(license_id: UUID) -> LicenseRecord:
         support_until=row.support_until,
         policy_profile_code=row.policy_profile_code,
         enforcement=row.enforcement,
+        monitor_until=row.monitor_until,
         extra_capabilities=tuple(row.extra_capabilities),
         customer_id=row.customer_id,
         customer_name=row.customer.name,

@@ -3,6 +3,84 @@ info:
   title: ALMI License Product API
   version: 1.0.0
 paths:
+  /api/admin/activations:
+    get:
+      operationId: activations_list
+      parameters:
+      - in: query
+        name: license_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          default: -last_seen_at
+          minLength: 1
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: search
+        schema:
+          type: string
+          default: ''
+      - in: query
+        name: status
+        schema:
+          type: string
+          default: ''
+      tags:
+      - activations
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivationPage'
+          description: ''
+  /api/admin/activations/{activation_id}/release:
+    post:
+      operationId: activations_release
+      parameters:
+      - in: path
+        name: activation_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - activations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+          description: ''
   /api/admin/customers:
     get:
       operationId: customers_list
@@ -123,6 +201,408 @@ paths:
               schema:
                 $ref: '#/components/schemas/Customer'
           description: ''
+  /api/admin/licenses:
+    get:
+      operationId: licenses_list
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: expires_after
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: expires_before
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          default: valid_until
+          minLength: 1
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: status
+        schema:
+          type: string
+          default: ''
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensePage'
+          description: ''
+    post:
+      operationId: licenses_create
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}:
+    get:
+      operationId: licenses_get
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/history:
+    get:
+      operationId: licenses_history
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryEvent'
+          description: ''
+  /api/admin/licenses/{license_id}/keys:
+    post:
+      operationId: licenses_issue_key
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedKey'
+          description: ''
+  /api/admin/licenses/{license_id}/lift-block:
+    post:
+      operationId: licenses_lift_block
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiftBlock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LiftBlock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LiftBlock'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/renew:
+    post:
+      operationId: licenses_renew
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Renew'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Renew'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Renew'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/resume:
+    post:
+      operationId: licenses_resume
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/revoke:
+    post:
+      operationId: licenses_revoke
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/settings:
+    patch:
+      operationId: licenses_settings
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSettings'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/suspend:
+    post:
+      operationId: licenses_suspend
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/transfer:
+    post:
+      operationId: licenses_transfer
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/usage:
+    get:
+      operationId: licenses_usage
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usage'
+          description: ''
+  /api/admin/products:
+    get:
+      operationId: products_list
+      tags:
+      - products
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
   /api/admin/session:
     get:
       operationId: session_get
@@ -182,6 +662,79 @@ paths:
           description: No response body
 components:
   schemas:
+    Activation:
+      type: object
+      properties:
+        activation_id:
+          type: string
+        license_id:
+          type: string
+          format: uuid
+        instance_id:
+          type: string
+          format: uuid
+        instance_name:
+          type: string
+        subject_type:
+          type: string
+        status:
+          $ref: '#/components/schemas/ActivationStatusEnum'
+        in_reserve:
+          type: boolean
+        product_version:
+          type: string
+        os:
+          type: object
+          additionalProperties: {}
+        activated_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+        released_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - activated_at
+      - activation_id
+      - in_reserve
+      - instance_id
+      - instance_name
+      - last_seen_at
+      - license_id
+      - os
+      - product_version
+      - released_at
+      - status
+      - subject_type
+    ActivationPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activation'
+      required:
+      - count
+      - results
+    ActivationStatusEnum:
+      enum:
+      - active
+      - released
+      - released_auto
+      - revoked
+      - conflict
+      type: string
+      description: |-
+        * `active` - active
+        * `released` - released
+        * `released_auto` - released_auto
+        * `revoked` - revoked
+        * `conflict` - conflict
     Customer:
       type: object
       properties:
@@ -199,7 +752,7 @@ components:
           type: string
           maxLength: 128
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/CustomerStatusEnum'
         created_at:
           type: string
           format: date-time
@@ -223,6 +776,14 @@ components:
       required:
       - count
       - results
+    CustomerStatusEnum:
+      enum:
+      - active
+      - archived
+      type: string
+      description: |-
+        * `active` - active
+        * `archived` - archived
     CustomerWrite:
       type: object
       description: Fields an operator sends; checks of values are in licensing.domain
@@ -240,6 +801,207 @@ components:
         status:
           type: string
           maxLength: 16
+    Edition:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+      - id
+      - name
+    HistoryEvent:
+      type: object
+      properties:
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+        action:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - action
+      - actor
+      - at
+      - data
+      - seq
+    IssuedKey:
+      type: object
+      properties:
+        license_id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          description: Shown once; the server keeps only hash and mask
+        key_mask:
+          type: string
+      required:
+      - key
+      - key_mask
+      - license_id
+    License:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        status:
+          $ref: '#/components/schemas/LicenseStatusEnum'
+        limit:
+          type: integer
+        reserve_pct:
+          type: integer
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        support_until:
+          type: string
+          format: date-time
+          nullable: true
+        enforcement:
+          type: string
+        monitor_until:
+          type: string
+          format: date-time
+          nullable: true
+        policy_profile_code:
+          type: string
+        rights_version:
+          type: integer
+        key_masks:
+          type: array
+          items:
+            type: string
+      required:
+      - customer_id
+      - customer_name
+      - edition_id
+      - enforcement
+      - id
+      - key_masks
+      - limit
+      - monitor_until
+      - policy_profile_code
+      - product_id
+      - reserve_pct
+      - rights_version
+      - status
+      - support_until
+      - type
+      - valid_from
+      - valid_until
+    LicenseCreate:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        limit:
+          type: integer
+        reserve_pct:
+          type: integer
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        support_until:
+          type: string
+          format: date-time
+          nullable: true
+        policy_profile_code:
+          type: string
+        enforcement:
+          type: string
+      required:
+      - customer_id
+      - limit
+      - metric_id
+      - product_id
+      - type
+      - valid_from
+    LicensePage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+      required:
+      - count
+      - results
+    LicenseStatusEnum:
+      enum:
+      - active
+      - suspended
+      - revoked
+      type: string
+      description: |-
+        * `active` - active
+        * `suspended` - suspended
+        * `revoked` - revoked
+    LiftBlock:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+        until:
+          type: string
+          format: date-time
+      required:
+      - reason
+      - until
     PatchedCustomerWrite:
       type: object
       description: Fields an operator sends; checks of values are in licensing.domain
@@ -257,6 +1019,71 @@ components:
         status:
           type: string
           maxLength: 16
+    PatchedSettings:
+      type: object
+      properties:
+        limit:
+          type: integer
+        reserve_pct:
+          type: integer
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+        enforcement:
+          type: string
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        default_metric_id:
+          type: string
+          format: uuid
+        default_metric:
+          type: string
+        editions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edition'
+      required:
+      - code
+      - default_metric
+      - default_metric_id
+      - editions
+      - id
+      - name
+    Reason:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+      - reason
+    Renew:
+      type: object
+      properties:
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        support_until:
+          type: string
+          format: date-time
+          nullable: true
+        limit:
+          type: integer
+          nullable: true
+      required:
+      - valid_until
     RoleEnum:
       enum:
       - operator
@@ -289,14 +1116,67 @@ components:
       required:
       - password
       - username
-    StatusEnum:
+    Transfer:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+        customer_id:
+          type: string
+          format: uuid
+        document:
+          type: string
+          default: ''
+          maxLength: 256
+      required:
+      - customer_id
+      - reason
+    TypeEnum:
       enum:
-      - active
-      - archived
+      - subscription
+      - perpetual
+      - trial
+      - nfr
+      - free
       type: string
       description: |-
-        * `active` - active
-        * `archived` - archived
+        * `subscription` - subscription
+        * `perpetual` - perpetual
+        * `trial` - trial
+        * `nfr` - nfr
+        * `free` - free
+    Usage:
+      type: object
+      properties:
+        active:
+          type: integer
+        in_reserve:
+          type: integer
+        released_auto:
+          type: integer
+        conflicts:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        by_version:
+          type: object
+          additionalProperties:
+            type: integer
+        by_os:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - active
+      - by_os
+      - by_version
+      - conflicts
+      - in_reserve
+      - last_seen_at
+      - released_auto
   securitySchemes:
     consoleSession:
       type: apiKey

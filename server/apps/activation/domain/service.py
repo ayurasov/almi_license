@@ -90,16 +90,19 @@ def _find_license(raw_key: str) -> UUID:
     return license_id
 
 
-def load_terms(license_: LicenseRecord) -> Terms:
+def load_terms(license_: LicenseRecord, now: datetime) -> Terms:
     product = product_info(license_.product_id)
     profile = latest_profile(license_.policy_profile_code or product.default_profile_code)
+    # A lifted block (E01-05) is monitor mode until monitor_until.
+    lifted = license_.monitor_until is not None and now < license_.monitor_until
+    enforcement = "monitor" if lifted else license_.enforcement
     return Terms(
         license=license_,
         product_code=product.code,
         edition=edition_code(license_.edition_id),
         capabilities=capabilities(license_.product_id, license_.edition_id)
         | frozenset(license_.extra_capabilities),
-        policy=effective_policy(profile.params, profile.version, license_.enforcement),
+        policy=effective_policy(profile.params, profile.version, enforcement),
         params=profile.params,
         reserve_pct=reserve_pct(profile.params, license_.reserve_pct),
     )
@@ -109,7 +112,7 @@ def _terms(license_: LicenseRecord, request: ActivationRequest, now: datetime) -
     """Checks of a new activation in the order of prompt I2-04: revoked, product, term."""
     if license_.status == "revoked":
         raise DomainError("license_revoked")
-    terms = load_terms(license_)
+    terms = load_terms(license_, now)
     if terms.product_code != request.product_code or (
         request.edition is not None and request.edition != terms.edition
     ):

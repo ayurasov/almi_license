@@ -102,6 +102,12 @@ class License(UUIDModel):
     status = models.CharField(
         max_length=16, choices=LicenseStatus.choices, default=LicenseStatus.ACTIVE
     )
+    rights_version = models.PositiveIntegerField(
+        default=1, help_text="Растёт при продлении и снятии блока (E01-05)"
+    )
+    monitor_until = models.DateTimeField(
+        null=True, blank=True, help_text="Снятый блок: режим monitor до этого момента (E01-05)"
+    )
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
 

@@ -64,6 +64,26 @@ def latest_profile(code: str) -> ProfileVersion:
     return ProfileVersion(code=row.code, version=row.version, params=dict(row.params))
 
 
+def list_products() -> list[dict[str, Any]]:
+    """Products with editions and metrics for console selects (E07-04)."""
+    metrics = {m.id: m.code for m in Metric.objects.all()}
+    result = []
+    for product in Product.objects.prefetch_related("editions").order_by("code"):
+        result.append(
+            {
+                "id": product.id,
+                "code": product.code,
+                "name": product.name,
+                "default_metric_id": product.default_metric_id,
+                "default_metric": metrics.get(product.default_metric_id, ""),
+                "editions": [
+                    {"id": e.id, "code": e.code, "name": e.name} for e in product.editions.all()
+                ],
+            }
+        )
+    return result
+
+
 __all__ = [
     "ProductInfo",
     "ProfileNotFound",
@@ -71,6 +91,7 @@ __all__ = [
     "capabilities",
     "edition_code",
     "latest_profile",
+    "list_products",
     "metric_code",
     "product_info",
 ]
