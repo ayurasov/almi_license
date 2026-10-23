@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/admin/activations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/activations/{activation_id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["activations_release"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/customers": {
         parameters: {
             query?: never;
@@ -36,6 +68,214 @@ export interface paths {
         patch: operations["customers_update"];
         trace?: never;
     };
+    "/api/admin/licenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["licenses_list"];
+        put?: never;
+        post: operations["licenses_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["licenses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["licenses_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_issue_key"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/lift-block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_lift_block"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_renew"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_resume"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["licenses_settings"];
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_suspend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["licenses_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["products_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/session": {
         parameters: {
             query?: never;
@@ -59,13 +299,47 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Activation: {
+            activation_id: string;
+            /** Format: uuid */
+            license_id: string;
+            /** Format: uuid */
+            instance_id: string;
+            instance_name: string;
+            subject_type: string;
+            status: components["schemas"]["ActivationStatusEnum"];
+            in_reserve: boolean;
+            product_version: string;
+            os: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            activated_at: string;
+            /** Format: date-time */
+            last_seen_at: string;
+            /** Format: date-time */
+            released_at: string | null;
+        };
+        ActivationPage: {
+            count: number;
+            results: components["schemas"]["Activation"][];
+        };
+        /**
+         * @description * `active` - active
+         *     * `released` - released
+         *     * `released_auto` - released_auto
+         *     * `revoked` - revoked
+         *     * `conflict` - conflict
+         * @enum {string}
+         */
+        ActivationStatusEnum: "active" | "released" | "released_auto" | "revoked" | "conflict";
         Customer: {
             /** Format: uuid */
             readonly id: string;
             name: string;
             inn: string;
             external_id: string;
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["CustomerStatusEnum"];
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -73,6 +347,12 @@ export interface components {
             count: number;
             results: components["schemas"]["Customer"][];
         };
+        /**
+         * @description * `active` - active
+         *     * `archived` - archived
+         * @enum {string}
+         */
+        CustomerStatusEnum: "active" | "archived";
         /** @description Fields an operator sends; checks of values are in licensing.domain (AGENTS.md, rule 2). */
         CustomerWrite: {
             name?: string;
@@ -80,12 +360,130 @@ export interface components {
             external_id?: string;
             status?: string;
         };
+        Edition: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: {
+                [key: string]: string;
+            };
+        };
+        HistoryEvent: {
+            seq: number;
+            /** Format: date-time */
+            at: string;
+            actor: string;
+            action: string;
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        IssuedKey: {
+            /** Format: uuid */
+            license_id: string;
+            /** @description Shown once; the server keeps only hash and mask */
+            key: string;
+            key_mask: string;
+        };
+        License: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            customer_id: string;
+            customer_name: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            edition_id: string | null;
+            type: components["schemas"]["TypeEnum"];
+            status: components["schemas"]["LicenseStatusEnum"];
+            limit: number;
+            reserve_pct: number | null;
+            /** Format: date-time */
+            valid_from: string;
+            /** Format: date-time */
+            valid_until: string | null;
+            /** Format: date-time */
+            support_until: string | null;
+            enforcement: string;
+            /** Format: date-time */
+            monitor_until: string | null;
+            policy_profile_code: string;
+            rights_version: number;
+            key_masks: string[];
+        };
+        LicenseCreate: {
+            /** Format: uuid */
+            customer_id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            edition_id?: string | null;
+            /** Format: uuid */
+            metric_id: string;
+            type: string;
+            limit: number;
+            reserve_pct?: number | null;
+            /** Format: date-time */
+            valid_from: string;
+            /** Format: date-time */
+            valid_until?: string | null;
+            /** Format: date-time */
+            support_until?: string | null;
+            policy_profile_code?: string;
+            enforcement?: string;
+        };
+        LicensePage: {
+            count: number;
+            results: components["schemas"]["License"][];
+        };
+        /**
+         * @description * `active` - active
+         *     * `suspended` - suspended
+         *     * `revoked` - revoked
+         * @enum {string}
+         */
+        LicenseStatusEnum: "active" | "suspended" | "revoked";
+        LiftBlock: {
+            reason: string;
+            /** Format: date-time */
+            until: string;
+        };
         /** @description Fields an operator sends; checks of values are in licensing.domain (AGENTS.md, rule 2). */
         PatchedCustomerWrite: {
             name?: string;
             inn?: string;
             external_id?: string;
             status?: string;
+        };
+        PatchedSettings: {
+            limit?: number;
+            reserve_pct?: number | null;
+            /** Format: uuid */
+            metric_id?: string;
+            enforcement?: string;
+        };
+        Product: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: {
+                [key: string]: string;
+            };
+            /** Format: uuid */
+            default_metric_id: string;
+            default_metric: string;
+            editions: components["schemas"]["Edition"][];
+        };
+        Reason: {
+            reason: string;
+        };
+        Renew: {
+            /** Format: date-time */
+            valid_until: string | null;
+            /** Format: date-time */
+            support_until?: string | null;
+            limit?: number | null;
         };
         /**
          * @description * `operator` - operator
@@ -102,12 +500,36 @@ export interface components {
             username: string;
             password: string;
         };
+        Transfer: {
+            reason: string;
+            /** Format: uuid */
+            customer_id: string;
+            /** @default  */
+            document: string;
+        };
         /**
-         * @description * `active` - active
-         *     * `archived` - archived
+         * @description * `subscription` - subscription
+         *     * `perpetual` - perpetual
+         *     * `trial` - trial
+         *     * `nfr` - nfr
+         *     * `free` - free
          * @enum {string}
          */
-        StatusEnum: "active" | "archived";
+        TypeEnum: "subscription" | "perpetual" | "trial" | "nfr" | "free";
+        Usage: {
+            active: number;
+            in_reserve: number;
+            released_auto: number;
+            conflicts: number;
+            /** Format: date-time */
+            last_seen_at: string | null;
+            by_version: {
+                [key: string]: number;
+            };
+            by_os: {
+                [key: string]: number;
+            };
+        };
     };
     responses: never;
     parameters: never;
@@ -117,6 +539,59 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    activations_list: {
+        parameters: {
+            query?: {
+                license_id?: string;
+                ordering?: string;
+                page?: number;
+                page_size?: number;
+                search?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationPage"];
+                };
+            };
+        };
+    };
+    activations_release: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activation"];
+                };
+            };
+        };
+    };
     customers_list: {
         parameters: {
             query?: {
@@ -212,6 +687,351 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    licenses_list: {
+        parameters: {
+            query?: {
+                customer_id?: string;
+                expires_after?: string;
+                expires_before?: string;
+                ordering?: string;
+                page?: number;
+                page_size?: number;
+                product_id?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicensePage"];
+                };
+            };
+        };
+    };
+    licenses_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LicenseCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["LicenseCreate"];
+                "multipart/form-data": components["schemas"]["LicenseCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEvent"][];
+                };
+            };
+        };
+    };
+    licenses_issue_key: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedKey"];
+                };
+            };
+        };
+    };
+    licenses_lift_block: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiftBlock"];
+                "application/x-www-form-urlencoded": components["schemas"]["LiftBlock"];
+                "multipart/form-data": components["schemas"]["LiftBlock"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_renew: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Renew"];
+                "application/x-www-form-urlencoded": components["schemas"]["Renew"];
+                "multipart/form-data": components["schemas"]["Renew"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_resume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSettings"];
+                "multipart/form-data": components["schemas"]["PatchedSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_suspend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reason"];
+                "application/x-www-form-urlencoded": components["schemas"]["Reason"];
+                "multipart/form-data": components["schemas"]["Reason"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Transfer"];
+                "application/x-www-form-urlencoded": components["schemas"]["Transfer"];
+                "multipart/form-data": components["schemas"]["Transfer"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_usage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Usage"];
+                };
+            };
+        };
+    };
+    products_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"][];
                 };
             };
         };

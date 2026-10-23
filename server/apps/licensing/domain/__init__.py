@@ -17,8 +17,34 @@ from apps.licensing.domain.import_lk import (
 from apps.licensing.domain.inn import inn_is_valid
 from apps.licensing.domain.keys import InvalidKeyFormat, key_hash, key_mask, normalize_key
 from apps.licensing.domain.licenses import LicenseRecord, license_id_by_key_hash, lock_license
+from apps.licensing.domain.management import (
+    IssuedKey,
+    LicenseData,
+    LicensePage,
+    create_license,
+    get_license,
+    issue_key,
+    lift_block,
+    list_licenses,
+    renew_license,
+    set_license_status,
+    transfer_license,
+    update_settings,
+)
 
 __all__ = [
+    "IssuedKey",
+    "LicenseData",
+    "LicensePage",
+    "create_license",
+    "get_license",
+    "issue_key",
+    "lift_block",
+    "list_licenses",
+    "renew_license",
+    "set_license_status",
+    "transfer_license",
+    "update_settings",
     "CustomerData",
     "CustomerPage",
     "create_customer",

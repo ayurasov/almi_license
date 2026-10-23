@@ -86,4 +86,15 @@ def verify_chain() -> int:
     return count
 
 
-__all__ = ["record", "verify_chain"]
+def events_for(object_type: str, object_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
+    """History of one object for the console card (newest first)."""
+    rows = AuditEvent.objects.filter(object_type=object_type, object_id=object_id).order_by("-seq")[
+        :limit
+    ]
+    return [
+        {"seq": e.seq, "at": e.at, "actor": e.actor, "action": e.action, "data": e.data}
+        for e in rows
+    ]
+
+
+__all__ = ["events_for", "record", "verify_chain"]
