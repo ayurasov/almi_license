@@ -63,12 +63,9 @@ target_link_libraries(license_module
   PRIVATE lm_internal unofficial-sodium::sodium CURL::libcurl nlohmann_json::nlohmann_json)
 target_compile_options(license_module PRIVATE ${LM_WARNINGS})
 set_target_properties(license_module PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
-if(WIN32)
-  # The public header declares LM_API as dllimport only (open question 8, docs/progress/stage1.md);
-  # exports are listed in the .def file and C4273 for the definitions is expected.
-  target_sources(license_module PRIVATE src/license_module.def)
-  target_compile_options(license_module PRIVATE /wd4273)
-else()
+# LM_API becomes dllexport on Windows; the product never defines LM_BUILDING_DLL.
+target_compile_definitions(license_module PRIVATE LM_BUILDING_DLL)
+if(NOT WIN32)
   # Only LM_* leave the library; symbols of statically linked dependencies stay hidden.
   target_link_options(license_module PRIVATE -Wl,--exclude-libs,ALL -Wl,--no-undefined)
 endif()
