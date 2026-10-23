@@ -6,8 +6,13 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+// Order matters: winsock2.h before windows.h, ws2ipdef.h before iphlpapi.h.
+#include <winsock2.h>
+//
 #include <windows.h>
-// windows.h first
+//
+#include <ws2ipdef.h>
+//
 #include <dpapi.h>
 #include <iphlpapi.h>
 #include <shlobj.h>
