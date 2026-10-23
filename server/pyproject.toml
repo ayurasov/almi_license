@@ -23,6 +23,7 @@ dev = [
     "django-stubs[compatible-mypy]==5.2.9",
     "djangorestframework-stubs==3.16.9",
     "import-linter==2.15",
+    "hypothesis==6.170.8",
 ]
 
 [tool.uv]
@@ -103,6 +104,8 @@ django_settings_module = "almi_license.settings.ci"
 
 [tool.importlinter]
 root_packages = ["almi_license", "apps", "infra"]
+# External packages are part of the graph only for the purity contract of PolicyEngine.
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "A module uses another module only through <module>.domain (AGENTS.md, rule 3)"
@@ -135,3 +138,11 @@ name = "infra does not depend on the project or modules"
 type = "forbidden"
 source_modules = ["infra"]
 forbidden_modules = ["almi_license", "apps"]
+
+[[tool.importlinter.contracts]]
+name = "PolicyEngine is a pure function: no Django, database, clock or I/O (AGENTS.md, rule 5)"
+type = "forbidden"
+source_modules = ["apps.policy.domain.engine"]
+forbidden_modules = [
+    "django", "rest_framework", "infra", "apps.policy.models", "socket", "random", "time", "os",
+]
