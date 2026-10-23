@@ -8,6 +8,7 @@ from apps.policy.domain.engine import (
     TrialFacts,
     evaluate,
 )
+from apps.policy.domain.messages import lease_messages, messages_for
 from apps.policy.domain.profile import (
     accepts_new_activations,
     effective_policy,
@@ -24,6 +25,8 @@ __all__ = [
     "accepts_new_activations",
     "effective_policy",
     "evaluate",
+    "lease_messages",
     "lease_policy",
+    "messages_for",
     "reserve_pct",
 ]

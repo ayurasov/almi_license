@@ -40,6 +40,11 @@ class Activation(UUIDModel):
     product_version = models.CharField(max_length=64)
     os = models.JSONField()
     lease_seq = models.PositiveIntegerField(default=0)
+    done_profile_directives = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="id директив профиля, подтверждённых или неподдерживаемых",
+    )
     activated_at = models.DateTimeField()
     last_seen_at = models.DateTimeField()
     released_at = models.DateTimeField(null=True, blank=True)
@@ -86,3 +91,28 @@ class Lease(UUIDModel):
 
     def __str__(self) -> str:
         return f"{self.activation_id}#{self.seq}"
+
+
+class Directive(UUIDModel):
+    """A directive queued for an activation (section 8 of document 2); sent until acked."""
+
+    external_id = models.CharField(max_length=30, unique=True, help_text="dir_ + ULID")
+    activation = models.ForeignKey(Activation, on_delete=models.CASCADE, related_name="directives")
+    type = models.CharField(max_length=32)
+    params = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField()
+    acked_at = models.DateTimeField(null=True, blank=True)
+    unsupported_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["activation", "acked_at"], name="activation_directive_open")
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(external_id__regex=rf"^dir_{ULID}$"), name="activation_directive_id"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.external_id
