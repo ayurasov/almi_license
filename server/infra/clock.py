@@ -1,0 +1,42 @@
+"""The only source of current time on the server (AGENTS.md, rule 4).
+
+Code receives a Clock and calls clock.now(); datetime.now() and time.time()
+are forbidden everywhere else. Tests use FrozenClock.
+"""
+
+from datetime import UTC, datetime, timedelta
+from typing import Protocol
+
+
+class Clock(Protocol):
+    def now(self) -> datetime:
+        """Current time as a timezone-aware datetime in UTC."""
+        ...
+
+
+class SystemClock:
+    def now(self) -> datetime:
+        return datetime.now(UTC)
+
+
+class FrozenClock:
+    """Clock for tests: stands still until moved with advance() or set()."""
+
+    def __init__(self, at: datetime) -> None:
+        self._now = _as_utc(at)
+
+    def now(self) -> datetime:
+        return self._now
+
+    def advance(self, delta: timedelta) -> None:
+        """Move the clock by delta; a negative delta models a clock rollback."""
+        self._now += delta
+
+    def set(self, at: datetime) -> None:
+        self._now = _as_utc(at)
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("FrozenClock needs a timezone-aware datetime")
+    return value.astimezone(UTC)
