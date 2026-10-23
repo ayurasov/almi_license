@@ -51,6 +51,8 @@ add_library(lm_internal STATIC src/version.cpp src/trust_roots.cpp src/crypto/ba
                                src/crypto/lease_verifier.cpp)
 target_include_directories(lm_internal PUBLIC src "${CMAKE_BINARY_DIR}/generated")
 target_link_libraries(lm_internal PUBLIC unofficial-sodium::sodium nlohmann_json::nlohmann_json)
+# No implicit json -> T conversions: they are ambiguous across nlohmann/json versions.
+target_compile_definitions(lm_internal PUBLIC JSON_USE_IMPLICIT_CONVERSIONS=0)
 target_compile_options(lm_internal PRIVATE ${LM_WARNINGS})
 
 if(WIN32)

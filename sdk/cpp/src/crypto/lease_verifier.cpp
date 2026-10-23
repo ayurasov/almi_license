@@ -53,7 +53,7 @@ std::optional<json> DecodeObject(std::string_view segment) {
   const SecureBytes bytes(std::move(*decoded));
   json value = json::parse(bytes.bytes().begin(), bytes.bytes().end(), nullptr, false);
   if (value.is_discarded() || !value.is_object()) return std::nullopt;
-  return value;
+  return std::optional<json>(std::in_place, std::move(value));
 }
 
 bool IsString(const json& object, const char* name) {
