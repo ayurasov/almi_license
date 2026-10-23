@@ -1,18 +1,18 @@
 // LeaseVerifier on the reference vectors contracts/vectors/jws/*.json (E00-04, E13-02):
 // the test reads the directory, so a new vector is covered without code changes.
+#include "crypto/lease_verifier.h"
+
 #include <gtest/gtest.h>
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
-#include <nlohmann/json.hpp>
-
 #include "crypto/base64url.h"
-#include "crypto/lease_verifier.h"
 #include "trust_roots.h"
 
 namespace {
@@ -49,14 +49,14 @@ TEST_P(JwsVector, GivesTheExpectedResult) {
   std::vector<lm::crypto::TrustRoot> roots;
   for (const auto& item : vector.at("trust_roots")) roots.push_back(Root(item));
   const json& context = vector.at("context");
-  lm::crypto::LeaseContext lease{context.at("product_code").get<std::string>(),
-                                 context.at("instance_id").get<std::string>(),
-                                 context.at("device_key_thumbprint").get<std::string>(),
-                                 context.at("stored_seq").get<std::int64_t>(),
-                                 context.at("revoked_kids").get<std::vector<std::string>>()};
+  lm::crypto::LeaseContext lease{
+      context.at("product_code").get<std::string>(), context.at("instance_id").get<std::string>(),
+      context.at("device_key_thumbprint").get<std::string>(), context.at("stored_seq").get<std::int64_t>(),
+      context.at("revoked_kids").get<std::vector<std::string>>()};
 
   const lm::crypto::LeaseVerifier verifier(roots);
-  const auto result = verifier.Verify(vector.at("jws").get<std::string>(), lease, vector.at("now").get<std::int64_t>());
+  const auto result =
+      verifier.Verify(vector.at("jws").get<std::string>(), lease, vector.at("now").get<std::int64_t>());
 
   const json& expected = vector.at("expected");
   EXPECT_EQ(result.Valid(), expected.at("valid").get<bool>());
@@ -87,7 +87,8 @@ TEST(LeaseVerifierLimits, RejectsTokensOver64KiB) {
 }
 
 TEST(BuiltinTrustRoots, MatchBuildOption) {
-  const auto roots = lm::crypto::ParseTrustRoots(lm::EmbeddedTrustRoots(), lm::EmbeddedTrustRootsKid());
+  const auto roots =
+      lm::crypto::ParseTrustRoots(lm::EmbeddedTrustRoots(), std::string(lm::EmbeddedTrustRootsKid()));
   if (lm::TrustRootsName() == "dev") {
     const json vector = ReadJson(fs::path(LM_VECTORS_DIR) / "jws" / "01-valid-lease.json");
     ASSERT_EQ(roots.size(), 1U);

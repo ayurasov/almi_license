@@ -2,4 +2,5 @@
 #pragma once
 
 #define LM_TRUST_ROOTS_NAME "@LM_TRUST_ROOTS@"
+#define LM_TRUST_ROOTS_KID "@LM_TRUST_ROOTS_KID@"
 #define LM_TRUST_ROOTS_DATA R"lm_roots(@LM_TRUST_ROOTS_DATA@)lm_roots"

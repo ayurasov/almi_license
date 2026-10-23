@@ -1,8 +1,8 @@
+#include "crypto/base64url.h"
+
 #include <gtest/gtest.h>
 
 #include <string>
-
-#include "crypto/base64url.h"
 
 using lm::crypto::Base64UrlDecode;
 using lm::crypto::Base64UrlEncode;

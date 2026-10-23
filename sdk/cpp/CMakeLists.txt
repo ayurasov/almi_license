@@ -47,8 +47,10 @@ endif()
 configure_file(src/version.h.in "${CMAKE_BINARY_DIR}/generated/lm/version.h" @ONLY)
 
 # Internal code shared by the library and the tests; nothing here is exported.
-add_library(lm_internal STATIC src/version.cpp src/trust_roots.cpp)
+add_library(lm_internal STATIC src/version.cpp src/trust_roots.cpp src/crypto/base64url.cpp
+                               src/crypto/lease_verifier.cpp)
 target_include_directories(lm_internal PUBLIC src "${CMAKE_BINARY_DIR}/generated")
+target_link_libraries(lm_internal PUBLIC unofficial-sodium::sodium nlohmann_json::nlohmann_json)
 target_compile_options(lm_internal PRIVATE ${LM_WARNINGS})
 
 if(WIN32)
@@ -60,7 +62,7 @@ endif()
 add_library(license_module SHARED src/license_module.cpp ${LM_PLATFORM_SOURCES})
 target_include_directories(license_module PUBLIC include)
 target_link_libraries(license_module
-  PRIVATE lm_internal unofficial-sodium::sodium CURL::libcurl nlohmann_json::nlohmann_json)
+  PRIVATE lm_internal CURL::libcurl)
 target_compile_options(license_module PRIVATE ${LM_WARNINGS})
 set_target_properties(license_module PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 # LM_API becomes dllexport on Windows; the product never defines LM_BUILDING_DLL.

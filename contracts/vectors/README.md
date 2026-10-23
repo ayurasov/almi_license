@@ -58,11 +58,12 @@ Seed ключа = `SHA-256("almi-license dev vectors v1|" + имя)`. `*.key` �
 | 6 | Ни один `kid` цепочки и подписи не в `revoked_kids` | `kid_revoked` |
 | 7 | `now` в пределах `nbf`…`exp` каждого сертификата | `cert_expired` |
 | 8 | Подпись аренды ключом листа цепочки (до разбора полезной нагрузки) | `signature_invalid` |
-| 9 | Для ключа `local_server`: продукт и заказчик аренды в `scope` сертификата | `scope_mismatch` |
-| 10 | `aud` = свой продукт | `audience_mismatch` |
-| 11 | `subject.instance_id` и `device_key_thumbprint` — свои | `subject_mismatch` |
-| 12 | `seq` > `stored_seq` | `seq_not_greater` |
-| 13 | `nbf` ≤ `now` + 24 ч | `not_yet_valid` |
+| 9 | Полезная нагрузка — JSON-объект, `ver` = 1, `exp` (если есть) — целое; истёкший `exp` аренду не отклоняет, а влияет на состояние (раздел 7.2 документа 2) | `malformed` |
+| 10 | Для ключа `local_server`: продукт и заказчик аренды в `scope` сертификата | `scope_mismatch` |
+| 11 | `aud` = свой продукт | `audience_mismatch` |
+| 12 | `subject.instance_id` и `device_key_thumbprint` — свои | `subject_mismatch` |
+| 13 | `seq` > `stored_seq` | `seq_not_greater` |
+| 14 | `nbf` ≤ `now` + 24 ч | `not_yet_valid` |
 
 Коды — словарь результата проверки (сервер и `LeaseVerifier`), а не коды ошибок API раздела 16; модуль DL отображает любой из них в `LM_ERR_INVALID_SIGNATURE`.
 
