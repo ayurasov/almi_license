@@ -45,8 +45,9 @@ seed: ## Apply migrations and load the seed-minimal data set
 
 test: test-server test-console test-dl test-keytool ## Run all tests
 
-test-server: ## Server tests (pytest)
-	$(SERVER) pytest server
+test-server: ## Server tests (pytest); policy coverage >= 95 % (prompt I2-02)
+	cd server && uv run pytest --cov --cov-report= && \
+		uv run coverage report --include='apps/policy/*' --fail-under=95
 
 test-console: ## Console tests (vitest) — I2-07
 	$(not_implemented)

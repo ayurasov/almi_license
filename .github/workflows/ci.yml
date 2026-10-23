@@ -124,6 +124,9 @@ jobs:
       - name: pytest with coverage
         working-directory: server
         run: uv run pytest --cov --cov-report=term --cov-fail-under=70
+      - name: policy coverage >= 95 % (prompt I2-02)
+        working-directory: server
+        run: uv run coverage report --include='apps/policy/*' --fail-under=95
 
   test-dl:
     strategy:
