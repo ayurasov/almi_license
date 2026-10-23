@@ -46,14 +46,14 @@
 - Разблокировано: I1-02 (векторы), I1-03, I1-05, E02-02/E02-03.
 - Запрос на слияние: [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1).
 
-### I1-02 — Эталонные векторы (E00-04) — готова, ждёт проверки `reasoning` техническим лидером
+### I1-02 — Эталонные векторы (E00-04) — закрыта 23.10.2026 (правила и `reasoning` подтверждены, вопрос 12)
 - Реализовано: `tools/vectors/generate.py` (PyNaCl, фиксированные seed) — ключи `dev-root`, `dev-issuer`, `dev-local-server`, `dev-device`; 12 векторов `jws/` (все обязательные случаи промпта, у каждого ровно один дефект); 6 векторов `request-signature/`; 39 векторов `policy/`, посчитанных вручную, с `reasoning`; `contracts/vectors/README.md` (форматы, порядок проверок и коды результата, соглашения); `make vectors` и задача CI `vectors`.
 - Проверено: независимая перепроверка вне репозитория — подписи и цепочки библиотекой `cryptography` (не PyNaCl), ожидания policy-векторов — одноразовой реализацией алгоритма раздела 7.2 (39 из 39 совпали); генератор воспроизводим байт в байт; утверждения аренд и сертификатов валидны по схемам I1-01; DL при `LM_TRUST_ROOTS=dev` встраивает `dev-root.pub`; `make up` использует `dev-issuer.key`.
 - Ограничения: прогон векторов на сервере и в DL появится с E02-03, E04-01, E13-02; `policy/` расширены полями `license.type`, `license.capabilities`, `trial` (без них ожидание не вычисляется).
 - Разблокировано: I1-04 (keytool сверяет результаты с векторами), I1-05 (LeaseVerifier), E02-02/E02-03, E04-01.
 
 ## Текущая итерация
-I1 — контракты и основа. Выполнено: I1-01, I1-02 (ждёт проверки reasoning, вопрос 12). Следующие: I1-03 (модель данных), I1-04 (keytool), I1-05 (проверка JWS в DL). I0: выполнены I0-01…I0-04; в CI сборка DL на Windows зелёная, на Linux исправлено отсутствие autotools для libsodium. Ветка `stage1` создана, запрос на слияние [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1); первый прогон CI (I0-01…I0-03) зелёный. Для выхода из I0 осталось: зелёный CI с задачами DL, слияние, защита веток `main` и `stage1`.
+I1 — контракты и основа. Выполнено: I1-01, I1-02. Следующие: I1-03 (модель данных), I1-04 (keytool), I1-05 (проверка JWS в DL). I0: выполнены I0-01…I0-04; в CI сборка DL на Windows зелёная, на Linux исправлено отсутствие autotools для libsodium. Ветка `stage1` создана, запрос на слияние [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1); первый прогон CI (I0-01…I0-03) зелёный. Для выхода из I0 осталось: зелёный CI с задачами DL, слияние, защита веток `main` и `stage1`.
 
 ## Открытые вопросы
 
@@ -72,13 +72,4 @@ I1 — контракты и основа. Выполнено: I1-01, I1-02 (ж�
 9. ~~`LM_GetVersion`~~ — принято: `LM_GetVersion(char*, int)` добавлена в конец ABI (v1+) в заголовке и разделе 15.1 документа 2.
 10. ~~Состав объектов, не описанных в спецификации (E00-03)~~ — принято предложение: `cert`, `trust`, `receipt`, `alk-lic`, `package`, `alk-usage` в `contracts/schemas`; `typ` отчёта — `alm-usage+jws`; `iat`, `nbf`, `exp`, `server_time` — Unix, остальные даты — RFC 3339.
 11. ~~`license.transferred` в `WebhookEvent`~~ — добавлено в OpenAPI.
-12. **Проверка policy-векторов (обязательна по промпту I1-02) и правила, которых нет в разделе 7.2 документа 2.** Документы 2 и 4 расходятся, векторы построены на правилах (README `contracts/vectors`, раздел `policy`):
-    - `support` доступна, пока `now` < `support_until`; для бессрочной после `support_until` снимается и `updates`, если она в `restricted_caps` — сводит матрицу 6.1 документа 4 (support «по `support_until`», нет в RESTRICTED/BLOCKED) с разделом 7.2;
-    - TRIAL и UNLICENSED — все функции продукта, кроме `support` (документ 2 и ТЗ; ограничение UNLICENSED в документе 4 помечено «подтвердить»);
-    - `BLOCKED`/`REVOKED` при `no_start` — пустой набор функций;
-    - `messages_ids` — сообщения раздела 3.1 документа 5 для состояния с окнами «≤ 7 дней» и «≤ 5 дней триала»; `active.restored`, `monitor.over_limit` не входят;
-    - статус `suspended` не выделяется — состояние по датам;
-    - коды результата проверки JWS (`malformed`, `alg_unsupported`, `typ_invalid`, `chain_invalid`, `kid_revoked`, `cert_expired`, `signature_invalid`, `scope_mismatch`, `audience_mismatch`, `subject_mismatch`, `seq_not_greater`, `not_yet_valid`) и порядок проверок;
-    - подпись запроса: `sig` — Ed25519 в base64url (пример `MEUCIQ…` в разделе 4.4 похож на DER ECDSA); `nonce` не 16 байт → `signature_invalid`.
-    Нужна проверка всех `reasoning` в `contracts/vectors/policy` и подтверждение правил.
-
+12. ~~Проверка policy-векторов и правила вне раздела 7.2~~ — подтверждено руководителем проекта: правила `support`/`support_until`, TRIAL/UNLICENSED, `no_start`, `messages_ids`, `suspended`, коды и порядок проверки JWS, `sig` в base64url (README `contracts/vectors`).
