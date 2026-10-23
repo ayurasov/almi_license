@@ -22,8 +22,8 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool \
-	contract-check vectors cross-verify e2e bundle-airgap
+.PHONY: help up down up-local seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
+	contract-check vectors cross-verify admin-schema e2e bundle-airgap
 
 help: ## Show available targets
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -49,8 +49,8 @@ test-server: ## Server tests (pytest); policy coverage >= 95 % (prompt I2-02)
 	cd server && uv run pytest --cov --cov-report= && \
 		uv run coverage report --include='apps/policy/*' --fail-under=95
 
-test-console: ## Console tests (vitest) — I2-07
-	$(not_implemented)
+test-console: ## Console tests (vitest)
+	cd console && npm run test
 
 test-dl: dl-configure ## DL module build and tests (ctest)
 	cmake --build $(DL_BUILD) --config $(DL_CONFIG)
@@ -62,8 +62,18 @@ test-keytool: ## almi-keytool tests (pytest)
 dl-configure:
 	cmake -S sdk/cpp -B $(DL_BUILD) -DCMAKE_BUILD_TYPE=$(DL_CONFIG) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(DL_CMAKE_ARGS)
 
-lint: lint-server lint-dl lint-keytool ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-format, clang-tidy
-	@echo "lint-console (eslint, vue-tsc): not implemented"
+lint: lint-server lint-dl lint-keytool lint-console ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-format, clang-tidy
+
+lint-console: ## Console linters: eslint, vue-tsc
+	cd console && npm run lint
+
+# The console client is generated from the Admin API schema (prompt I2-07); CI checks that the
+# committed schema and types match the server.
+admin-schema: ## Admin API schema -> console/src/api/admin-api.yaml and generated TypeScript types
+	cd server && DATABASE_URL="$${DATABASE_URL:-postgres://localhost/unused}" uv run python manage.py \
+		spectacular --urlconf apps.api_admin.api.schema_urls --validate --fail-on-warn \
+		--file ../console/src/api/admin-api.yaml
+	cd console && npm run gen:api
 
 # mypy loads Django settings (django-stubs); the database is not contacted, so a
 # placeholder DATABASE_URL is enough when none is set.
@@ -103,8 +113,8 @@ cross-verify: ## Server-issued JWS pass almi-keytool and the DL LeaseVerifier (E
 		tests/test_vectors.py -k issued
 	ALMI_ISSUED_VECTORS_DIR=$(ISSUED_VECTORS) $(DL_BUILD)/bin/lm_tests --gtest_filter='Issued/*'
 
-e2e: ## Playwright and API scenarios against dev — E16-04
-	$(not_implemented)
+e2e: ## Playwright scenarios of the console against a local server (needs DATABASE_URL); API scenarios — E16-04
+	cd console && npm run e2e
 
 bundle-airgap: ## Build the air-gapped bundle locally — E15-04
 	$(not_implemented)
