@@ -4,7 +4,14 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
-from apps.catalog.models import Capability, CapabilityStatus, Edition, PolicyProfile, Product
+from apps.catalog.models import (
+    Capability,
+    CapabilityStatus,
+    Edition,
+    Metric,
+    PolicyProfile,
+    Product,
+)
 
 
 @dataclass(frozen=True)
@@ -37,6 +44,11 @@ def edition_code(edition_id: UUID | None) -> str | None:
     return code
 
 
+def metric_code(metric_id: UUID) -> str:
+    code: str = Metric.objects.values_list("code", flat=True).get(id=metric_id)
+    return code
+
+
 def capabilities(product_id: UUID, edition_id: UUID | None) -> frozenset[str]:
     """Active capabilities of the edition; without an edition — all active ones of the product."""
     rows = Capability.objects.filter(product_id=product_id, status=CapabilityStatus.ACTIVE)
@@ -59,5 +71,6 @@ __all__ = [
     "capabilities",
     "edition_code",
     "latest_profile",
+    "metric_code",
     "product_info",
 ]

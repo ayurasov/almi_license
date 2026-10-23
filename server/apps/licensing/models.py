@@ -164,3 +164,47 @@ class ExternalRef(UUIDModel):
 
     def __str__(self) -> str:
         return f"{self.system}:{self.value}"
+
+
+class ArticleMapping(UUIDModel):
+    """Field AA of an LK article -> product, edition, metric (section 8.2 of document 4, E06-02)."""
+
+    aa = models.CharField(max_length=8, unique=True)
+    product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT, related_name="+")
+    edition = models.ForeignKey(
+        "catalog.Edition", on_delete=models.PROTECT, related_name="+", null=True, blank=True
+    )
+    metric = models.ForeignKey("catalog.Metric", on_delete=models.PROTECT, related_name="+")
+
+    def __str__(self) -> str:
+        return self.aa
+
+
+class ImportSessionStatus(models.TextChoices):
+    DRAFT = "draft"
+    APPLIED = "applied"
+    EXPIRED = "expired"
+
+
+class ImportSession(UUIDModel):
+    """Preview of an LK export (E06-01): rows with status and reasons; keys only as mask/hash."""
+
+    filename = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=8, choices=ImportSessionStatus.choices, default=ImportSessionStatus.DRAFT
+    )
+    rows = models.JSONField()
+    summary = models.JSONField()
+    created_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(status__in=ImportSessionStatus.values),
+                name="licensing_importsession_status",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.filename
