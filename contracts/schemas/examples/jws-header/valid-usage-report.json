@@ -1,0 +1,8 @@
+{
+  "alg": "EdDSA",
+  "typ": "alm-usage+jws",
+  "kid": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8-1",
+  "chain": [
+    "eyJhbGciOiJFZERTQSJ9.e30.c2ln"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "ver": 1,
+  "seq": 4,
+  "iat": 1762071300,
+  "roots": [
+    {
+      "kid": "root-2026",
+      "alg": "EdDSA",
+      "pub": "test-root-public-key-base64url-00000000000",
+      "status": "active"
+    },
+    {
+      "kid": "root-2026-r",
+      "alg": "EdDSA",
+      "pub": "test-reserve-root-public-key-0000000000000",
+      "status": "reserve"
+    }
+  ],
+  "issuers": [
+    "eyJhbGciOiJFZERTQSJ9.e30.c2ln"
+  ],
+  "revoked_kids": [
+    "srv_01H0000000000000000000000-1"
+  ]
+}

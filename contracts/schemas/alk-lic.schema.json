@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/alk-lic.schema.json",
+  "title": "AlkLicenseClaims",
+  "description": "Ответ на офлайн-запрос .alk-lic, alm-lic+jws (документ 2, раздел 10, приложение Б). Для activate и renew содержит аренду, для release — квитанцию.",
+  "type": "object",
+  "required": [
+    "request_nonce",
+    "activation_id",
+    "issued_at",
+    "respond_before"
+  ],
+  "properties": {
+    "request_nonce": {
+      "type": "string",
+      "minLength": 1,
+      "description": "nonce запроса .alk-req"
+    },
+    "activation_id": {
+      "type": "string"
+    },
+    "lease": {
+      "type": "string",
+      "description": "JWS alm-lease+jws"
+    },
+    "receipt": {
+      "type": "string",
+      "description": "JWS alm-receipt+jws (для release)"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "respond_before": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Срок применения ответа: 30 дней с момента запроса"
+    }
+  },
+  "additionalProperties": true,
+  "anyOf": [
+    {
+      "required": [
+        "lease"
+      ]
+    },
+    {
+      "required": [
+        "receipt"
+      ]
+    }
+  ]
+}
