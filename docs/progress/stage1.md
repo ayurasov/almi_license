@@ -92,8 +92,15 @@
 - Ограничения: `active.restored` и `monitor.over_limit` движок не выдаёт (зависят от истории и счётчиков, правило 5 решения 12) — их добавляет сборка аренды (E03-04); тексты сообщений по `message_ids` — E04-04; проверка профиля при сохранении (`view` не в `restricted_caps`) — E04-03.
 - Разблокировано: E04-03, E04-04, E03-01 (срок через PolicyEngine при активации), E13-06 (StateEvaluator — тот же алгоритм).
 
+### I2-03 — Подпись запросов (E05-01) — готова, ждёт ревью P7 («Подпись запросов»)
+- Реализовано: `apps/api_product/auth.py` — `DeviceSignatureAuthentication` (DRF); `apps/api_product/domain/signature.py` — разбор заголовка, строка подписи раздела 4.4 документа 2, окно ±300 с, проверка через `Ed25519Provider.verify`, `nonce` в таблице `RequestNonce` (уникальность, индекс, `purge_nonces`); `activation.domain.device_public_key`; `infra/problems.py` — `problem+json` с кодами каталога (часть E05-04); `infra.clock.current_clock()`/`use_clock()`.
+- Проверено: 164 теста сервера (+44 к I2-02); все 6 векторов `request-signature` — строка подписи, хэш тела и результат проверки через вид DRF; повтор `nonce` → `signature_invalid`, тот же `nonce` у другого ключа — независим; изменён один байт тела → `signature_invalid`; окно: ±300 с принимается, ±301 с — `clock_skew` с `server_time`; `keyid="device"` — ключ из тела, чужой ключ в теле и `device` вне активации отклоняются; 7 видов испорченного заголовка; неизвестная активация; `problem+json` для ошибок DRF; покрытие `auth.py` и `signature.py` — 100 %.
+- Чек-лист P7 «Подпись запросов»: строка подписи строго по разделу 4.4 — соблюдено (векторы); окно времени — соблюдено (границы ±300/301 с); хранение `nonce` — PostgreSQL, уникальный индекс, запись в отдельной точке сохранения после проверки подписи; тело хэшируется в байтах до разбора JSON — соблюдено (`request._request.body`, вектор 03 с юникодом). Сравнения: подпись проверяет `cryptography`, иных сравнений секретов нет — `hmac.compare_digest` не понадобился.
+- Ограничения: очистка `nonce` по расписанию — с очередью E12-01; ключи локальных серверов (`keyid` = `srv_…`) — E09; `user_message` в ошибках и журналирование `request_id` — E05-04; эндпоинтов Product API ещё нет — проверка подключается к ним в I2-04/I2-05.
+- Разблокировано: E03-01 (активация с `keyid="device"`), E03-04, E03-05, E05-02.
+
 ## Текущая итерация
-I2 — ядро сервера (план — `docs/progress/iteration-2.md`). Выполнено: I2-01, I2-02 (ждут ревью P7, вопросы 17, 18). I1 закрыта с переносами (`docs/progress/iteration-1.md`): I1-01…I1-05 и E00-08 выполнены, CI зелёный.
+I2 — ядро сервера (план — `docs/progress/iteration-2.md`). Выполнено: I2-01, I2-02, I2-03 (ждут ревью P7, вопросы 17–19). I1 закрыта с переносами (`docs/progress/iteration-1.md`): I1-01…I1-05 и E00-08 выполнены, CI зелёный.
 
 Перенесено из I1 (вне готовых промптов, нужны люди или внешние данные):
 - тег `contract-v1.0.0` — ставит технический лидер на коммите `stage1` после слияния [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1) (вопрос 15);
@@ -125,3 +132,4 @@ I2 — ядро сервера (план — `docs/progress/iteration-2.md`). В
 16. **E00-09 и E14-01.** Нужны доступ к работающему приложению Nextcloud `support` и `registration.sh` (запись запросов и ответов) и ответственный разработчик АльтерОфис Desktop. Кто и когда — до начала I4.
 17. **Ревью P7 I2-01 («Криптография», «Хранение секретов»).** `server/infra/crypto/ed25519.py`, `encoding.py`, `server/apps/signing/domain/jws.py`, `apps.py`; форматы файлов ключа и сертификата — `docs/decisions.md` (E02-02).
 18. **Ревью P7 I2-02 («Политика»).** `server/apps/policy/domain/engine.py`; решения E04-01/E04-02 в `docs/decisions.md` (триал в той же функции, `restricted_days` у бессрочной лицензии без связи, `next_check_at`).
+19. **Ревью P7 I2-03 («Подпись запросов»).** `server/apps/api_product/auth.py`, `domain/signature.py`, `server/infra/problems.py`; решения E05-01 и E05-04 в `docs/decisions.md` (неизвестный `keyid` → `signature_invalid`, сопоставление ошибок DRF с каталогом).
