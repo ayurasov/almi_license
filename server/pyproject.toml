@@ -33,3 +33,95 @@ pythonpath = ["."]
 django_find_project = false
 testpaths = ["almi_license", "apps", "infra", "tests"]
 addopts = ["--strict-markers"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = ["apps/*/migrations"]
+
+[tool.ruff.lint]
+# docs/specs/06-ai-rules.md, section 4.1; TID251 enforces AGENTS.md rule 4 (time only through Clock).
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "DJ", "TID251"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"datetime.datetime.now".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+"datetime.datetime.utcnow".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+"datetime.datetime.today".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+"datetime.date.today".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+"time.time".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+"time.time_ns".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+"django.utils.timezone.now".msg = "Use infra.clock.Clock (AGENTS.md, rule 4)"
+
+[tool.ruff.lint.isort]
+known-first-party = ["almi_license", "apps", "infra", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"infra/clock.py" = ["TID251"]  # the single place that reads system time
+"almi_license/settings/*.py" = ["F403", "F405"]  # settings layering: from .base import *
+"**/tests/**" = ["S101"]  # pytest uses assert
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["/migrations/", "^\\.venv/"]
+# Annotations everywhere (docs/specs/06-ai-rules.md, section 4.1)
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+# --strict for domain/ and infra/ (docs/specs/06-ai-rules.md, section 4.1)
+module = ["infra", "infra.*", "apps.*.domain", "apps.*.domain.*"]
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+warn_return_any = true
+no_implicit_reexport = true
+extra_checks = true
+
+[[tool.mypy.overrides]]
+module = ["environ", "environ.*"]  # django-environ ships no type information
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "almi_license.settings.ci"
+
+[tool.importlinter]
+root_packages = ["almi_license", "apps", "infra"]
+
+[[tool.importlinter.contracts]]
+name = "A module uses another module only through <module>.domain (AGENTS.md, rule 3)"
+type = "forbidden"
+source_modules = ["apps.*"]
+forbidden_modules = ["apps.*.*"]
+# A module's domain may use its own models, so only direct imports are checked.
+allow_indirect_imports = true
+ignore_imports = [
+    "apps.** -> apps.*.domain",
+    "apps.** -> apps.*.domain.*",
+    "apps.** -> apps.*.domain.*.*",
+]
+unmatched_ignore_imports_alerting = "none"
+
+[[tool.importlinter.contracts]]
+name = "API modules are imported by nobody but the URL configuration"
+type = "protected"
+protected_modules = ["apps.api_product", "apps.api_admin", "apps.api_sync"]
+allowed_importers = ["almi_license.urls"]
+
+[[tool.importlinter.contracts]]
+name = "Layers inside a module: api -> domain -> models (docs/specs/06-ai-rules.md, section 4.1)"
+type = "layers"
+containers = ["apps.*"]
+layers = ["api", "domain", "models"]
+
+[[tool.importlinter.contracts]]
+name = "infra does not depend on the project or modules"
+type = "forbidden"
+source_modules = ["infra"]
+forbidden_modules = ["almi_license", "apps"]

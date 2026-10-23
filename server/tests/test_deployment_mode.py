@@ -27,7 +27,9 @@ def test_rejects_missing_or_unknown_mode(value: str | None) -> None:
 
 
 def test_settings_expose_mode_from_environment() -> None:
-    assert settings.DEPLOYMENT_MODE == os.environ["DEPLOYMENT_MODE"]
+    configured = os.environ["DEPLOYMENT_MODE"]
+
+    assert configured == settings.DEPLOYMENT_MODE
 
 
 @pytest.mark.parametrize("value", [None, "remote"])
