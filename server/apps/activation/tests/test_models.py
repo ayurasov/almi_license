@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 import pytest
 from django.db import IntegrityError, transaction
@@ -7,34 +8,43 @@ from apps.activation.models import Activation, Lease
 from infra.clock import FrozenClock
 from tests.db import indexed_column_sets
 
+# license_ comes from server/conftest.py; this module may not import licensing models (rule 3).
 INSTANCE = uuid.UUID("8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11")
 
 
-def make(license_, clock: FrozenClock, external_id: str, status: str = "active") -> Activation:  # noqa: ANN001
+def make(license_: Any, clock: FrozenClock, external_id: str, status: str = "active") -> Activation:
     return Activation.objects.create(
-        external_id=external_id, license=license_, instance_id=INSTANCE, subject_type="device",
-        fp_components={"scheme": "fp-v1", "components": {"disk": "test-fp-disk"}}, device_pubkey="test-pub",
-        status=status, product_version="3.2.0", os={"family": "linux"}, activated_at=clock.now(),
-        last_seen_at=clock.now(), created_at=clock.now(),
+        external_id=external_id,
+        license=license_,
+        instance_id=INSTANCE,
+        subject_type="device",
+        fp_components={"scheme": "fp-v1", "components": {"disk": "test-fp-disk"}},
+        device_pubkey="test-pub",
+        status=status,
+        product_version="3.2.0",
+        os={"family": "linux"},
+        activated_at=clock.now(),
+        last_seen_at=clock.now(),
+        created_at=clock.now(),
     )
 
 
 @pytest.mark.django_db
-def test_one_active_activation_per_license_and_instance(license_, clock: FrozenClock) -> None:  # noqa: ANN001
+def test_one_active_activation_per_license_and_instance(license_: Any, clock: FrozenClock) -> None:
     make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3")
     with pytest.raises(IntegrityError), transaction.atomic():
         make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M4")
 
 
 @pytest.mark.django_db
-def test_released_activations_do_not_block_a_new_one(license_, clock: FrozenClock) -> None:  # noqa: ANN001
+def test_released_activations_do_not_block_a_new_one(license_: Any, clock: FrozenClock) -> None:
     make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3", status="released")
     make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M4", status="released_auto")
     make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M5")
 
 
 @pytest.mark.django_db
-def test_external_id_is_unique_and_formatted(license_, clock: FrozenClock) -> None:  # noqa: ANN001
+def test_external_id_is_unique_and_formatted(license_: Any, clock: FrozenClock) -> None:
     make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3", status="released")
     with pytest.raises(IntegrityError), transaction.atomic():
         make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3", status="released")
@@ -43,13 +53,13 @@ def test_external_id_is_unique_and_formatted(license_, clock: FrozenClock) -> No
 
 
 @pytest.mark.django_db
-def test_unknown_status_is_rejected(license_, clock: FrozenClock) -> None:  # noqa: ANN001
+def test_unknown_status_is_rejected(license_: Any, clock: FrozenClock) -> None:
     with pytest.raises(IntegrityError):
         make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3", status="deleted")
 
 
 @pytest.mark.django_db
-def test_one_lease_per_activation(license_, clock: FrozenClock) -> None:  # noqa: ANN001
+def test_one_lease_per_activation(license_: Any, clock: FrozenClock) -> None:
     activation = make(license_, clock, "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3")
     Lease.objects.create(activation=activation, seq=1, issued_at=clock.now(), jws_hash="0" * 64)
     with pytest.raises(IntegrityError):

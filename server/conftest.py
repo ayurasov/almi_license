@@ -2,10 +2,15 @@
 modules for tests; module code itself crosses boundaries only through <module>.domain."""
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import pytest
 
 from infra.clock import FrozenClock
+
+if TYPE_CHECKING:
+    from apps.catalog.models import Product
+    from apps.licensing.models import License
 
 NOW = datetime(2026, 11, 2, 8, 15, tzinfo=UTC)
 
@@ -16,7 +21,7 @@ def clock() -> FrozenClock:
 
 
 @pytest.fixture
-def product(db: None, clock: FrozenClock):
+def product(db: None, clock: FrozenClock) -> "Product":
     from apps.catalog.models import Metric, Product
 
     metric = Metric.objects.create(code="device", name={"ru": "Устройство"})
@@ -30,10 +35,12 @@ def product(db: None, clock: FrozenClock):
 
 
 @pytest.fixture
-def license_(product, clock: FrozenClock):
+def license_(product: "Product", clock: FrozenClock) -> "License":
     from apps.licensing.models import Customer, License
 
-    customer = Customer.objects.create(name="ООО «Пример»", inn="7701234567", created_at=clock.now())
+    customer = Customer.objects.create(
+        name="ООО «Пример»", inn="7701234567", created_at=clock.now()
+    )
     return License.objects.create(
         customer=customer,
         product=product,

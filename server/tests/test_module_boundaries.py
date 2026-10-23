@@ -2,6 +2,7 @@
 tables, except licensing -> catalog and activation -> licensing (docs/decisions.md, I1-03)."""
 
 from django.apps import apps
+from django.db.models import Model
 
 ALLOWED = {("licensing", "catalog"), ("activation", "licensing")}
 DOMAIN_APPS = {config.label for config in apps.get_app_configs() if config.name.startswith("apps.")}
@@ -14,8 +15,11 @@ def test_foreign_keys_cross_modules_only_where_allowed() -> None:
         if source not in DOMAIN_APPS:
             continue
         for field in model._meta.get_fields():
-            if field.is_relation and field.concrete and field.related_model is not None:
-                target = field.related_model._meta.app_label
+            related = field.related_model
+            if not (field.is_relation and field.concrete and isinstance(related, type)):
+                continue
+            if issubclass(related, Model):
+                target = related._meta.app_label
                 if target != source:
                     crossing.add((source, target, f"{model.__name__}.{field.name}"))
     assert {(s, t) for s, t, _ in crossing} <= ALLOWED, sorted(crossing)

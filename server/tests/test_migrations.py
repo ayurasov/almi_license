@@ -7,7 +7,9 @@ MODULES = ["audit", "packages", "activation", "licensing", "catalog"]
 
 
 def domain_tables() -> set[str]:
-    return {name for name in connection.introspection.table_names() if name.split("_")[0] in MODULES}
+    return {
+        name for name in connection.introspection.table_names() if name.split("_")[0] in MODULES
+    }
 
 
 @pytest.mark.django_db(transaction=True)
