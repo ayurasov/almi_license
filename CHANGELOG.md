@@ -29,4 +29,5 @@
 - Вход в консоль: пароли Argon2id, сессия в httpOnly cookie, CSRF, блокировка после 10 неудачных попыток на 15 минут, роли `operator`, `admin`, `customer_viewer`, аудит входа; `manage.py create_account` (E07-02).
 - Admin API заказчиков (`/api/admin/customers`): список с пагинацией, сортировкой и фильтрами, создание и изменение с проверкой ИНН и аудитом; статус заказчика `active`/`archived`; схема `/api/admin/schema` (E01-04).
 - Консоль (`console/`): Vue 3, PrimeVue 4 (Aura, светлая и тёмная темы), Pinia, vue-i18n (ru, en), клиент из схемы Admin API, обработка `problem+json`, макет с меню разделов, вход; эталонный экран «Заказчики»; образ `almi-license-console` (Nginx) (E07-01, E07-03).
+- Модуль DL: `Transport` (libcurl, HTTPS с системным хранилищем сертификатов и прокси, таймауты 10/30 с, повторы 429/503 и сетевых сбоев с `Retry-After`, подпись каждого запроса ключом устройства), `InstanceIdentity` (отпечаток `fp-v1`: диск, плата, процессор, MAC; `instance_id`), `SecureStore` (DPAPI на Windows, XChaCha20-Poly1305 с ключом от `machine-id` на Linux, атомарная запись, повреждённый файл не роняет продукт) (E13-03, E13-04, E13-05).
 
