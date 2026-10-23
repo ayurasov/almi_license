@@ -140,6 +140,8 @@ def _walk_chain(chain: list[str], keys: dict[str, bytes]) -> list[_Certificate]:
 def _check_lease(
     claims: dict[str, Any], leaf: _Certificate | None, lease: LeaseContext, now: int
 ) -> None:
+    if claims.get("ver") != 1 or ("exp" in claims and not isinstance(claims["exp"], int)):
+        raise _Rejected(MALFORMED)
     subject, lic = claims.get("subject") or {}, claims.get("lic") or {}
     if leaf is not None and leaf.role == "local_server":
         scope = leaf.scope or {}
