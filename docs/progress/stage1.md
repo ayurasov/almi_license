@@ -52,8 +52,14 @@
 - Ограничения: прогон векторов на сервере и в DL появится с E02-03, E04-01, E13-02; `policy/` расширены полями `license.type`, `license.capabilities`, `trial` (без них ожидание не вычисляется).
 - Разблокировано: I1-04 (keytool сверяет результаты с векторами), I1-05 (LeaseVerifier), E02-02/E02-03, E04-01.
 
+### I1-03 — Модель данных (E01-01) — закрыта 23.10.2026
+- Реализовано: модели и миграции `catalog` (Metric, Product, Capability, Edition, PolicyProfile), `licensing` (Customer, License, LicenseKey, ExternalRef), `activation` (Activation, Lease), `packages` (LocalServer, Allocation, Package, UsageReport), `audit` (AuditEvent); первичные ключи UUID; `act_`/`srv_` — ULID в отдельном поле с уникальным индексом и проверкой формата в БД; частичный уникальный индекс «одна активная активация на лицензию и экземпляр»; индексы `Activation(status, last_seen_at)`, `License(status, valid_until)`, `LicenseKey(key_hash)`; перечисления и форматы — ограничения `CHECK`.
+- Проверено: 41 тест сервера (ограничения, индексы, межмодульные внешние ключи, `migrate zero` и обратно); покрытие 90 %; тест границ модулей ловит запрещённый `ForeignKey` (проверено временной правкой).
+- Ограничения: генерация ULID и значений времени — в доменных сервисах (E03-01, E09-01, через `Clock`); `CustomerGroup` — этап 2; фабрики `factory_boy` не добавлялись — хватило фикстур `server/conftest.py`.
+- Разблокировано: E01-02…E01-08, E02-02, E03-01, E09-01, `seed-minimal`.
+
 ## Текущая итерация
-I1 — контракты и основа. Выполнено: I1-01, I1-02. Следующие: I1-03 (модель данных), I1-04 (keytool), I1-05 (проверка JWS в DL). I0: выполнены I0-01…I0-04; в CI сборка DL на Windows зелёная, на Linux исправлено отсутствие autotools для libsodium. Ветка `stage1` создана, запрос на слияние [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1); первый прогон CI (I0-01…I0-03) зелёный. Для выхода из I0 осталось: зелёный CI с задачами DL, слияние, защита веток `main` и `stage1`.
+I1 — контракты и основа. Выполнено: I1-01, I1-02, I1-03. Следующие: I1-04 (keytool), I1-05 (проверка JWS в DL). I0: выполнены I0-01…I0-04; в CI сборка DL на Windows зелёная, на Linux исправлено отсутствие autotools для libsodium. Ветка `stage1` создана, запрос на слияние [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1); первый прогон CI (I0-01…I0-03) зелёный. Для выхода из I0 осталось: зелёный CI с задачами DL, слияние, защита веток `main` и `stage1`.
 
 ## Открытые вопросы
 
