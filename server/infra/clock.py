@@ -4,6 +4,8 @@ Code receives a Clock and calls clock.now(); datetime.now() and time.time()
 are forbidden everywhere else. Tests use FrozenClock.
 """
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
@@ -40,3 +42,22 @@ def _as_utc(value: datetime) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("FrozenClock needs a timezone-aware datetime")
     return value.astimezone(UTC)
+
+
+_current: Clock = SystemClock()
+
+
+def current_clock() -> Clock:
+    """Clock of the running process; entry points (views, commands) pass it to domain code."""
+    return _current
+
+
+@contextmanager
+def use_clock(clock: Clock) -> Iterator[Clock]:
+    """Replace the process clock for the duration of the block (tests)."""
+    global _current
+    previous, _current = _current, clock
+    try:
+        yield clock
+    finally:
+        _current = previous

@@ -81,6 +81,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "UNAUTHENTICATED_USER": None,
+    "EXCEPTION_HANDLER": "infra.problems.problem_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {
