@@ -1,0 +1,7 @@
+# Reviewed false positives (docs/decisions.md, I0-03): example license key, example JWS
+# and the word password_scheme in the specs of the initial commit. Fingerprint = commit:file:rule:line.
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:1177
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:1186
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:142
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:281
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/08-lk-tz.md:generic-api-key:286
