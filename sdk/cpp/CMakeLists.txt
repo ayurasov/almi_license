@@ -46,25 +46,29 @@ endif()
 
 configure_file(src/version.h.in "${CMAKE_BINARY_DIR}/generated/lm/version.h" @ONLY)
 
+if(WIN32)
+  set(LM_PLATFORM_SOURCES src/platform/win/platform_win.cpp)
+  set(LM_PLATFORM_LIBRARIES crypt32 iphlpapi winhttp shell32 ole32 advapi32)
+else()
+  set(LM_PLATFORM_SOURCES src/platform/linux/platform_linux.cpp)
+  set(LM_PLATFORM_LIBRARIES "")
+endif()
+
 # Internal code shared by the library and the tests; nothing here is exported.
 add_library(lm_internal STATIC src/version.cpp src/trust_roots.cpp src/crypto/base64url.cpp
-                               src/crypto/lease_verifier.cpp)
+                               src/crypto/lease_verifier.cpp src/crypto/device_key.cpp src/crypto/aead.cpp
+                               src/identity/instance_identity.cpp src/store/secure_store.cpp
+                               src/transport/transport.cpp ${LM_PLATFORM_SOURCES})
 target_include_directories(lm_internal PUBLIC src "${CMAKE_BINARY_DIR}/generated")
-target_link_libraries(lm_internal PUBLIC unofficial-sodium::sodium nlohmann_json::nlohmann_json)
+target_link_libraries(lm_internal PUBLIC unofficial-sodium::sodium nlohmann_json::nlohmann_json CURL::libcurl
+                                         ${LM_PLATFORM_LIBRARIES})
 # No implicit json -> T conversions: they are ambiguous across nlohmann/json versions.
 target_compile_definitions(lm_internal PUBLIC JSON_USE_IMPLICIT_CONVERSIONS=0)
 target_compile_options(lm_internal PRIVATE ${LM_WARNINGS})
 
-if(WIN32)
-  set(LM_PLATFORM_SOURCES src/platform/win/platform_win.cpp)
-else()
-  set(LM_PLATFORM_SOURCES src/platform/linux/platform_linux.cpp)
-endif()
-
-add_library(license_module SHARED src/license_module.cpp ${LM_PLATFORM_SOURCES})
+add_library(license_module SHARED src/license_module.cpp)
 target_include_directories(license_module PUBLIC include)
-target_link_libraries(license_module
-  PRIVATE lm_internal CURL::libcurl)
+target_link_libraries(license_module PRIVATE lm_internal)
 target_compile_options(license_module PRIVATE ${LM_WARNINGS})
 set_target_properties(license_module PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 # LM_API becomes dllexport on Windows; the product never defines LM_BUILDING_DLL.
@@ -81,9 +85,11 @@ target_compile_options(lm-demo PRIVATE ${LM_WARNINGS})
 if(LM_BUILD_TESTS)
   enable_testing()
   find_package(GTest CONFIG REQUIRED)
+  find_package(httplib CONFIG REQUIRED)
   add_executable(lm_tests tests/version_test.cpp tests/abi_stub_test.cpp tests/base64url_test.cpp
-                          tests/lease_verifier_test.cpp)
-  target_link_libraries(lm_tests PRIVATE license_module lm_internal GTest::gtest_main)
+                          tests/lease_verifier_test.cpp tests/device_key_test.cpp tests/aead_test.cpp
+                          tests/instance_identity_test.cpp tests/secure_store_test.cpp tests/transport_test.cpp)
+  target_link_libraries(lm_tests PRIVATE license_module lm_internal GTest::gtest_main httplib::httplib)
   target_compile_definitions(lm_tests PRIVATE
     LM_EXPECTED_VERSION="${PROJECT_VERSION}" LM_EXPECTED_TRUST_ROOTS="${LM_TRUST_ROOTS}"
     LM_VECTORS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../contracts/vectors")

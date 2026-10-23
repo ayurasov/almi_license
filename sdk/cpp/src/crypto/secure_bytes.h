@@ -3,6 +3,7 @@
 #include <sodium.h>
 
 #include <cstddef>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -34,7 +35,10 @@ class SecureBytes {
     if (!data_.empty()) sodium_memzero(data_.data(), data_.size());
   }
 
-  std::vector<unsigned char> data_;
+  std::vector<unsigned char> data_{};
 };
+
+// Bytes of a string for libsodium calls (a copy: no casts between char and unsigned char).
+inline std::vector<unsigned char> ToBytes(std::string_view text) { return {text.begin(), text.end()}; }
 
 }  // namespace lm::crypto
