@@ -14,4 +14,5 @@
 - `license_module.h`: `LM_GetVersion` (версия модуля) и `LM_BUILDING_DLL` для экспорта на Windows; раздел 15.1 документа 2 обновлён (E13-01).
 - JSON Schema 2020-12 в `contracts/schemas` (аренда, политика, сообщения, директивы, ошибки, заголовок JWS, офлайн-файлы, `.alk-req`, `config.json`) с примерами; `make contract-check` проверяет схемы, примеры и все json-примеры документа 2 и сверяет схемы с OpenAPI (E00-03).
 - JSON Schema сертификата ключа, пакета доверия, квитанции, ответа `.alk-lic`, пакета `.alk` и отчёта `.alk-usage`; тип JWS отчёта `alm-usage+jws`; в OpenAPI добавлен вебхук `license.transferred` (E00-03).
+- Эталонные векторы v1 в `contracts/vectors`: тестовые ключи Ed25519, 12 векторов JWS, 6 векторов подписи запроса, 39 векторов `PolicyEngine`; генератор `tools/vectors/generate.py`, `make vectors` (E00-04).
 

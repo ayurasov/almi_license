@@ -57,7 +57,7 @@ Docker 24+ с Compose v2, GNU Make, [uv](https://docs.astral.sh/uv/) 0.11+ (ли
 | `make test` | Все тесты: `test-server`, `test-console`, `test-dl` (`test-dl`: сборка `sdk/cpp/build`, `DL_CONFIG=Debug`) |
 | `make lint` | Все линтеры: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy (`make lint-server`, `make lint-dl` — по частям) |
 | `make contract-check` | Сверка OpenAPI реализации с `contracts/openapi-product-api-v1.yaml` |
-| `make vectors` | Эталонные векторы на сервере и в DL |
+| `make vectors` | Эталонные векторы: совпадают с генератором и валидны (прогон на сервере и в DL — с E02-03, E04-01, E13-02) |
 | `make e2e` | Playwright и сценарии API против `dev` |
 | `make bundle-airgap` | Собрать комплект изолированного контура локально |
 
