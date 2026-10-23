@@ -27,5 +27,5 @@ repos:
       - id: eslint
         name: eslint
         language: system
-        entry: bash -c 'cd console && npx --no-install eslint --max-warnings=0 "${@#console/}"' --
+        entry: bash -c 'cd console && npx --no-install eslint --max-warnings=0 --no-warn-ignored "${@#console/}"' --
         files: ^console/.*\.(ts|tsx|js|mjs|cjs|vue)$
