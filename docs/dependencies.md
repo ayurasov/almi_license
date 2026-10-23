@@ -11,7 +11,7 @@
 | Пакет | Версия | Назначение | Добавлена | Согласовано |
 |---|---|---|---|---|
 | django | 5.2.18 | Фреймворк сервера (5.2 LTS) | I0-02 | Стек `AGENTS.md` |
-| djangorestframework | 3.16.1 | REST API | I0-02 | Стек `AGENTS.md`; версия 3.16 вместо 3.15 — см. примечание 1 |
+| djangorestframework | 3.16.1 | REST API | I0-02 | Стек `AGENTS.md` (3.16 подтверждена 23.10.2026, примечание 1) |
 | drf-spectacular | 0.30.0 | Генерация OpenAPI для сверки с `contracts/` | I0-02 | Стек `AGENTS.md` |
 | psycopg[binary] | 3.3.6 | Драйвер PostgreSQL 17 | I0-02 | Стек `AGENTS.md` |
 | django-environ | 0.14.0 | Настройки только из переменных окружения | I0-02 | Промпт I0-02 |
@@ -31,6 +31,20 @@
 
 Запланированы стеком, будут добавлены вместе с первым использованием: `cryptography` (E02-02), `hypothesis`, `factory-boy` (I1-03 и далее).
 
+## Образы и инструменты CI (не входят в `uv.lock`)
+
+| Компонент | Версия | Где | Назначение | Добавлен |
+|---|---|---|---|---|
+| python | 3.13-slim | `deploy/Dockerfile` | Базовый образ (раздел 7.1 документа 7) | I0-03 |
+| ghcr.io/astral-sh/uv | 0.11.32 | `deploy/Dockerfile`, CI | Установка зависимостей по `uv.lock` | I0-03 |
+| postgres | 17 | `deploy/dev`, CI | БД | I0-03 |
+| nginx | 1.27 | `deploy/dev` | Шлюз | I0-03 |
+| node | 22 | `deploy/dev`, CI | Консоль | I0-03 |
+| gitleaks | 8.30.1 (sha256 в `ci.yml`) | CI, pre-commit | Поиск секретов | I0-01, I0-03 |
+| openapi-spec-validator | 0.9.0 | CI (`uvx`) | Валидность `contracts/openapi-product-api-v1.yaml` | I0-03 |
+| actions/checkout, actions/setup-node | v7 | CI | | I0-03 |
+| astral-sh/setup-uv | v10.3.2 | CI | Плавающих тегов после v7 нет | I0-03 |
+
 ## Примечания
 
-1. DRF 3.15.2 официально поддерживает Django до 5.0 и Python до 3.12. Стек требует Python 3.13 и Django 5.2, официальная поддержка которых появилась в DRF 3.16. Выбрана 3.16.1; в строке стека `AGENTS.md` указано «DRF 3.15» — открытый вопрос в `docs/progress/stage1.md`.
+1. DRF 3.15.2 официально поддерживает Django до 5.0 и Python до 3.12. Стек требует Python 3.13 и Django 5.2, официальная поддержка которых появилась в DRF 3.16. Выбрана 3.16.1; подтверждено руководителем проекта 23.10.2026, строка стека в `AGENTS.md` исправлена (в разделе 3 документа 6 пока «3.15»).
