@@ -3,7 +3,7 @@ import socket
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 
 from almi_keytool.cli import main
 from almi_keytool.encoding import b64url_decode
@@ -23,11 +23,12 @@ def offline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(socket, "create_connection", refuse)
 
 
-def run(tmp_path: Path, *args: str, password: str | None = PASSWORD, confirm: bool = False) -> object:
+def run(tmp_path: Path, *args: str, answer: str | None = PASSWORD, confirm: bool = False) -> Result:
     runner = CliRunner()
-    stdin = None if password is None else (f"{password}\n{password}\n" if confirm else f"{password}\n")
-    return runner.invoke(main, ["--log", str(tmp_path / "keytool.log"), *args], input=stdin,
-                         catch_exceptions=False)
+    stdin = None if answer is None else (f"{answer}\n{answer}\n" if confirm else f"{answer}\n")
+    return runner.invoke(
+        main, ["--log", str(tmp_path / "keytool.log"), *args], input=stdin, catch_exceptions=False
+    )
 
 
 def write_pub(path: Path, raw: bytes) -> Path:
@@ -49,34 +50,87 @@ def test_full_ceremony_offline(tmp_path: Path, fast_kdf: None, offline: None) ->
     issuers = tmp_path / "issuers"
     issuers.mkdir()
     pub = write_pub(tmp_path / "issuer.pub", bytes(issuer.verify_key))
-    result = run(tmp_path, "issue-cert", "--root", str(keys / "root.key.json"), "--subject-pub", str(pub),
-                 "--role", "issuer", "--kid", "c-2026-01", "--valid-days", "730",
-                 "--out", str(issuers / "c-2026-01.jws"), "--now", NOW)
+    result = run(
+        tmp_path,
+        "issue-cert",
+        "--root",
+        str(keys / "root.key.json"),
+        "--subject-pub",
+        str(pub),
+        "--role",
+        "issuer",
+        "--kid",
+        "c-2026-01",
+        "--valid-days",
+        "730",
+        "--out",
+        str(issuers / "c-2026-01.jws"),
+        "--now",
+        NOW,
+    )
     assert result.exit_code == 0, result.output
 
-    result = run(tmp_path, "verify", str(issuers / "c-2026-01.jws"), "--trust-root", str(keys / "root.pub.json"),
-                 "--now", NOW, password=None)
+    result = run(
+        tmp_path,
+        "verify",
+        str(issuers / "c-2026-01.jws"),
+        "--trust-root",
+        str(keys / "root.pub.json"),
+        "--now",
+        NOW,
+        answer=None,
+    )
     assert result.exit_code == 0, result.output
     assert "OK" in result.output
 
-    result = run(tmp_path, "revoke-cert", "--root", str(keys / "root.key.json"), "--kid", "srv_01H-1")
+    result = run(
+        tmp_path, "revoke-cert", "--root", str(keys / "root.key.json"), "--kid", "srv_01H-1"
+    )
     assert result.exit_code == 0, result.output
     assert json.loads((keys / "revoked.json").read_text())["revoked_kids"] == ["srv_01H-1"]
 
     trust = tmp_path / "trust.json"
-    result = run(tmp_path, "export-trust", "--root", str(keys / "root.key.json"), "--issuers", str(issuers),
-                 "--out", str(trust), "--now", NOW)
+    result = run(
+        tmp_path,
+        "export-trust",
+        "--root",
+        str(keys / "root.key.json"),
+        "--issuers",
+        str(issuers),
+        "--out",
+        str(trust),
+        "--now",
+        NOW,
+    )
     assert result.exit_code == 0, result.output
     bundle = json.loads(trust.read_text())
     assert bundle["seq"] == 1 and bundle["revoked_kids"] == ["srv_01H-1"]
     assert bundle["issuers"] == [(issuers / "c-2026-01.jws").read_text().strip()]
 
-    result = run(tmp_path, "verify", str(trust), "--trust-root", str(keys / "root.pub.json"), "--now", NOW,
-                 password=None)
+    result = run(
+        tmp_path,
+        "verify",
+        str(trust),
+        "--trust-root",
+        str(keys / "root.pub.json"),
+        "--now",
+        NOW,
+        answer=None,
+    )
     assert result.exit_code == 0, result.output
 
-    second = run(tmp_path, "export-trust", "--root", str(keys / "root.key.json"), "--issuers", str(issuers),
-                 "--out", str(trust), "--now", NOW)
+    second = run(
+        tmp_path,
+        "export-trust",
+        "--root",
+        str(keys / "root.key.json"),
+        "--issuers",
+        str(issuers),
+        "--out",
+        str(trust),
+        "--now",
+        NOW,
+    )
     assert second.exit_code == 0 and json.loads(trust.read_text())["seq"] == 2
 
 
@@ -87,12 +141,38 @@ def test_revoked_issuer_fails_verification(tmp_path: Path, fast_kdf: None) -> No
     run(tmp_path, "init-root", "--out", str(keys), "--kid", "root-test", confirm=True)
     pub = write_pub(tmp_path / "issuer.pub", bytes(SigningKey.generate().verify_key))
     cert = tmp_path / "cert.jws"
-    run(tmp_path, "issue-cert", "--root", str(keys / "root.key.json"), "--subject-pub", str(pub), "--role",
-        "issuer", "--kid", "c-2026-01", "--valid-days", "730", "--out", str(cert), "--now", NOW)
+    run(
+        tmp_path,
+        "issue-cert",
+        "--root",
+        str(keys / "root.key.json"),
+        "--subject-pub",
+        str(pub),
+        "--role",
+        "issuer",
+        "--kid",
+        "c-2026-01",
+        "--valid-days",
+        "730",
+        "--out",
+        str(cert),
+        "--now",
+        NOW,
+    )
     run(tmp_path, "revoke-cert", "--root", str(keys / "root.key.json"), "--kid", "c-2026-01")
 
-    result = run(tmp_path, "verify", str(cert), "--trust-root", str(keys / "root.pub.json"), "--revoked",
-                 str(keys / "revoked.json"), "--now", NOW, password=None)
+    result = run(
+        tmp_path,
+        "verify",
+        str(cert),
+        "--trust-root",
+        str(keys / "root.pub.json"),
+        "--revoked",
+        str(keys / "revoked.json"),
+        "--now",
+        NOW,
+        answer=None,
+    )
     assert result.exit_code == 1
     assert "kid_revoked" in result.output
 
@@ -101,7 +181,15 @@ def test_wrong_password_is_refused_without_details(tmp_path: Path, fast_kdf: Non
     keys = tmp_path / "root"
     run(tmp_path, "init-root", "--out", str(keys), "--kid", "root-test", confirm=True)
 
-    result = run(tmp_path, "revoke-cert", "--root", str(keys / "root.key.json"), "--kid", "x", password="wrong")
+    result = run(
+        tmp_path,
+        "revoke-cert",
+        "--root",
+        str(keys / "root.key.json"),
+        "--kid",
+        "x",
+        answer="wrong",
+    )
 
     assert result.exit_code == 2
     assert "Traceback" not in result.output
@@ -120,8 +208,19 @@ def test_corrupted_key_file_is_refused(tmp_path: Path) -> None:
 
 def test_password_confirmation_must_match(tmp_path: Path, fast_kdf: None) -> None:
     runner = CliRunner()
-    result = runner.invoke(main, ["--log", str(tmp_path / "keytool.log"), "init-root", "--out",
-                                  str(tmp_path / "root"), "--kid", "root-test"], input="one\ntwo\none\ntwo\n")
+    result = runner.invoke(
+        main,
+        [
+            "--log",
+            str(tmp_path / "keytool.log"),
+            "init-root",
+            "--out",
+            str(tmp_path / "root"),
+            "--kid",
+            "root-test",
+        ],
+        input="one\ntwo\none\ntwo\n",
+    )
     assert result.exit_code != 0
     assert not (tmp_path / "root" / "root.key.json").exists()
 

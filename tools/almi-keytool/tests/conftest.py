@@ -12,7 +12,9 @@ def vector_key(name: str) -> str:
 
 
 def jws_vectors() -> list[dict[str, Any]]:
-    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted((VECTORS / "jws").glob("*.json"))]
+    return [
+        json.loads(p.read_text(encoding="utf-8")) for p in sorted((VECTORS / "jws").glob("*.json"))
+    ]
 
 
 @pytest.fixture
