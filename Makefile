@@ -94,12 +94,11 @@ vectors: ## Reference vectors: up to date and valid; server and DL runners come 
 # Leases signed by the server (issue_jws) are written in the contracts/vectors/jws format and
 # checked by the two independent verifiers: almi-keytool (PyNaCl) and LeaseVerifier (libsodium).
 ISSUED_VECTORS ?= $(abspath $(DL_BUILD))/issued-vectors
-cross-verify: ## Server-issued JWS pass almi-keytool and the DL LeaseVerifier (E02-03); needs make test-dl first
+cross-verify: ## Server-issued JWS pass almi-keytool and the DL LeaseVerifier (E02-03); needs make test-dl and DATABASE_URL
 	rm -rf $(ISSUED_VECTORS) && mkdir -p $(ISSUED_VECTORS)
-	cd server && export DATABASE_URL="$${DATABASE_URL:-postgres://localhost/unused}" && \
-		ALMI_ISSUED_VECTORS_DIR=$(ISSUED_VECTORS) uv run pytest -q -p no:cacheprovider \
-		apps/signing/tests/test_issue_jws.py -k cross_verification
-	test -n "$$(ls $(ISSUED_VECTORS)/*.json)"
+	cd server && ALMI_ISSUED_VECTORS_DIR=$(ISSUED_VECTORS) uv run pytest -q -p no:cacheprovider \
+		apps/signing/tests/test_issue_jws.py tests/api_product/test_activate.py -k cross_verification
+	test "$$(ls $(ISSUED_VECTORS)/*.json | wc -l)" -eq 3
 	cd tools/almi-keytool && ALMI_ISSUED_VECTORS_DIR=$(ISSUED_VECTORS) uv run --locked pytest -q \
 		tests/test_vectors.py -k issued
 	ALMI_ISSUED_VECTORS_DIR=$(ISSUED_VECTORS) $(DL_BUILD)/bin/lm_tests --gtest_filter='Issued/*'

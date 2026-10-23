@@ -10,6 +10,8 @@ from typing import Any
 from rest_framework import exceptions, status
 from rest_framework.response import Response
 
+from infra.errors import DomainError
+
 PROBLEM_TYPE = "https://license.alter-os.ru/problems/"
 CONTENT_TYPE = "application/problem+json"
 
@@ -35,6 +37,42 @@ CATALOG: dict[str, tuple[int, str]] = {
     "rate_limited": (429, "Слишком много запросов"),
     "internal_error": (500, "Ошибка сервера"),
     "maintenance": (503, "Обслуживание"),
+}
+
+# Texts shown to the user (section 5 of document 5); {used}, {limit} come from data.
+USER_MESSAGES: dict[str, dict[str, str]] = {
+    "invalid_key_format": {
+        "ru": "Ключ введён неверно. Проверьте его и попробуйте снова.",
+        "en": "The key is incorrect. Check it and try again.",
+    },
+    "key_not_found": {
+        "ru": "Ключ не найден. Проверьте ключ или обратитесь к поставщику лицензии.",
+        "en": "The key was not found. Check it or contact your license supplier.",
+    },
+    "license_expired": {
+        "ru": "Срок действия этой лицензии истёк. Обратитесь к администратору для продления.",
+        "en": "This license has expired. Contact your administrator to renew it.",
+    },
+    "license_revoked": {
+        "ru": "Лицензия отозвана. Обратитесь к администратору.",
+        "en": "The license has been revoked. Contact your administrator.",
+    },
+    "product_mismatch": {
+        "ru": "Этот ключ предназначен для другого продукта или редакции.",
+        "en": "This key is for a different product or edition.",
+    },
+    "seats_exhausted": {
+        "ru": "Все лицензии по этому ключу уже используются ({used} из {limit}). Освободите "
+        "лицензию на другом компьютере или обратитесь к администратору.",
+        "en": "All licenses for this key are in use ({used} of {limit}). Release a license on "
+        "another computer or contact your administrator.",
+    },
+    "instance_conflict": {
+        "ru": "Этот компьютер похож на копию уже активированного. Нажмите «Активировать заново», "
+        "чтобы зарегистрировать его как новый.",
+        "en": 'This computer looks like a copy of an already activated one. Click "Activate '
+        'again" to register it as a new computer.',
+    },
 }
 
 # Errors raised by DRF itself are mapped by status onto the closest catalog code.
@@ -63,12 +101,20 @@ class Problem(exceptions.APIException):
         super().__init__(detail or title, code)
         self.problem_code = code
         self.title = title
+        if user_message is None and code in USER_MESSAGES:
+            values = data or {}
+            user_message = {
+                lang: text.format(**values) if "{" in text else text
+                for lang, text in USER_MESSAGES[code].items()
+            }
         self.user_message = user_message
         self.data = data
         self.server_time = server_time
 
 
-def _problem_of(exc: exceptions.APIException) -> Problem:
+def _problem_of(exc: exceptions.APIException | DomainError) -> Problem:
+    if isinstance(exc, DomainError):
+        return Problem(exc.code, exc.detail or None, data=exc.data)
     if isinstance(exc, Problem):
         return exc
     if exc.status_code >= 500:
@@ -78,7 +124,7 @@ def _problem_of(exc: exceptions.APIException) -> Problem:
 
 def problem_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
     """DRF EXCEPTION_HANDLER: every APIException becomes problem+json; others propagate (500)."""
-    if not isinstance(exc, exceptions.APIException):
+    if not isinstance(exc, exceptions.APIException | DomainError):
         return None
     problem = _problem_of(exc)
     request = context.get("request")

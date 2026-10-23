@@ -20,6 +20,13 @@ DEBUG = False
 SIGNING_KEY_FILE = env.str("SIGNING_KEY_FILE", default="")
 SIGNING_CERT_FILE = env.str("SIGNING_CERT_FILE", default="")
 SIGNING_REQUIRED = False
+# iss of leases (section 6.2 of document 2): the central server URL or urn:almi:ls:<server_id>.
+LEASE_ISSUER = env.str(
+    "LEASE_ISSUER",
+    default="https://license.alter-os.ru"
+    if DEPLOYMENT_MODE == "central"
+    else f"urn:almi:ls:{env.str('SERVER_ID', default='')}",
+)
 
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
