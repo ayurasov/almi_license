@@ -650,7 +650,8 @@ P = L.policy; VU = L.lic.valid_until
 - модуль хранит `nonce` неподтверждённых запросов и принимает `.alk-lic` только с известным `request_nonce`;
 - срок ответа — 30 дней с момента запроса; после — нужен новый запрос;
 - для офлайн-активаций сервер ставит `exp` аренды по `offline_grace_days` профиля; для продления используется `.alk-req` типа `renew`;
-- файлы можно передавать по почте: они не содержат секретов, кроме ключа лицензии в `activate`.
+- файлы можно передавать по почте: они не содержат секретов, кроме ключа лицензии в `activate`;
+- точный состав полезной нагрузки файлов и подписанных объектов (`alk-req`, `alk-lic`, `package`, `alk-usage`, `cert`, `trust`, `receipt`, аренда) — JSON Schema в `contracts/schemas`; время `iat`, `nbf`, `exp`, `server_time` — Unix, остальные даты — RFC 3339.
 
 Где обрабатываются файлы устройств: портал `/offline` центрального сервера (без входа, с ограничением частоты), консоль оператора, консоль локального сервера.
 
@@ -789,7 +790,7 @@ occ config:system:set support.backend --value="https://license.alter-os.ru"
 
 ### 13.4. Отчёт `.alk-usage`
 
-`POST /api/sync/v1/servers/{server_id}/usage` → `200` с квитанцией (`alm-receipt+jws`).
+`POST /api/sync/v1/servers/{server_id}/usage` → `200` с квитанцией (`alm-receipt+jws`). Отчёт подписывается ключом локального сервера, `typ: alm-usage+jws`.
 
 | Поле | Описание |
 |---|---|

@@ -26,7 +26,8 @@
         "alm-receipt+jws",
         "alm-trust+jws",
         "alm-req+jws",
-        "alm-lic+jws"
+        "alm-lic+jws",
+        "alm-usage+jws"
       ]
     },
     "kid": {

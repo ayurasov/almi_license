@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/package.schema.json",
+  "title": "PackageClaims",
+  "description": "Пакет прав локального сервера .alk, alm-package+jws (документ 2, раздел 13.3). Полный снимок: при импорте заменяет предыдущий целиком; пакет с меньшим или равным seq отклоняется.",
+  "type": "object",
+  "required": [
+    "server_id",
+    "customer_id",
+    "seq",
+    "issued_at",
+    "valid_until",
+    "licenses",
+    "keys",
+    "revocations",
+    "trust"
+  ],
+  "properties": {
+    "server_id": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "licenses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "license_id",
+          "product",
+          "type",
+          "metric",
+          "allocation",
+          "valid_from",
+          "capabilities",
+          "policy",
+          "status"
+        ],
+        "properties": {
+          "license_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{2,64}$"
+          },
+          "edition": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "subscription",
+              "perpetual",
+              "trial",
+              "nfr",
+              "free"
+            ]
+          },
+          "metric": {
+            "type": "string",
+            "pattern": "^[a-z_]+$",
+            "description": "Метрика учёта (документ 1, раздел 7.3)",
+            "examples": [
+              "device",
+              "server_instance",
+              "os_node",
+              "named_user",
+              "active_user",
+              "concurrent_session",
+              "feature"
+            ]
+          },
+          "allocation": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Места, переданные локальному серверу"
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "support_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "policy": {
+            "$ref": "policy.schema.json"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "revoked"
+            ]
+          }
+        }
+      }
+    },
+    "keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key_hash",
+          "key_mask",
+          "license_id"
+        ],
+        "properties": {
+          "key_hash": {
+            "type": "string",
+            "description": "SHA-256 нормализованного ключа"
+          },
+          "key_mask": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{4}-\\*{4}-\\*{4}-[0-9A-Z]{4}$",
+            "examples": [
+              "2645-****-****-81ZT"
+            ],
+            "description": "Маска ключа: средние группы скрыты; полный ключ в пакет не попадает (AGENTS.md, правило 9)"
+          },
+          "license_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    "revocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "revoked_at"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "license",
+              "activation"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": [
+        "issuers",
+        "revoked_kids"
+      ],
+      "properties": {
+        "issuers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "JWS alm-cert+jws"
+          }
+        },
+        "revoked_kids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "server_certificate": {
+          "type": "string",
+          "description": "Обновлённый сертификат локального сервера, JWS alm-cert+jws"
+        }
+      }
+    },
+    "expired_policy": {
+      "type": "object",
+      "description": "Режим после valid_until пакета (по умолчанию GRACE 30 дней, затем RESTRICTED)",
+      "properties": {
+        "enforcement": {
+          "type": "string",
+          "enum": [
+            "enforce",
+            "monitor"
+          ]
+        },
+        "expiry_action": {
+          "type": "string",
+          "enum": [
+            "none",
+            "restrict",
+            "block"
+          ]
+        },
+        "grace_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 365
+        }
+      }
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "$ref": "message.schema.json"
+      }
+    }
+  },
+  "additionalProperties": true
+}
