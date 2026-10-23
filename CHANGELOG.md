@@ -21,4 +21,6 @@
 - ADR-001…011 в `docs/adr` по решениям Р1–Р11 документа 1 (E00-08).
 - Сервер подписывает JWS ключом выпуска: `Ed25519Provider` (ключ из `SIGNING_KEY_FILE`, цепочка сертификатов из `SIGNING_CERT_FILE`), `signing.domain.issue_jws` с заголовком раздела 6.1 документа 2; production-сервер не стартует без ключа; `make cross-verify` проверяет выпущенные аренды `almi-keytool` и модулем DL (E02-02, E02-03).
 - `PolicyEngine` (`apps/policy/domain/engine.py`): состояние лицензии, доступные функции, сообщения и срок аренды по разделу 7.2 документа 2; проходит все 39 policy-векторов; property-тесты монотонности (E04-01, E04-02).
+- Проверка подписи запросов `ALMI-Signature` ключом устройства (DRF Authentication): окно ±300 с с `server_time` в ответе `clock_skew`, защита от повтора `nonce` на 10 минут, `keyid="device"` для активации (E05-01).
+- Ошибки API в формате `application/problem+json` только с кодами каталога раздела 16 документа 2 (E05-04, часть).
 
