@@ -40,12 +40,14 @@
 - Разблокировано: E13-02 (`LeaseVerifier`), E13-11 (`lm-demo`, заглушка).
 - Запрос на слияние: [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1).
 
-### I1-01 — JSON Schema подписанных объектов (E00-03) — в работе (часть 1 из 2)
-- Сделано: 15 схем JSON Schema 2020-12 в `contracts/schemas` — `lease`, `policy`, `message`, `directive`, `problem`, `jws-header`, `alk-file`, `alk-req`, `config` и общие `product`, `os-info`, `instance`, `fingerprint`, `usage`, `license-state`; по 1+ валидному и 2+ невалидных примера (каждый невалидный падает ровно по заявленной причине); `make contract-check` (`tools/contract_check.py`): метасхема, примеры, все 17 json-блоков документа 2 по назначенным схемам (неназначенный блок — ошибка), совпадение зеркальных схем с компонентами OpenAPI по полям и типам; задача CI `contract` вызывает `make contract-check`.
-- Осталось: `cert`, `trust` (утверждения пакета доверия), `receipt`, `package`, `alk-lic`, `alk-usage` — их состав в спецификации не определён (вопрос 10).
+### I1-01 — JSON Schema подписанных объектов (E00-03) — закрыта 23.10.2026
+- Реализовано: 21 схема JSON Schema 2020-12 в `contracts/schemas` — `lease`, `policy`, `message`, `directive`, `problem`, `jws-header`, `alk-file`, `alk-req`, `alk-lic`, `alk-usage`, `package`, `cert`, `trust`, `receipt`, `config` и общие `product`, `os-info`, `instance`, `fingerprint`, `usage`, `license-state`; у каждой 1+ валидный и 2+ невалидных примера, каждый невалидный падает ровно по заявленной причине; `make contract-check` (`tools/contract_check.py`): метасхема, примеры, все 17 json-блоков документа 2 по назначенным схемам, совпадение 12 зеркальных схем с компонентами OpenAPI; задача CI `contract` вызывает `make contract-check`. Состав `cert`, `trust`, `receipt`, `alk-lic`, `package`, `alk-usage` — по решению 10; `license.transferred` в OpenAPI — по решению 11.
+- Ограничения: сверка реализации с drf-spectacular — с появлением эндпоинтов Product API; тег `contract-v1.0.0` ставит технический лидер после E00-04 (критерий выхода I1).
+- Разблокировано: I1-02 (векторы), I1-03, I1-05, E02-02/E02-03.
+- Запрос на слияние: [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1).
 
 ## Текущая итерация
-I1 — контракты и основа. В работе: I1-01 (ждёт решения по вопросу 10). I0: выполнены I0-01…I0-04; в CI сборка DL на Windows зелёная, на Linux исправлено отсутствие autotools для libsodium. Ветка `stage1` создана, запрос на слияние [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1); первый прогон CI (I0-01…I0-03) зелёный. Для выхода из I0 осталось: зелёный CI с задачами DL, слияние, защита веток `main` и `stage1`.
+I1 — контракты и основа. Выполнено: I1-01. Следующая: I1-02 (эталонные векторы, E00-04). I0: выполнены I0-01…I0-04; в CI сборка DL на Windows зелёная, на Linux исправлено отсутствие autotools для libsodium. Ветка `stage1` создана, запрос на слияние [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1); первый прогон CI (I0-01…I0-03) зелёный. Для выхода из I0 осталось: зелёный CI с задачами DL, слияние, защита веток `main` и `stage1`.
 
 ## Открытые вопросы
 
@@ -62,13 +64,5 @@ I1 — контракты и основа. В работе: I1-01 (ждёт ре
 7. **Защита веток.** `stage1` и запрос на слияние созданы, CI запускается. После слияния — защита веток `main` и `stage1` (раздел 6.3 документа 7, критерий выхода I0) в настройках репозитория.
 8. ~~`LM_API` при сборке DLL~~ — принято: `LM_BUILDING_DLL` → `dllexport` в заголовке и разделе 15.1 документа 2.
 9. ~~`LM_GetVersion`~~ — принято: `LM_GetVersion(char*, int)` добавлена в конец ABI (v1+) в заголовке и разделе 15.1 документа 2.
-10. **Состав объектов, не описанных в спецификации (E00-03).** Документ 2 не задаёт полей полезной нагрузки `alm-cert+jws`, `alm-trust+jws`, `alm-receipt+jws`; для `.alk` (13.3) и `.alk-usage` (13.4) поля вложенных объектов описаны словами; `typ` отчёта не назван. Предложение:
-    - **Время:** `iat`, `nbf`, `exp`, `server_time` — Unix (целое); остальные даты (`issued_at`, `valid_until`, `released_at`, `respond_before`…) — RFC 3339, как `lic.*` в аренде и `created` в приложении А.
-    - **cert** (`alm-cert+jws`, подпись корнем или ключом выпуска): `ver`, `kid` (сертифицируемый ключ), `alg`, `pub`, `role` (`issuer` | `local_server`), `iss` (kid подписавшего), `iat`, `nbf`, `exp`; для `local_server` — `scope`: `server_id`, `customer_id`, `products[]`, `quotas` (места по `license_id`).
-    - **trust** (`alm-trust+jws`, подпись корнем): `ver`, `seq`, `iat`, `roots[]`, `issuers[]`, `revoked_kids[]` — те же поля, что в ответе `/api/v1/trust`.
-    - **receipt** (`alm-receipt+jws`): `ver`, `type` (`release` | `usage`), `iat`; для `release` — `activation_id`, `released_at`; для `usage` — `server_id`, `report_seq`.
-    - **alk-lic** (`alm-lic+jws`): `request_nonce`, `activation_id`, `lease`, `receipt` (для `release`), `issued_at`, `respond_before` — по приложению Б и разделу 10.
-    - **package** (`alm-package+jws`): поля таблицы 13.3; `licenses[]` — `license_id`, `product`, `edition`, `type`, `metric`, `allocation`, `limits`, `valid_from`, `valid_until`, `support_until`, `capabilities`, `policy`, `status`; `keys[]` — `key_hash`, `key_mask`, `license_id`; `revocations[]` — `kind` (`license` | `activation`), `id`, `revoked_at`, `reason`; `trust` — `issuers[]`, `revoked_kids[]`, `server_certificate`; `expired_policy` — `enforcement`, `expiry_action`, `grace_days` (режим «пакет истёк»).
-    - **alk-usage** (новый `typ` `alm-usage+jws`): поля таблицы 13.4; `licenses[]` — `license_id`, `active`, `released`, `reserve_used`, `by_version{}`, `by_os{}`, `users_total`, `users_max_active`; `activations[]` — `activation_id`, `instance_hash`, `version`, `os`, `status`, `activated_at`, `last_seen_at`; `denials` — `{код: количество}`.
-11. **`WebhookEvent.type` в OpenAPI** не содержит `license.transferred` из таблицы 14.3 документа 2 (этап 2). Добавить значение в контракт?
-
+10. ~~Состав объектов, не описанных в спецификации (E00-03)~~ — принято предложение: `cert`, `trust`, `receipt`, `alk-lic`, `package`, `alk-usage` в `contracts/schemas`; `typ` отчёта — `alm-usage+jws`; `iat`, `nbf`, `exp`, `server_time` — Unix, остальные даты — RFC 3339.
+11. ~~`license.transferred` в `WebhookEvent`~~ — добавлено в OpenAPI.
