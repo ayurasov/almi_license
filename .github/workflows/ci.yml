@@ -152,17 +152,6 @@ jobs:
         run: cmake --build build --config Release --parallel
       - if: steps.detect.outputs.present == 'true'
         run: ctest --test-dir build -C Release --output-on-failure
-      - if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
-        uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: |
-            server/uv.lock
-            tools/almi-keytool/uv.lock
-      - name: Server-issued JWS through almi-keytool and LeaseVerifier (E02-03)
-        if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
-        run: make cross-verify DL_BUILD=build
       - name: ASan and UBSan (docs/specs/06-ai-rules.md, 4.3)
         if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
         run: |
@@ -181,6 +170,34 @@ jobs:
             build/bin/**/lm-demo.exe
             build/lib/**/license_module.lib
             sdk/cpp/include/license_module.h
+
+  # Leases signed by the server (issue_jws, a real activation) pass the two independent
+  # verifiers: almi-keytool (PyNaCl) and the DL LeaseVerifier (E02-03, E03-01).
+  cross-verify:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DEPLOYMENT_MODE: central
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - run: cmake -S sdk/cpp -B build -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=ci
+      - run: cmake --build build --parallel --target lm_tests
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: |
+            server/uv.lock
+            tools/almi-keytool/uv.lock
+      - run: make cross-verify DL_BUILD=build
 
   lint-dl:
     runs-on: ubuntu-24.04
