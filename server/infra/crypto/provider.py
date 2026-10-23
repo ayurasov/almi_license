@@ -13,6 +13,11 @@ class CryptoProvider(Protocol):
         """Identifier of the signing key, written to the JWS header."""
         ...
 
+    @property
+    def chain(self) -> tuple[str, ...]:
+        """Certificates (alm-cert+jws) of the signing key, its own first: the JWS header chain."""
+        ...
+
     def sign(self, payload: bytes) -> bytes:
         """Sign payload bytes with the provider's private key."""
         ...

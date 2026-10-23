@@ -22,8 +22,9 @@ services:
       DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-central}
       DATABASE_URL: postgres://almi:dev-only@db:5432/almi_license
       SIGNING_KEY_FILE: /run/secrets/signing_key
+      SIGNING_CERT_FILE: /run/secrets/signing_cert
       DJANGO_SETTINGS_MODULE: almi_license.settings.dev
-    secrets: [signing_key]
+    secrets: [signing_key, signing_cert]
     volumes: [../../server:/app/server]
     depends_on:
       db: { condition: service_healthy }
@@ -57,8 +58,10 @@ services:
     ports: ["8080:80"]
     depends_on: [api, console]
 secrets:
+  # Public dev issuer key and its certificate from the reference vectors (E00-04, E02-02).
   signing_key:
-    # make sets SIGNING_KEY_SOURCE=/dev/null until E00-04 generates the dev keys.
-    file: ${SIGNING_KEY_SOURCE:-../../contracts/vectors/keys/dev-issuer.key}
+    file: ../../contracts/vectors/keys/dev-issuer.key
+  signing_cert:
+    file: ./secrets/dev-issuer-1.cert.jws
 volumes:
   db: {}
