@@ -16,10 +16,7 @@ def parse_deployment_mode(value: str | None) -> DeploymentMode:
     Raises ImproperlyConfigured when the value is missing or is not exactly
     "central" or "local", so a misconfigured server refuses to start.
     """
-    try:
+    if value in {mode.value for mode in DeploymentMode}:
         return DeploymentMode(value)
-    except ValueError:
-        allowed = ", ".join(mode.value for mode in DeploymentMode)
-        raise ImproperlyConfigured(
-            f"DEPLOYMENT_MODE must be one of: {allowed}; got {value!r}"
-        ) from None
+    allowed = ", ".join(mode.value for mode in DeploymentMode)
+    raise ImproperlyConfigured(f"DEPLOYMENT_MODE must be one of: {allowed}; got {value!r}")

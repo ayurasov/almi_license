@@ -12,7 +12,7 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local seed test test-server test-console test-dl lint \
+.PHONY: help up down up-local seed test test-server test-console test-dl lint lint-server \
 	contract-check vectors e2e bundle-airgap
 
 help: ## Show available targets
@@ -42,8 +42,18 @@ test-console: ## Console tests (vitest) — I2-07
 test-dl: ## DL module tests (ctest) — I0-04
 	$(not_implemented)
 
-lint: ## All linters: ruff, mypy, eslint, vue-tsc, clang-tidy — I0-02, I0-04, I2-07
-	$(not_implemented)
+lint: lint-server ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy
+	@echo "lint-console (eslint, vue-tsc): not implemented"
+	@echo "lint-dl (clang-format, clang-tidy): not implemented"
+
+# mypy loads Django settings (django-stubs); the database is not contacted, so a
+# placeholder DATABASE_URL is enough when none is set.
+lint-server: ## Server linters: ruff, mypy, import-linter
+	cd server && export DATABASE_URL="$${DATABASE_URL:-postgres://localhost/lint}" && \
+		uv run ruff check . && \
+		uv run ruff format --check . && \
+		uv run mypy . && \
+		uv run lint-imports
 
 contract-check: ## Compare the implemented OpenAPI with contracts/ — I0-03
 	$(not_implemented)

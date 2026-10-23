@@ -46,7 +46,7 @@ def test_frozen_clock_normalizes_to_utc() -> None:
 
 @pytest.mark.parametrize("method", ["init", "set"])
 def test_frozen_clock_rejects_naive_datetime(method: str) -> None:
-    naive = datetime(2026, 1, 1, 0, 0)  # noqa: DTZ001  (naive on purpose; I0-02)
+    naive = datetime(2026, 1, 1, 0, 0)  # naive on purpose
     with pytest.raises(ValueError, match="timezone-aware"):
         if method == "init":
             FrozenClock(naive)
