@@ -104,7 +104,9 @@ class Ed25519Provider:
     def sign(self, payload: bytes) -> bytes:
         return self._key.sign(payload)
 
-    def verify(self, payload: bytes, signature: bytes, public_key: bytes) -> bool:
+    @staticmethod
+    def verify(payload: bytes, signature: bytes, public_key: bytes) -> bool:
+        """Needs no private key: request signatures are checked without the issuer key."""
         try:
             Ed25519PublicKey.from_public_bytes(public_key).verify(signature, payload)
         except (InvalidSignature, ValueError):
