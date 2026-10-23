@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/directive.schema.json",
+  "title": "Directive",
+  "description": "Директива сервера (документ 2, раздел 8). Клиент обязан игнорировать неизвестные типы.",
+  "type": "object",
+  "required": [
+    "id",
+    "type"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "description": "Клиент обязан игнорировать неизвестные типы",
+      "examples": [
+        "refresh_now",
+        "update_trust",
+        "set_check_interval",
+        "show_message",
+        "rebind",
+        "release",
+        "set_server_url",
+        "collect_diagnostics"
+      ]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

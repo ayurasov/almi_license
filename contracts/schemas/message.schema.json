@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/message.schema.json",
+  "title": "Message",
+  "description": "Сообщение продукту (документ 2, раздел 9). Продукт показывает текст без изменений.",
+  "type": "object",
+  "required": [
+    "id",
+    "severity",
+    "placement",
+    "text"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "state": {
+      "$ref": "license-state.schema.json"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ]
+    },
+    "placement": {
+      "type": "string",
+      "enum": [
+        "banner",
+        "dialog",
+        "about",
+        "tray"
+      ]
+    },
+    "text": {
+      "type": "object",
+      "description": "Тексты по языкам; подстановки {days_left}, {valid_until}, {customer}, {used}, {limit}",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "repeat": {
+      "type": "string",
+      "enum": [
+        "once",
+        "daily",
+        "each_start"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

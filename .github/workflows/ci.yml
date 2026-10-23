@@ -20,7 +20,6 @@ env:
   UV_VERSION: "0.11.32"
   GITLEAKS_VERSION: "8.30.1"
   GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
-  OPENAPI_SPEC_VALIDATOR_VERSION: "0.9.0"
 
 jobs:
   lint-server:
@@ -42,10 +41,9 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
         with:
           version: ${{ env.UV_VERSION }}
-      # For now only the validity of the contract; comparison with drf-spectacular comes with Product API.
-      - run: >-
-          uvx --from "openapi-spec-validator==${OPENAPI_SPEC_VALIDATOR_VERSION}"
-          openapi-spec-validator contracts/openapi-product-api-v1.yaml
+      # OpenAPI validity, JSON Schemas and their examples, docs/specs/02 examples;
+      # comparison with drf-spectacular comes with Product API endpoints.
+      - run: make contract-check
 
   arch:
     runs-on: ubuntu-24.04

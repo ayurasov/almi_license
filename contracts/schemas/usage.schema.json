@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/usage.schema.json",
+  "title": "Usage",
+  "description": "Счётчики использования; состав по каталогу продукта (документ 2, раздел 5.3).",
+  "type": "object",
+  "properties": {
+    "named_users": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "active_users": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "active_users_window_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "documents_opened": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "apps": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": {
+    "type": [
+      "number",
+      "integer",
+      "string",
+      "boolean",
+      "object"
+    ]
+  }
+}

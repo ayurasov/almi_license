@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/product.schema.json",
+  "title": "Product",
+  "description": "Продукт в запросах (документ 2, раздел 5.2).",
+  "type": "object",
+  "required": [
+    "code",
+    "version"
+  ],
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{2,64}$",
+      "examples": [
+        "alteroffice-desktop",
+        "alteroffice-web",
+        "alteros"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "build": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "edition": {
+      "type": "string",
+      "maxLength": 64
+    }
+  },
+  "additionalProperties": true
+}

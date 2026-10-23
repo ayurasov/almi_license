@@ -1,0 +1,11 @@
+{
+  "instance_id": "8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11",
+  "subject_type": "phone",
+  "name": "WS-0451",
+  "os": {
+    "family": "linux",
+    "name": "Astra Linux",
+    "version": "1.8",
+    "arch": "x86_64"
+  }
+}
