@@ -23,4 +23,5 @@
 - `PolicyEngine` (`apps/policy/domain/engine.py`): состояние лицензии, доступные функции, сообщения и срок аренды по разделу 7.2 документа 2; проходит все 39 policy-векторов; property-тесты монотонности (E04-01, E04-02).
 - Проверка подписи запросов `ALMI-Signature` ключом устройства (DRF Authentication): окно ±300 с с `server_time` в ответе `clock_skew`, защита от повтора `nonce` на 10 минут, `keyid="device"` для активации (E05-01).
 - Ошибки API в формате `application/problem+json` только с кодами каталога раздела 16 документа 2 (E05-04, часть).
+- `POST /api/v1/activations`: активация экземпляра по ключу лицензии с подписанной арендой, учётом мест и резерва под блокировкой строки лицензии, повторной активацией, обнаружением клона (`409 instance_conflict`), отказами `invalid_key_format`, `key_not_found`, `license_revoked`, `product_mismatch`, `license_expired`, `seats_exhausted`; журнал аудита с цепочкой хэшей (E03-01, E03-02, E03-03).
 
