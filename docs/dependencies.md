@@ -15,6 +15,7 @@
 | drf-spectacular | 0.30.0 | Генерация OpenAPI для сверки с `contracts/` | I0-02 | Стек `AGENTS.md` |
 | psycopg[binary] | 3.3.6 | Драйвер PostgreSQL 17 | I0-02 | Стек `AGENTS.md` |
 | cryptography | 50.0.2 | Ed25519 ключа выпуска (`infra/crypto/ed25519.py`); тянет `cffi` 2.1.1, `pycparser` 3.12 | I2-01 | Стек документа 1, раздел 13; промпт I2-01 |
+| openpyxl | 3.1.5 | Разбор XLSX-выгрузки ЛК в режиме `read_only` (E06-01); тянет `et-xmlfile` 2.0.0 | I2-06 | Промпт I2-06 |
 | django-environ | 0.14.0 | Настройки только из переменных окружения | I0-02 | Промпт I0-02 |
 
 ### Разработка и CI (группа `dev`)
@@ -30,6 +31,7 @@
 | djangorestframework-stubs | 3.16.9 | Типы DRF для mypy | I0-02 | Документ 6, раздел 4.1 |
 | hypothesis | 6.170.8 | Property-тесты `PolicyEngine` (E04-02) | I2-02 | Стек `AGENTS.md`; промпт I2-02 |
 | jsonschema | 4.26.0 | Контрактные тесты API: ответы по OpenAPI, аренда по `contracts/schemas` (`server/tests/contract.py`) | I2-05 | Уже согласован для `tools/contract_check.py` (I1-01) |
+| types-openpyxl | 3.1.5.20260827 | Типы openpyxl для mypy | I2-06 | Выпуск старше двух недель (20261017 — слишком свежий) |
 | import-linter | 2.15 | Модульные границы (правило 3 `AGENTS.md`) | I0-02 | `AGENTS.md`, документ 7 |
 
 Запланированы стеком, будут добавлены вместе с первым использованием: `factory-boy`.
