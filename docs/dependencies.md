@@ -28,9 +28,10 @@
 | mypy | 1.19.1 | Проверка типов (`--strict` для `domain/` и `infra/`) | I0-02 | Документ 6, раздел 4.1; 1.19 — последняя версия, совместимая с django-stubs 5.2 |
 | django-stubs[compatible-mypy] | 5.2.9 | Типы Django для mypy | I0-02 | Документ 6, раздел 4.1 |
 | djangorestframework-stubs | 3.16.9 | Типы DRF для mypy | I0-02 | Документ 6, раздел 4.1 |
+| hypothesis | 6.170.8 | Property-тесты `PolicyEngine` (E04-02) | I2-02 | Стек `AGENTS.md`; промпт I2-02 |
 | import-linter | 2.15 | Модульные границы (правило 3 `AGENTS.md`) | I0-02 | `AGENTS.md`, документ 7 |
 
-Запланированы стеком, будут добавлены вместе с первым использованием: `hypothesis`, `factory-boy` (I1-03 и далее).
+Запланированы стеком, будут добавлены вместе с первым использованием: `factory-boy`.
 
 ## almi-keytool (`tools/almi-keytool/pyproject.toml`, `uv.lock`)
 
