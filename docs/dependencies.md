@@ -14,6 +14,7 @@
 | djangorestframework | 3.16.1 | REST API | I0-02 | Стек `AGENTS.md` (3.16 подтверждена 23.10.2026, примечание 1) |
 | drf-spectacular | 0.30.0 | Генерация OpenAPI для сверки с `contracts/` | I0-02 | Стек `AGENTS.md` |
 | psycopg[binary] | 3.3.6 | Драйвер PostgreSQL 17 | I0-02 | Стек `AGENTS.md` |
+| cryptography | 50.0.2 | Ed25519 ключа выпуска (`infra/crypto/ed25519.py`); тянет `cffi` 2.1.1, `pycparser` 3.12 | I2-01 | Стек документа 1, раздел 13; промпт I2-01 |
 | django-environ | 0.14.0 | Настройки только из переменных окружения | I0-02 | Промпт I0-02 |
 
 ### Разработка и CI (группа `dev`)
@@ -29,7 +30,7 @@
 | djangorestframework-stubs | 3.16.9 | Типы DRF для mypy | I0-02 | Документ 6, раздел 4.1 |
 | import-linter | 2.15 | Модульные границы (правило 3 `AGENTS.md`) | I0-02 | `AGENTS.md`, документ 7 |
 
-Запланированы стеком, будут добавлены вместе с первым использованием: `cryptography` (E02-02), `hypothesis`, `factory-boy` (I1-03 и далее).
+Запланированы стеком, будут добавлены вместе с первым использованием: `hypothesis`, `factory-boy` (I1-03 и далее).
 
 ## almi-keytool (`tools/almi-keytool/pyproject.toml`, `uv.lock`)
 
