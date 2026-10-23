@@ -16,6 +16,7 @@ from django.test import Client
 from conftest import LICENSE_KEY
 from infra.clock import FrozenClock, use_clock
 from infra.crypto.encoding import b64url_decode, b64url_encode
+from tests.contract import openapi_errors, schema_errors
 from tests.signed import dev_device_key, public_b64, signed_post
 
 PATH = "/api/v1/activations"
@@ -70,6 +71,7 @@ def claims_of(lease: str) -> dict[str, Any]:
 
 def code_of(response: Any) -> str:
     assert response["Content-Type"] == "application/problem+json"
+    assert openapi_errors("Problem", response.json()) == []
     code: str = response.json()["code"]
     return code
 
@@ -92,6 +94,8 @@ def test_new_activation(licensed: Any, issuer: Any, clock: FrozenClock) -> None:
         b64url_decode(signature), f"{header}.{payload}".encode()
     )
     claims = claims_of(body["lease"])
+    assert openapi_errors("LeaseResponse", body) == []
+    assert schema_errors("lease", claims) == []
     now = int(clock.now().timestamp())
     thumbprint = b64url_encode(
         hashlib.sha256(
@@ -140,9 +144,11 @@ def test_new_activation(licensed: Any, issuer: Any, clock: FrozenClock) -> None:
             "check_interval_hours": 24,
             "release_after_days": 30,
         },
-        "messages": [],
+        "messages": claims["messages"],
         "server_time": now,
     }
+    assert [m["id"] for m in claims["messages"]] == sorted(m["id"] for m in claims["messages"])
+    assert {m["id"] for m in claims["messages"]} >= {"notice.banner", "revoked.dialog"}
 
     activation = Activation.objects.get(external_id=body["activation_id"])
     assert activation.status == "active" and not activation.in_reserve
