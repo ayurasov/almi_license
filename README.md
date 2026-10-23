@@ -50,11 +50,13 @@ prompts/        промпты итераций I0–I6 и базового ци
 | `make up-local` | То же в режиме `DEPLOYMENT_MODE=local` |
 | `make seed` | Миграции и набор `seed-minimal` |
 | `make test` | Все тесты: `test-server`, `test-console`, `test-dl` |
-| `make lint` | Все линтеры: ruff, mypy, eslint, vue-tsc, clang-tidy |
+| `make lint` | Все линтеры: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy (`make lint-server` — только сервер) |
 | `make contract-check` | Сверка OpenAPI реализации с `contracts/openapi-product-api-v1.yaml` |
 | `make vectors` | Эталонные векторы на сервере и в DL |
 | `make e2e` | Playwright и сценарии API против `dev` |
 | `make bundle-airgap` | Собрать комплект изолированного контура локально |
+
+Серверным целям нужен `DATABASE_URL` (PostgreSQL 17), например `postgres://almi:<пароль>@localhost:5432/almi_license`; `DEPLOYMENT_MODE` по умолчанию `central`. `make lint` обращается к настройкам, но не к БД, поэтому работает и без `DATABASE_URL`.
 
 Хуки перед коммитом (ruff, ruff-format, eslint, clang-format, gitleaks):
 
@@ -67,5 +69,6 @@ pre-commit run --all-files
 
 1. Работа ведётся итерациями I0–I6 по [prompts/iterations/](prompts/iterations/README.md); каждая история — по циклу [prompts/base/](prompts/base/README.md) (P0 → P9).
 2. Ветки задач создаются от `stage1`, слияние — squash через запрос по шаблону [.github/pull_request_template.md](.github/pull_request_template.md) (раздел 6 документа 6).
-3. Технический лидер заменяет `@tech-lead` в [CODEOWNERS](CODEOWNERS) на свою учётную запись.
-4. `docs/specs/` и `contracts/` меняются только через ревью технического лидера.
+3. Обязательного ревью через `CODEOWNERS` нет — изменения контролирует руководитель проекта; критичные модули проходят чек-лист раздела 8 документа 6.
+4. `docs/specs/` и `contracts/` меняются только через ревью руководителя проекта.
+5. Зависимости — только из реестра [docs/dependencies.md](docs/dependencies.md).
