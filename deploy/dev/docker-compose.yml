@@ -62,6 +62,6 @@ secrets:
   signing_key:
     file: ../../contracts/vectors/keys/dev-issuer.key
   signing_cert:
-    file: ./secrets/dev-issuer-1.cert.jws
+    file: ./dev-issuer-1.cert.jws
 volumes:
   db: {}

@@ -37,4 +37,4 @@ def write_chain(path: Path, chain: list[str]) -> Path:
 
 # Certificate of dev-issuer-1, the chain of contracts/vectors/jws/01-valid-lease.json,
 # mounted by deploy/dev as SIGNING_CERT_FILE next to contracts/vectors/keys/dev-issuer.key.
-DEV_ISSUER_CERT = Path(__file__).resolve().parents[2] / "deploy/dev/secrets/dev-issuer-1.cert.jws"
+DEV_ISSUER_CERT = Path(__file__).resolve().parents[2] / "deploy/dev/dev-issuer-1.cert.jws"

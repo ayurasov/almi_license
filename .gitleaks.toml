@@ -11,5 +11,5 @@ description = "Public dev/test keys and artifacts signed with them; make vectors
 paths = [
   '''^contracts/vectors/(keys|jws|request-signature)/''',
   # Certificate of the dev issuer key (public), copied from vector 01; checked by server tests.
-  '''^deploy/dev/secrets/dev-issuer-1\.cert\.jws$''',
+  '''^deploy/dev/dev-issuer-1\.cert\.jws$''',
 ]
