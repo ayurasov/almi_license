@@ -106,8 +106,14 @@
 - Ограничения: `Idempotency-Key` — E05-02 (тест xfail); `messages`/`directives` пустые до E04-04/E03-07; `next_check_at` без разброса; `422 unsupported_product_version` и `426 upgrade_required` не проверяются (нет данных о версиях); `trial: true` (серверный триал) не поддержан; `limits` аренды пустые; утверждения аренды не сверяются с `lease.schema.json` автоматически (проверяются тестом поле за полем и обоими проверяющими).
 - Разблокировано: E03-04 (проверка), E03-05 (освобождение), E03-06 (консоль конфликтов), E13-11 (`lm-demo activate`).
 
+### I2-05 — Проверка и продление (E03-04, E03-07) — готова, ждёт ревью P7 («Учёт мест»: блокировка при изменении активации)
+- Реализовано: `activation.domain.check()` и `POST /api/v1/activations/{activation_id}/check` (`CheckView`, `keyid` = активация пути); обновление версии, ОС, отпечатка, `last_seen_at`; `stats.domain.record_usage` (`UsageRecord`); `412`, `410`, `403` с арендой REVOKED, `lease_seq_anomaly`, `seq = max + 1`; директивы — модель `Directive`, `queue_directive`, директивы профиля, `acked`/`unsupported` с аудитом; сообщения — `policy.domain.messages` (раздел 3.1 документа 5, переопределение профилем), в ответе и аренде; контрактные тесты по OpenAPI и `lease.schema.json` (`server/tests/contract.py`), в том числе для активации и ошибок.
+- Проверено: 239 тестов сервера, 1 xfail (E05-02); каждая ветка раздела 5.3 и промпта; ответы `check` и `activate`, все `problem+json` и утверждения аренд проходят схемы контракта; покрытие сервера 97 %, `apps/policy` 100 %.
+- Ограничения: в OpenAPI у `check` нет ответа 403 (вопрос 21); `next_check_at` без разброса; `state` и `last_success_at` запроса принимаются, но не используются (аренда выпускается в момент связи); `503 maintenance`, `429 rate_limited` — E05-03/E05-05; тексты сообщений — только Desktop `commercial` (каталог продуктов и классов — E04-04).
+- Разблокировано: E13-11 (`lm-demo check`), E03-05 (освобождение), E12-02 (автоосвобождение по `last_seen_at`), E04-04.
+
 ## Текущая итерация
-I2 — ядро сервера (план — `docs/progress/iteration-2.md`). Выполнено: I2-01…I2-04 (ждут ревью P7, вопросы 17–20). I1 закрыта с переносами (`docs/progress/iteration-1.md`): I1-01…I1-05 и E00-08 выполнены, CI зелёный.
+I2 — ядро сервера (план — `docs/progress/iteration-2.md`). Выполнено: I2-01…I2-05 (ждут ревью P7, вопросы 17–20, 22). I1 закрыта с переносами (`docs/progress/iteration-1.md`): I1-01…I1-05 и E00-08 выполнены, CI зелёный.
 
 Перенесено из I1 (вне готовых промптов, нужны люди или внешние данные):
 - тег `contract-v1.0.0` — ставит технический лидер на коммите `stage1` после слияния [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1) (вопрос 15);
@@ -141,3 +147,5 @@ I2 — ядро сервера (план — `docs/progress/iteration-2.md`). В
 18. **Ревью P7 I2-02 («Политика»).** `server/apps/policy/domain/engine.py`; решения E04-01/E04-02 в `docs/decisions.md` (триал в той же функции, `restricted_days` у бессрочной лицензии без связи, `next_check_at`).
 19. **Ревью P7 I2-03 («Подпись запросов»).** `server/apps/api_product/auth.py`, `domain/signature.py`, `server/infra/problems.py`; решения E05-01 и E05-04 в `docs/decisions.md` (неизвестный `keyid` → `signature_invalid`, сопоставление ошибок DRF с каталогом).
 20. **Ревью P7 I2-04 («Учёт мест»).** `server/apps/activation/domain/service.py`, `fingerprint.py`, `leases.py`, `server/apps/licensing/domain/`, `server/apps/audit/domain/__init__.py`; решения E03-01/E03-02 в `docs/decisions.md`.
+21. **Ответ 403 у `check` в OpenAPI.** Промпт I2-05 и раздел 16 документа 2 требуют `403 license_revoked` с арендой REVOKED при проверке, а в `contracts/openapi-product-api-v1.yaml` у `/activations/{activation_id}/check` ответа 403 нет. Предлагаю добавить его задачей с меткой `contract` (только добавление).
+22. **Ревью P7 I2-05.** `server/apps/activation/domain/check.py`, `directives.py`, `server/apps/policy/domain/messages.py`; решения E03-04/E03-07 в `docs/decisions.md`.
