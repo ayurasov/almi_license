@@ -9,6 +9,11 @@ from django.db.models import F, Q
 from infra.db import UUIDModel
 
 
+class CustomerStatus(models.TextChoices):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
 class Customer(UUIDModel):
     name = models.CharField(max_length=512)
     inn = models.CharField(
@@ -18,10 +23,19 @@ class Customer(UUIDModel):
         max_length=128, blank=True, default="", help_text="Идентификатор в ЛК"
     )
     contact = models.JSONField(default=dict, blank=True)
+    status = models.CharField(
+        max_length=8,
+        choices=CustomerStatus.choices,
+        default=CustomerStatus.ACTIVE,
+        help_text="Архивный заказчик не выбирается для новых лицензий; удаления нет",
+    )
     created_at = models.DateTimeField()
 
     class Meta:
         constraints = [
+            models.CheckConstraint(
+                condition=Q(status__in=CustomerStatus.values), name="licensing_customer_status"
+            ),
             models.UniqueConstraint(
                 fields=["inn"], condition=~Q(inn=""), name="licensing_customer_unique_inn"
             ),
