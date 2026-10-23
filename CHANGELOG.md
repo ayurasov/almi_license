@@ -11,3 +11,5 @@
 - CI GitHub Actions: `lint-server`, `contract`, `arch`, `secrets`, `test-server`, `test-dl`, `lint-console`, `test-console` (E00-06).
 - Каркас модуля DL `sdk/cpp`: `license_module` (Windows и Linux), `lm_tests`, `lm-demo`; публичный заголовок `license_module.h` по разделу 15.1 документа 2; все `LM_*` пока возвращают `LM_ERR_NOT_INITIALIZED` (E13-01).
 - `make test-dl`, `make lint-dl`; задачи CI `test-dl` (с ASan/UBSan на Linux и артефактами) и `lint-dl` (E13-01).
+- `license_module.h`: `LM_GetVersion` (версия модуля) и `LM_BUILDING_DLL` для экспорта на Windows; раздел 15.1 документа 2 обновлён (E13-01).
+
