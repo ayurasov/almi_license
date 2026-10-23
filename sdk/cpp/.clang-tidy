@@ -1,0 +1,11 @@
+# docs/specs/06-ai-rules.md, section 4.3: bugprone, cert, cppcoreguidelines, modernize.
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  -modernize-use-trailing-return-type
+WarningsAsErrors: '*'
+# Only the module's own sources; the public C header is fixed by the contract (C style by design).
+HeaderFilterRegex: '.*/sdk/cpp/src/.*'
