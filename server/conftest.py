@@ -9,6 +9,9 @@ import pytest
 from infra.clock import FrozenClock
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from apps.activation.models import Activation
     from apps.catalog.models import Product
     from apps.licensing.models import License
 
@@ -52,3 +55,27 @@ def license_(product: "Product", clock: FrozenClock) -> "License":
         created_at=clock.now(),
         updated_at=clock.now(),
     )
+
+
+@pytest.fixture
+def make_activation(license_: "License", clock: FrozenClock) -> "Callable[..., Activation]":
+    """Create an active activation of license_; fields can be overridden."""
+    from apps.activation.models import Activation
+
+    def make(**fields: object) -> Activation:
+        values: dict[str, object] = {
+            "external_id": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+            "license": license_,
+            "instance_id": "8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11",
+            "subject_type": "device",
+            "fp_components": {"scheme": "fp-v1", "components": {}},
+            "device_pubkey": "",
+            "product_version": "1.0",
+            "os": {},
+            "activated_at": clock.now(),
+            "last_seen_at": clock.now(),
+            "created_at": clock.now(),
+        }
+        return Activation.objects.create(**(values | fields))
+
+    return make
