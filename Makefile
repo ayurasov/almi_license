@@ -4,6 +4,10 @@
 
 .DEFAULT_GOAL := help
 
+# Server commands need DATABASE_URL (PostgreSQL 17); DEPLOYMENT_MODE defaults to central.
+export DEPLOYMENT_MODE ?= central
+SERVER := uv run --project server
+
 define not_implemented
 	@echo "$@: not implemented"
 endef
@@ -29,8 +33,8 @@ seed: ## Apply migrations and load the seed-minimal data set — E00-07
 
 test: test-server test-console test-dl ## Run all tests
 
-test-server: ## Server tests (pytest) — I0-02
-	$(not_implemented)
+test-server: ## Server tests (pytest)
+	$(SERVER) pytest server
 
 test-console: ## Console tests (vitest) — I2-07
 	$(not_implemented)
