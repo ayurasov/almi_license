@@ -13,11 +13,19 @@ COMPOSE := docker compose -f deploy/dev/docker-compose.yml
 DEV_SIGNING_KEY := contracts/vectors/keys/dev-issuer.key
 export SIGNING_KEY_SOURCE := $(if $(wildcard $(DEV_SIGNING_KEY)),../../$(DEV_SIGNING_KEY),/dev/null)
 
+# DL module: dependencies come from vcpkg (set VCPKG_ROOT); extra configure options via DL_CMAKE_ARGS.
+DL_BUILD ?= sdk/cpp/build
+DL_CONFIG ?= Debug
+DL_CMAKE_ARGS ?=
+CLANG_FORMAT := uvx clang-format==23.1.3
+DL_FORMAT_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/*.cpp' 'sdk/cpp/*.h')
+DL_TIDY_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/src/*.cpp')
+
 define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local seed test test-server test-console test-dl lint lint-server \
+.PHONY: help up down up-local seed test test-server test-console test-dl dl-configure lint lint-server lint-dl \
 	contract-check vectors e2e bundle-airgap
 
 help: ## Show available targets
@@ -47,12 +55,15 @@ test-server: ## Server tests (pytest)
 test-console: ## Console tests (vitest) — I2-07
 	$(not_implemented)
 
-test-dl: ## DL module tests (ctest) — I0-04
-	$(not_implemented)
+test-dl: dl-configure ## DL module build and tests (ctest)
+	cmake --build $(DL_BUILD) --config $(DL_CONFIG)
+	ctest --test-dir $(DL_BUILD) -C $(DL_CONFIG) --output-on-failure
 
-lint: lint-server ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy
+dl-configure:
+	cmake -S sdk/cpp -B $(DL_BUILD) -DCMAKE_BUILD_TYPE=$(DL_CONFIG) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(DL_CMAKE_ARGS)
+
+lint: lint-server lint-dl ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-format, clang-tidy
 	@echo "lint-console (eslint, vue-tsc): not implemented"
-	@echo "lint-dl (clang-format, clang-tidy): not implemented"
 
 # mypy loads Django settings (django-stubs); the database is not contacted, so a
 # placeholder DATABASE_URL is enough when none is set.
@@ -62,6 +73,10 @@ lint-server: ## Server linters: ruff, mypy, import-linter
 		uv run ruff format --check . && \
 		uv run mypy . && \
 		uv run lint-imports
+
+lint-dl: dl-configure ## DL linters: clang-format, clang-tidy (needs compile_commands.json)
+	$(CLANG_FORMAT) --dry-run --Werror $(DL_FORMAT_SOURCES)
+	clang-tidy -p $(DL_BUILD) --quiet $(DL_TIDY_SOURCES)
 
 contract-check: ## Compare the implemented OpenAPI with contracts/ — I0-03
 	$(not_implemented)
