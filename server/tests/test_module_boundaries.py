@@ -4,7 +4,8 @@ tables, except licensing -> catalog and activation -> licensing (docs/decisions.
 from django.apps import apps
 from django.db.models import Model
 
-ALLOWED = {("licensing", "catalog"), ("activation", "licensing")}
+# iam -> auth: console users are django.contrib.auth users, owned by iam (decision E07-02).
+ALLOWED = {("licensing", "catalog"), ("activation", "licensing"), ("iam", "auth")}
 DOMAIN_APPS = {config.label for config in apps.get_app_configs() if config.name.startswith("apps.")}
 
 
