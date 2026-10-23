@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,16 @@ def vector_key(name: str) -> str:
 def jws_vectors() -> list[dict[str, Any]]:
     return [
         json.loads(p.read_text(encoding="utf-8")) for p in sorted((VECTORS / "jws").glob("*.json"))
+    ]
+
+
+def issued_vectors() -> list[dict[str, Any]]:
+    """Leases issued by the server, same format (make cross-verify, E02-03); none by default."""
+    directory = os.environ.get("ALMI_ISSUED_VECTORS_DIR")
+    if not directory:
+        return []
+    return [
+        json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(directory).glob("*.json"))
     ]
 
 

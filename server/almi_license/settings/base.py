@@ -16,6 +16,11 @@ DEPLOYMENT_MODE = parse_deployment_mode(env.str("DEPLOYMENT_MODE", default=None)
 SECRET_KEY = env.str("DJANGO_SECRET_KEY", default="")
 
 DEBUG = False
+# Issuer key (Docker secret) and its certificate chain, read once at startup (E02-02).
+SIGNING_KEY_FILE = env.str("SIGNING_KEY_FILE", default="")
+SIGNING_CERT_FILE = env.str("SIGNING_CERT_FILE", default="")
+SIGNING_REQUIRED = False
+
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [

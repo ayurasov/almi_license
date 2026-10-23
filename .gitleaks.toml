@@ -8,4 +8,8 @@ useDefault = true
 
 [[allowlists]]
 description = "Public dev/test keys and artifacts signed with them; make vectors fails if these files differ from tools/vectors/generate.py output"
-paths = ['''^contracts/vectors/(keys|jws|request-signature)/''']
+paths = [
+  '''^contracts/vectors/(keys|jws|request-signature)/''',
+  # Certificate of the dev issuer key (public), copied from vector 01; checked by server tests.
+  '''^deploy/dev/secrets/dev-issuer-1\.cert\.jws$''',
+]

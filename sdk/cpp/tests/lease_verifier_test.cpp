@@ -1,10 +1,13 @@
 // LeaseVerifier on the reference vectors contracts/vectors/jws/*.json (E00-04, E13-02):
 // the test reads the directory, so a new vector is covered without code changes.
+// Leases issued by the server in the same format are checked when ALMI_ISSUED_VECTORS_DIR
+// names their directory (make cross-verify, E02-03).
 #include "crypto/lease_verifier.h"
 
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -25,13 +28,34 @@ json ReadJson(const fs::path& path) {
   return json::parse(stream);
 }
 
-std::vector<fs::path> VectorFiles() {
+std::vector<fs::path> JsonFiles(const fs::path& directory) {
   std::vector<fs::path> files;
-  for (const auto& entry : fs::directory_iterator(fs::path(LM_VECTORS_DIR) / "jws")) {
+  for (const auto& entry : fs::directory_iterator(directory)) {
     if (entry.path().extension() == ".json") files.push_back(entry.path());
   }
   std::sort(files.begin(), files.end());
   return files;
+}
+
+std::vector<fs::path> VectorFiles() { return JsonFiles(fs::path(LM_VECTORS_DIR) / "jws"); }
+
+std::string Environment(const char* name) {
+#ifdef _MSC_VER
+  char* value = nullptr;
+  std::size_t size = 0;
+  if (_dupenv_s(&value, &size, name) != 0 || value == nullptr) return {};
+  std::string result(value);
+  std::free(value);
+  return result;
+#else
+  const char* value = std::getenv(name);
+  return value == nullptr ? std::string() : std::string(value);
+#endif
+}
+
+std::vector<fs::path> IssuedFiles() {
+  const std::string directory = Environment("ALMI_ISSUED_VECTORS_DIR");
+  return directory.empty() ? std::vector<fs::path>() : JsonFiles(directory);
 }
 
 lm::crypto::TrustRoot Root(const json& item) {
@@ -76,6 +100,7 @@ std::string VectorName(const testing::TestParamInfo<fs::path>& info) {
 }
 
 INSTANTIATE_TEST_SUITE_P(Vectors, JwsVector, testing::ValuesIn(VectorFiles()), VectorName);
+INSTANTIATE_TEST_SUITE_P(Issued, JwsVector, testing::ValuesIn(IssuedFiles()), VectorName);
 
 TEST(JwsVectorSet, HasAllTwelveVectors) { EXPECT_EQ(VectorFiles().size(), 12U); }
 

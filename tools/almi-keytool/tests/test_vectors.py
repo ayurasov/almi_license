@@ -9,7 +9,7 @@ from almi_keytool.encoding import b64url_decode
 from almi_keytool.jws import LeaseContext, verify
 from almi_keytool.rootkey import signing_key_from_seed
 
-from .conftest import jws_vectors, vector_key
+from .conftest import issued_vectors, jws_vectors, vector_key
 
 NOW = 1762071300
 DAY = 86400
@@ -73,7 +73,7 @@ def test_local_server_certificate_equals_vector() -> None:
     assert certificate == chain_of("02-valid-local-server-lease")[0]
 
 
-@pytest.mark.parametrize("vector", jws_vectors(), ids=lambda v: v["name"])
+@pytest.mark.parametrize("vector", jws_vectors() + issued_vectors(), ids=lambda v: v["name"])
 def test_verify_gives_the_expected_result(vector: dict[str, Any]) -> None:
     roots = {r["kid"]: b64url_decode(r["pub"]) for r in vector["trust_roots"]}
     context = vector["context"]
