@@ -77,10 +77,12 @@ target_compile_options(lm-demo PRIVATE ${LM_WARNINGS})
 if(LM_BUILD_TESTS)
   enable_testing()
   find_package(GTest CONFIG REQUIRED)
-  add_executable(lm_tests tests/version_test.cpp tests/abi_stub_test.cpp)
+  add_executable(lm_tests tests/version_test.cpp tests/abi_stub_test.cpp tests/base64url_test.cpp
+                          tests/lease_verifier_test.cpp)
   target_link_libraries(lm_tests PRIVATE license_module lm_internal GTest::gtest_main)
   target_compile_definitions(lm_tests PRIVATE
-    LM_EXPECTED_VERSION="${PROJECT_VERSION}" LM_EXPECTED_TRUST_ROOTS="${LM_TRUST_ROOTS}")
+    LM_EXPECTED_VERSION="${PROJECT_VERSION}" LM_EXPECTED_TRUST_ROOTS="${LM_TRUST_ROOTS}"
+    LM_VECTORS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../contracts/vectors")
   include(GoogleTest)
   gtest_discover_tests(lm_tests DISCOVERY_MODE PRE_TEST)
 endif()
