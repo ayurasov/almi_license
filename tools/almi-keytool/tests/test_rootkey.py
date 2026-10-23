@@ -11,8 +11,13 @@ PASSWORD = "correct horse battery staple"  # test-only value, not a secret  # no
 def test_root_key_uses_argon2id_t3_m256mib_and_xchacha20poly1305() -> None:
     document, key = create_root_key(PASSWORD, "root-test")
 
-    assert document["kdf"] == {"alg": "argon2id", "opslimit": 3, "memlimit": 256 * 1024 * 1024,
-                               "parallelism": 1, "salt": document["kdf"]["salt"]}
+    assert document["kdf"] == {
+        "alg": "argon2id",
+        "opslimit": 3,
+        "memlimit": 256 * 1024 * 1024,
+        "parallelism": 1,
+        "salt": document["kdf"]["salt"],
+    }
     assert document["cipher"]["alg"] == "xchacha20poly1305-ietf"
     loaded = load_root_key(json.dumps(document), PASSWORD)
     assert loaded.kid == "root-test"

@@ -45,6 +45,18 @@ jobs:
       # comparison with drf-spectacular comes with Product API endpoints.
       - run: make contract-check
 
+  keytool:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: tools/almi-keytool/uv.lock
+      - run: make lint-keytool
+      - run: make test-keytool
+
   vectors:
     runs-on: ubuntu-24.04
     steps:

@@ -25,7 +25,7 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local seed test test-server test-console test-dl dl-configure lint lint-server lint-dl \
+.PHONY: help up down up-local seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool \
 	contract-check vectors e2e bundle-airgap
 
 help: ## Show available targets
@@ -47,7 +47,7 @@ seed: ## Apply migrations and load the seed-minimal data set
 	$(COMPOSE) exec -T api python manage.py migrate --noinput
 	@echo "seed-minimal: not implemented (data set comes with the data model, I1-03)"
 
-test: test-server test-console test-dl ## Run all tests
+test: test-server test-console test-dl test-keytool ## Run all tests
 
 test-server: ## Server tests (pytest)
 	$(SERVER) pytest server
@@ -59,10 +59,13 @@ test-dl: dl-configure ## DL module build and tests (ctest)
 	cmake --build $(DL_BUILD) --config $(DL_CONFIG)
 	ctest --test-dir $(DL_BUILD) -C $(DL_CONFIG) --output-on-failure
 
+test-keytool: ## almi-keytool tests (pytest)
+	cd tools/almi-keytool && uv run --locked pytest
+
 dl-configure:
 	cmake -S sdk/cpp -B $(DL_BUILD) -DCMAKE_BUILD_TYPE=$(DL_CONFIG) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(DL_CMAKE_ARGS)
 
-lint: lint-server lint-dl ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-format, clang-tidy
+lint: lint-server lint-dl lint-keytool ## All linters: ruff, mypy, import-linter, eslint, vue-tsc, clang-format, clang-tidy
 	@echo "lint-console (eslint, vue-tsc): not implemented"
 
 # mypy loads Django settings (django-stubs); the database is not contacted, so a
@@ -77,6 +80,10 @@ lint-server: ## Server linters: ruff, mypy, import-linter
 lint-dl: dl-configure ## DL linters: clang-format, clang-tidy (needs compile_commands.json)
 	$(CLANG_FORMAT) --dry-run --Werror $(DL_FORMAT_SOURCES)
 	clang-tidy -p $(DL_BUILD) --quiet $(DL_TIDY_SOURCES)
+
+lint-keytool: ## almi-keytool linters: ruff, mypy --strict
+	cd tools/almi-keytool && uv run --locked ruff check . && uv run --locked ruff format --check . && \
+		uv run --locked mypy src tests
 
 contract-check: ## Contract: OpenAPI validity, JSON Schemas, their examples, docs/specs/02 examples
 	uvx --from openapi-spec-validator==0.9.0 openapi-spec-validator contracts/openapi-product-api-v1.yaml
