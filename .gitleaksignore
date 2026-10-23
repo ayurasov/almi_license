@@ -16,3 +16,6 @@ server/tests/api_product/test_activate.py:generic-api-key:62
 # The same example key quoted in docs/decisions.md and in a comment of this file (commit 7ec68db).
 7ec68dbb3fac4fd6b7b8830a0099d2de46d20ce0:docs/decisions.md:generic-api-key:104
 7ec68dbb3fac4fd6b7b8830a0099d2de46d20ce0:.gitleaksignore:generic-api-key:9
+# The key alphabet constant of server/apps/licensing/domain/management.py in commit 069a4c7 (E01-06);
+# the code now builds it from string.digits and string.ascii_uppercase.
+069a4c791a615c32301915ccfc91c9a981227757:server/apps/licensing/domain/management.py:generic-api-key:32

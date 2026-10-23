@@ -4,6 +4,7 @@ Every change runs in a transaction with SELECT … FOR UPDATE of the license row
 audit event (AGENTS.md, rules 6 and 7). Renewal and lifting a block raise rights_version.
 """
 
+import string
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -28,8 +29,8 @@ ORDERINGS = frozenset(
     {"valid_until", "-valid_until", "created_at", "-created_at", "status", "-status"}
 )
 MAX_PAGE_SIZE = 100
-# Key alphabet without I and O, which are read as 1 and 0.
-KEY_ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+# Key alphabet: digits and Latin capitals without I and O, which are read as 1 and 0.
+KEY_ALPHABET = "".join(c for c in string.digits + string.ascii_uppercase if c not in "IO")
 
 
 @dataclass(frozen=True)
