@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: ALMI License Product API
+  version: 1.0.0
+paths:
+  /api/admin/customers:
+    get:
+      operationId: customers_list
+      parameters:
+      - in: query
+        name: inn
+        schema:
+          type: string
+          default: ''
+      - in: query
+        name: name
+        schema:
+          type: string
+          default: ''
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          default: name
+          minLength: 1
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: status
+        schema:
+          type: string
+          default: ''
+      tags:
+      - customers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPage'
+          description: ''
+    post:
+      operationId: customers_create
+      tags:
+      - customers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerWrite'
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/admin/customers/{customer_id}:
+    get:
+      operationId: customers_get
+      parameters:
+      - in: path
+        name: customer_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - customers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    patch:
+      operationId: customers_update
+      parameters:
+      - in: path
+        name: customer_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - customers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerWrite'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/admin/session:
+    get:
+      operationId: session_get
+      description: 'Console session: GET who is signed in, POST sign in, DELETE sign
+        out (E07-02).'
+      tags:
+      - session
+      security:
+      - consoleSession: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+    post:
+      operationId: session_create
+      description: 'Console session: GET who is signed in, POST sign in, DELETE sign
+        out (E07-02).'
+      tags:
+      - session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+        required: true
+      security:
+      - consoleSession: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+    delete:
+      operationId: session_delete
+      description: 'Console session: GET who is signed in, POST sign in, DELETE sign
+        out (E07-02).'
+      tags:
+      - session
+      security:
+      - consoleSession: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 512
+        inn:
+          type: string
+          maxLength: 12
+        external_id:
+          type: string
+          maxLength: 128
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - external_id
+      - id
+      - inn
+      - name
+      - status
+    CustomerPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+      required:
+      - count
+      - results
+    CustomerWrite:
+      type: object
+      description: Fields an operator sends; checks of values are in licensing.domain
+        (AGENTS.md, rule 2).
+      properties:
+        name:
+          type: string
+          maxLength: 512
+        inn:
+          type: string
+          maxLength: 12
+        external_id:
+          type: string
+          maxLength: 128
+        status:
+          type: string
+          maxLength: 16
+    PatchedCustomerWrite:
+      type: object
+      description: Fields an operator sends; checks of values are in licensing.domain
+        (AGENTS.md, rule 2).
+      properties:
+        name:
+          type: string
+          maxLength: 512
+        inn:
+          type: string
+          maxLength: 12
+        external_id:
+          type: string
+          maxLength: 128
+        status:
+          type: string
+          maxLength: 16
+    RoleEnum:
+      enum:
+      - operator
+      - admin
+      - customer_viewer
+      type: string
+      description: |-
+        * `operator` - operator
+        * `admin` - admin
+        * `customer_viewer` - customer_viewer
+    Session:
+      type: object
+      properties:
+        username:
+          type: string
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - role
+      - username
+    SessionRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          maxLength: 256
+      required:
+      - password
+      - username
+    StatusEnum:
+      enum:
+      - active
+      - archived
+      type: string
+      description: |-
+        * `active` - active
+        * `archived` - archived
+  securitySchemes:
+    consoleSession:
+      type: apiKey
+      in: cookie
+      name: sessionid

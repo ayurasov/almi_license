@@ -1,0 +1,42 @@
+{
+  "name": "almi-license-console",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --max-warnings=0 && vue-tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "gen:api": "openapi-typescript src/api/admin-api.yaml -o src/api/generated/admin.ts"
+  },
+  "dependencies": {
+    "@primeuix/themes": "2.0.3",
+    "openapi-fetch": "0.17.0",
+    "pinia": "3.0.4",
+    "primeicons": "7.0.0",
+    "primevue": "4.5.5",
+    "vue": "3.5.43",
+    "vue-i18n": "11.4.13",
+    "vue-router": "4.6.4",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.5",
+    "@vitejs/plugin-vue": "5.2.4",
+    "@vue/eslint-config-typescript": "14.9.0",
+    "@vue/test-utils": "2.5.1",
+    "eslint": "9.39.5",
+    "eslint-plugin-vue": "10.11.1",
+    "jsdom": "26.1.0",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.1",
+    "vite": "6.4.4",
+    "vitest": "3.2.7",
+    "vue-tsc": "2.2.12"
+  }
+}
