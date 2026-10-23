@@ -121,11 +121,50 @@ jobs:
           if [ -f sdk/cpp/CMakeLists.txt ]; then echo "present=true" >> "$GITHUB_OUTPUT"
           else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::sdk/cpp has no CMakeLists.txt yet (I0-04); skipped"; fi
       - if: steps.detect.outputs.present == 'true'
+        uses: ./.github/actions/setup-vcpkg
+      # Toolchain: CMakeLists.txt picks vcpkg from VCPKG_ROOT; Windows uses the x64-windows-static triplet.
+      - if: steps.detect.outputs.present == 'true'
         run: cmake -S sdk/cpp -B build -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=ci
       - if: steps.detect.outputs.present == 'true'
-        run: cmake --build build --config Release
+        run: cmake --build build --config Release --parallel
       - if: steps.detect.outputs.present == 'true'
         run: ctest --test-dir build -C Release --output-on-failure
+      - name: ASan and UBSan (docs/specs/06-ai-rules.md, 4.3)
+        if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
+        run: |
+          cmake -S sdk/cpp -B build-san -DCMAKE_BUILD_TYPE=Debug -DLM_TRUST_ROOTS=ci -DLM_SANITIZE=ON
+          cmake --build build-san --parallel
+          ctest --test-dir build-san --output-on-failure
+      - if: steps.detect.outputs.present == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: license_module-${{ runner.os }}
+          if-no-files-found: error
+          path: |
+            build/bin/**/license_module.dll
+            build/bin/**/liblicense_module.so*
+            build/bin/**/lm-demo
+            build/bin/**/lm-demo.exe
+            build/lib/**/license_module.lib
+            sdk/cpp/include/license_module.h
+
+  lint-dl:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - id: detect
+        run: |
+          if [ -f sdk/cpp/CMakeLists.txt ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::sdk/cpp has no CMakeLists.txt yet (I0-04); skipped"; fi
+      - if: steps.detect.outputs.present == 'true'
+        uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+      - if: steps.detect.outputs.present == 'true'
+        uses: ./.github/actions/setup-vcpkg
+      # clang-format is pinned in the Makefile (same version as pre-commit); clang-tidy comes with the runner.
+      - if: steps.detect.outputs.present == 'true'
+        run: make lint-dl DL_CMAKE_ARGS=-DLM_TRUST_ROOTS=ci
 
   lint-console:
     runs-on: ubuntu-24.04

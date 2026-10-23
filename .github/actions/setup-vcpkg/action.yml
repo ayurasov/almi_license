@@ -1,0 +1,29 @@
+name: setup-vcpkg
+description: >-
+  vcpkg at the commit pinned in sdk/cpp/vcpkg.json (builtin-baseline) with a binary cache,
+  so DL dependencies are built from source once per baseline and OS.
+runs:
+  using: composite
+  steps:
+    - name: Clone vcpkg at the baseline commit
+      shell: bash
+      run: |
+        commit=$(python3 -c "import json; print(json.load(open('sdk/cpp/vcpkg.json'))['builtin-baseline'])")
+        root="${RUNNER_TEMP}/vcpkg"
+        git init -q "${root}"
+        git -C "${root}" fetch -q --depth 1 https://github.com/microsoft/vcpkg.git "${commit}"
+        git -C "${root}" checkout -q FETCH_HEAD
+        echo "VCPKG_ROOT=${root}" >> "$GITHUB_ENV"
+        echo "VCPKG_BINARY_SOURCES=clear;files,${RUNNER_TEMP}/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+        echo "VCPKG_COMMIT=${commit}" >> "$GITHUB_ENV"
+        mkdir -p "${RUNNER_TEMP}/vcpkg-cache"
+    - name: Bootstrap vcpkg
+      shell: bash
+      run: |
+        if [ "${RUNNER_OS}" = "Windows" ]; then "${VCPKG_ROOT}/bootstrap-vcpkg.bat" -disableMetrics
+        else "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics; fi
+    - uses: actions/cache@v6
+      with:
+        path: ${{ runner.temp }}/vcpkg-cache
+        key: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-${{ hashFiles('sdk/cpp/vcpkg.json') }}
+        restore-keys: vcpkg-${{ runner.os }}-${{ env.VCPKG_COMMIT }}-
