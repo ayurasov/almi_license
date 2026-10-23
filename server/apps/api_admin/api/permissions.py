@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
@@ -23,3 +24,13 @@ class IsOperator(BasePermission):
             return False
         account = account_info(user)
         return account is not None and account.role in OPERATOR_ROLES
+
+
+class ConsoleSessionScheme(OpenApiAuthenticationExtension):
+    """Describes the console session cookie in the Admin API schema."""
+
+    target_class = "apps.api_admin.api.permissions.ConsoleSession"
+    name = "consoleSession"
+
+    def get_security_definition(self, auto_schema: Any) -> dict[str, str]:
+        return {"type": "apiKey", "in": "cookie", "name": "sessionid"}
