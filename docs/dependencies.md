@@ -29,6 +29,7 @@
 | django-stubs[compatible-mypy] | 5.2.9 | Типы Django для mypy | I0-02 | Документ 6, раздел 4.1 |
 | djangorestframework-stubs | 3.16.9 | Типы DRF для mypy | I0-02 | Документ 6, раздел 4.1 |
 | hypothesis | 6.170.8 | Property-тесты `PolicyEngine` (E04-02) | I2-02 | Стек `AGENTS.md`; промпт I2-02 |
+| jsonschema | 4.26.0 | Контрактные тесты API: ответы по OpenAPI, аренда по `contracts/schemas` (`server/tests/contract.py`) | I2-05 | Уже согласован для `tools/contract_check.py` (I1-01) |
 | import-linter | 2.15 | Модульные границы (правило 3 `AGENTS.md`) | I0-02 | `AGENTS.md`, документ 7 |
 
 Запланированы стеком, будут добавлены вместе с первым использованием: `factory-boy`.
