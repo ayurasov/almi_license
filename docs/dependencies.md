@@ -74,10 +74,11 @@
 
 | Пакет | Версия | Назначение | Добавлен | Согласовано |
 |---|---|---|---|---|
-| libsodium | 1.0.22 | Ed25519, обнуление секретов (`sodium_memzero`) | I0-04 | Стек `AGENTS.md` |
+| libsodium | 1.0.22 | Ed25519, SHA-256, XChaCha20-Poly1305, HKDF-SHA256 (нужен 1.0.19+), обнуление секретов (`sodium_memzero`) | I0-04 | Стек `AGENTS.md` |
 | curl[ssl] | 8.23.0 | HTTPS-транспорт; TLS — OpenSSL 3.6.5 (Linux), Schannel (Windows) | I0-04 | Стек `AGENTS.md` |
 | nlohmann-json | 3.12.0 | JSON | I0-04 | Стек `AGENTS.md` |
 | gtest | 1.18.0 | Тесты (`lm_tests`) | I0-04 | Стек `AGENTS.md` |
+| cpp-httplib | по `builtin-baseline` | Локальный HTTP-сервер в тестах `Transport` (только `lm_tests`, в модуль не входит) | I2-08 | Промпт I2-08 |
 
 ## Образы и инструменты CI (не входят в `uv.lock`)
 
