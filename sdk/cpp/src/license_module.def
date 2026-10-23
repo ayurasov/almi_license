@@ -1,0 +1,26 @@
+; Exports of license_module.dll: every LM_* function of include/license_module.h.
+LIBRARY license_module
+EXPORTS
+    LM_Initialize
+    LM_GetStatus
+    LM_Activate
+    LM_ActivateFromFile
+    LM_ActivateByPhone
+    LM_Deactivate
+    LM_GenerateOfflineRequest
+    LM_GetHwid
+    LM_Shutdown
+    LM_InitializeEx
+    LM_GetStatusEx
+    LM_HasFeature
+    LM_CheckNow
+    LM_SetCallback
+    LM_GetMessageCount
+    LM_GetMessage
+    LM_MarkMessageShown
+    LM_ReportUsage
+    LM_GenerateRenewRequest
+    LM_GenerateReleaseRequest
+    LM_SetServerUrl
+    LM_GetLastError
+    LM_GetAbiVersion
