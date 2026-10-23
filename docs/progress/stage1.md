@@ -85,8 +85,15 @@
 - Ограничения: сборка утверждений аренды (`LeaseIssuer`, монотонный `seq`) — в E03-01 (I2-04); `verify` по цепочке на сервере не нужен до E05-01/E09; закрытый ключ в памяти процесса не обнуляется (ограничение `cryptography`/OpenSSL); `docs/specs/07` (пример compose) не упоминает `SIGNING_CERT_FILE`.
 - Разблокировано: E02-04 (пакет доверия), E03-01 (выпуск аренды при активации), E03-05 (квитанции), E09-02 (сертификаты локальных серверов).
 
+### I2-02 — PolicyEngine (E04-01, E04-02) — готова, ждёт ревью P7 («Политика»)
+- Реализовано: `apps/policy/domain/engine.py` — `evaluate(policy, license, now, last_success_at) -> PolicyResult` (`state`, `capabilities`, `message_ids`, `lease_exp`, `next_check_at`); `PolicyParams` (с `from_json` по разделу 6.4), `LicenseFacts`, `TrialFacts` — frozen dataclass; контракт import-linter на чистоту функции; порог покрытия `apps/policy` ≥ 95 % в `make test-server` и CI.
+- Проверено: все 39 policy-векторов с первого прогона, без правки векторов; property-тесты hypothesis (по 500 примеров): состояние не улучшается с ростом `now` (ACTIVE → NOTICE → GRACE → RESTRICTED → BLOCKED) и при потере связи; функции RESTRICTED ⊆ функций лицензии и без `restricted_caps`; `view` доступна всегда, кроме `no_start`; `revoked` сильнее дат; `lease_exp`, `next_check_at`; покрытие модуля 100 % (ветви тоже); контракт чистоты ломается от `import time` (проверено временной правкой).
+- Чек-лист P7 «Политика»: чистота функции — соблюдено (import-linter, нет `datetime.now`, БД, сети, случайности); все векторы — 39/39; границы дат и часовых поясов — векторы 02–08, 11, 16–19, 31, 38–39, время без пояса отклоняется; `null`-значения — `valid_until`, `support_until`, `restricted_days`, `offline_grace_days`, `first_launch` (векторы 10, 26–29, 37 и решение по `restricted_days` без `valid_until`).
+- Ограничения: `active.restored` и `monitor.over_limit` движок не выдаёт (зависят от истории и счётчиков, правило 5 решения 12) — их добавляет сборка аренды (E03-04); тексты сообщений по `message_ids` — E04-04; проверка профиля при сохранении (`view` не в `restricted_caps`) — E04-03.
+- Разблокировано: E04-03, E04-04, E03-01 (срок через PolicyEngine при активации), E13-06 (StateEvaluator — тот же алгоритм).
+
 ## Текущая итерация
-I2 — ядро сервера (план — `docs/progress/iteration-2.md`). Выполнено: I2-01 (ждёт ревью P7, вопрос 17). I1 закрыта с переносами (`docs/progress/iteration-1.md`): I1-01…I1-05 и E00-08 выполнены, CI зелёный.
+I2 — ядро сервера (план — `docs/progress/iteration-2.md`). Выполнено: I2-01, I2-02 (ждут ревью P7, вопросы 17, 18). I1 закрыта с переносами (`docs/progress/iteration-1.md`): I1-01…I1-05 и E00-08 выполнены, CI зелёный.
 
 Перенесено из I1 (вне готовых промптов, нужны люди или внешние данные):
 - тег `contract-v1.0.0` — ставит технический лидер на коммите `stage1` после слияния [ayurasov/almi_license#1](https://github.com/ayurasov/almi_license/pull/1) (вопрос 15);
@@ -117,3 +124,4 @@ I2 — ядро сервера (план — `docs/progress/iteration-2.md`). В
 15. **Тег `contract-v1.0.0`.** Критерий выхода I1; ставится техническим лидером после слияния запроса #1 (контракт меняется только задачами с меткой `contract`).
 16. **E00-09 и E14-01.** Нужны доступ к работающему приложению Nextcloud `support` и `registration.sh` (запись запросов и ответов) и ответственный разработчик АльтерОфис Desktop. Кто и когда — до начала I4.
 17. **Ревью P7 I2-01 («Криптография», «Хранение секретов»).** `server/infra/crypto/ed25519.py`, `encoding.py`, `server/apps/signing/domain/jws.py`, `apps.py`; форматы файлов ключа и сертификата — `docs/decisions.md` (E02-02).
+18. **Ревью P7 I2-02 («Политика»).** `server/apps/policy/domain/engine.py`; решения E04-01/E04-02 в `docs/decisions.md` (триал в той же функции, `restricted_days` у бессрочной лицензии без связи, `next_check_at`).
