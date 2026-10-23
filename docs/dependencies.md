@@ -16,6 +16,7 @@
 | psycopg[binary] | 3.3.6 | Драйвер PostgreSQL 17 | I0-02 | Стек `AGENTS.md` |
 | cryptography | 50.0.2 | Ed25519 ключа выпуска (`infra/crypto/ed25519.py`); тянет `cffi` 2.1.1, `pycparser` 3.12 | I2-01 | Стек документа 1, раздел 13; промпт I2-01 |
 | openpyxl | 3.1.5 | Разбор XLSX-выгрузки ЛК в режиме `read_only` (E06-01); тянет `et-xmlfile` 2.0.0 | I2-06 | Промпт I2-06 |
+| argon2-cffi | 25.1.0 | Argon2id для паролей консоли (`PASSWORD_HASHERS`, E07-02); тянет `argon2-cffi-bindings` 26.1.0 | I2-07 | Критерий E07-02 документа 3 |
 | django-environ | 0.14.0 | Настройки только из переменных окружения | I0-02 | Промпт I0-02 |
 
 ### Разработка и CI (группа `dev`)
@@ -46,6 +47,26 @@
 | pynacl | 1.6.2 | Ed25519, Argon2id, XChaCha20-Poly1305 (libsodium) | I1-04 | Промпт I1-04 |
 | pytest, ruff, mypy (dev) | 9.1.1, 0.17.2, 1.19.1 | Тесты и линтеры, те же версии, что у сервера | I1-04 | Документ 6, раздел 4.1 |
 | hatchling (сборка) | 1.32.4 | Сборка пакета `almi-keytool` | I1-04 | — |
+
+## Консоль (`console/package.json`, `package-lock.json`)
+
+Точные версии, каждая выпущена не позже чем за две недели до добавления (23.10.2026); в рамках стека `AGENTS.md` (Vue 3.5, TypeScript 5, Vite 6, PrimeVue 4).
+
+| Пакет | Версия | Назначение | Добавлена | Согласовано |
+|---|---|---|---|---|
+| vue | 3.5.43 | Интерфейс | I2-07 | Стек `AGENTS.md` |
+| primevue, @primeuix/themes, primeicons | 4.5.5, 2.0.3, 7.0.0 | Компоненты и тема Aura (`@primevue/themes` устарел, заменён `@primeuix/themes`) | I2-07 | Стек `AGENTS.md`, промпт I2-07 |
+| pinia | 3.0.4 | Состояние | I2-07 | Стек `AGENTS.md` |
+| vue-router | 4.6.4 | Маршруты | I2-07 | Стек `AGENTS.md` |
+| vue-i18n | 11.4.13 | Тексты ru/en | I2-07 | Стек `AGENTS.md` |
+| openapi-fetch, openapi-typescript | 0.17.0, 7.13.0 | Клиент Admin API, генерация типов (`npm run gen:api`) | I2-07 | Промпт I2-07 |
+| zod | 3.25.76 | Проверка форм | I2-07 | Промпт I2-07 |
+| vite, @vitejs/plugin-vue | 6.4.4, 5.2.4 | Сборка | I2-07 | Стек `AGENTS.md` |
+| typescript, vue-tsc | 5.9.3, 2.2.12 | Типы (strict) | I2-07 | Стек `AGENTS.md` |
+| vitest, @vue/test-utils, jsdom | 3.2.7, 2.5.1, 26.1.0 | Модульные тесты | I2-07 | Стек `AGENTS.md` |
+| @playwright/test | 1.63.0 | Сквозной сценарий консоли (версия совпадает с браузерами окружения) | I2-07 | Стек `AGENTS.md` |
+| eslint, eslint-plugin-vue, typescript-eslint, @vue/eslint-config-typescript | 9.39.5, 10.11.1, 8.71.1, 14.9.0 | Линтер | I2-07 | Стек `AGENTS.md` |
+| @types/node | 22.20.5 | Типы Node для конфигураций | I2-07 | — |
 
 ## Модуль DL (`sdk/cpp/vcpkg.json`)
 
