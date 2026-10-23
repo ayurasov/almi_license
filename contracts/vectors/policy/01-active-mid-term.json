@@ -1,0 +1,63 @@
+{
+  "name": "01-active-mid-term",
+  "reasoning": "До valid_until больше notify_before_days (30): T < VU − 30 дн → ACTIVE; support_until впереди — support сохраняется.",
+  "policy": {
+    "version": 3,
+    "enforcement": "enforce",
+    "notify_before_days": 30,
+    "grace_days": 14,
+    "expiry_action": "restrict",
+    "restricted_caps": [
+      "updates",
+      "macros",
+      "collaboration"
+    ],
+    "restricted_days": null,
+    "hard_block_mode": "read_only",
+    "read_only_caps": [
+      "view",
+      "export",
+      "print"
+    ],
+    "offline_grace_days": null,
+    "check_interval_hours": 24,
+    "release_after_days": 30
+  },
+  "license": {
+    "type": "subscription",
+    "status": "active",
+    "valid_until": "2027-10-31T20:59:59Z",
+    "support_until": "2027-10-31T20:59:59Z",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "support",
+      "macros",
+      "collaboration"
+    ]
+  },
+  "now": "2027-03-01T09:00:00Z",
+  "last_success_at": "2027-03-01T09:00:00Z",
+  "expected": {
+    "state": "ACTIVE",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "support",
+      "macros",
+      "collaboration"
+    ],
+    "messages_ids": [],
+    "lease_exp": null
+  }
+}

@@ -45,6 +45,16 @@ jobs:
       # comparison with drf-spectacular comes with Product API endpoints.
       - run: make contract-check
 
+  vectors:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+      # Reference vectors are reproducible and valid; server and DL runs join with E02-03, E04-01, E13-02.
+      - run: make vectors
+
   arch:
     runs-on: ubuntu-24.04
     steps:
