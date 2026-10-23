@@ -42,7 +42,7 @@ prompts/        промпты итераций I0–I6 и базового ци
 ## Требования
 
 Docker 24+ с Compose v2, GNU Make, [uv](https://docs.astral.sh/uv/) 0.11+ (линтеры и тесты сервера на хосте), `pre-commit`.
-Модуль DL: CMake 3.28+, GCC или MSVC с C++17, clang-tidy, [vcpkg](https://vcpkg.io) — переменная `VCPKG_ROOT` (зависимости ставятся из `sdk/cpp/vcpkg.json` при первой конфигурации).
+Модуль DL: CMake 3.28+, GCC или MSVC с C++17, clang-tidy, [vcpkg](https://vcpkg.io) — переменная `VCPKG_ROOT` (зависимости ставятся из `sdk/cpp/vcpkg.json` при первой конфигурации); на Linux для libsodium нужны `autoconf autoconf-archive automake libtool`.
 
 ## Команды
 

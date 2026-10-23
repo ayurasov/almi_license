@@ -17,6 +17,11 @@ runs:
         echo "VCPKG_BINARY_SOURCES=clear;files,${RUNNER_TEMP}/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
         echo "VCPKG_COMMIT=${commit}" >> "$GITHUB_ENV"
         mkdir -p "${RUNNER_TEMP}/vcpkg-cache"
+    # The libsodium port builds with autotools on Linux.
+    - name: Build tools for vcpkg ports (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: sudo apt-get install -y --no-install-recommends autoconf autoconf-archive automake libtool
     - name: Bootstrap vcpkg
       shell: bash
       run: |
