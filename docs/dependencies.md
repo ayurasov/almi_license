@@ -52,7 +52,9 @@
 | nginx | 1.27 | `deploy/dev` | Шлюз | I0-03 |
 | node | 22 | `deploy/dev`, CI | Консоль | I0-03 |
 | gitleaks | 8.30.1 (sha256 в `ci.yml`) | CI, pre-commit | Поиск секретов | I0-01, I0-03 |
-| openapi-spec-validator | 0.9.0 | CI (`uvx`) | Валидность `contracts/openapi-product-api-v1.yaml` | I0-03 |
+| openapi-spec-validator | 0.9.0 | `make contract-check` (`uvx`) | Валидность `contracts/openapi-product-api-v1.yaml` | I0-03 |
+| jsonschema | 4.26.0 | `tools/contract_check.py` (uv-скрипт, `tools/contract_check.py.lock`) | Проверка JSON Schema 2020-12, примеров и примеров документа 2 | I1-01 |
+| pyyaml | 6.0.3 | `tools/contract_check.py` | Чтение OpenAPI для сверки схем | I1-01 |
 | actions/checkout, actions/setup-node | v7 | CI | | I0-03 |
 | actions/cache | v6 | CI | Кэш бинарных пакетов vcpkg | I0-04 |
 | actions/upload-artifact | v7 | CI | `license_module.dll`, `liblicense_module.so`, заголовок, `lm-demo` | I0-04 |

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/license-state.schema.json",
+  "title": "LicenseState",
+  "description": "Состояние лицензии в продукте (документ 2, раздел 7.1). Клиент обязан принимать неизвестные значения как ACTIVE (раздел 4.6).",
+  "type": "string",
+  "enum": [
+    "TRIAL",
+    "UNLICENSED",
+    "ACTIVE",
+    "NOTICE",
+    "GRACE",
+    "RESTRICTED",
+    "BLOCKED",
+    "REVOKED"
+  ]
+}

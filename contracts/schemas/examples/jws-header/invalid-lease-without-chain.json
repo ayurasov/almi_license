@@ -1,0 +1,5 @@
+{
+  "alg": "EdDSA",
+  "typ": "alm-lease+jws",
+  "kid": "c-2026-01"
+}

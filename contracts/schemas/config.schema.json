@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/config.schema.json",
+  "title": "ProductConfig",
+  "description": "config.json модуля DL (документ 2, раздел 4.1). Ключ лицензии из файла не выводится в интерфейс и журналы.",
+  "type": "object",
+  "properties": {
+    "server_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "online",
+        "offline"
+      ]
+    },
+    "license_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "proxy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "system или адрес прокси"
+    },
+    "ca_bundle": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Путь к корпоративному корневому сертификату TLS"
+    }
+  },
+  "additionalProperties": true
+}

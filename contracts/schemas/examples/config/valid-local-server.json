@@ -1,0 +1,7 @@
+{
+  "server_url": "https://license.corp.local",
+  "mode": "online",
+  "license_key": null,
+  "proxy": "system",
+  "ca_bundle": "/etc/almi/license/corp-ca.pem"
+}

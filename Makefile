@@ -78,8 +78,10 @@ lint-dl: dl-configure ## DL linters: clang-format, clang-tidy (needs compile_com
 	$(CLANG_FORMAT) --dry-run --Werror $(DL_FORMAT_SOURCES)
 	clang-tidy -p $(DL_BUILD) --quiet $(DL_TIDY_SOURCES)
 
-contract-check: ## Compare the implemented OpenAPI with contracts/ — I0-03
-	$(not_implemented)
+contract-check: ## Contract: OpenAPI validity, JSON Schemas, their examples, docs/specs/02 examples
+	uvx --from openapi-spec-validator==0.9.0 openapi-spec-validator contracts/openapi-product-api-v1.yaml
+	uv run --locked --script tools/contract_check.py
+	@echo "comparison with drf-spectacular: not implemented (comes with Product API endpoints)"
 
 vectors: ## Run reference vectors on the server and in DL — E00-04
 	$(not_implemented)

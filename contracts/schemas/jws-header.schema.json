@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/jws-header.schema.json",
+  "title": "JwsHeader",
+  "description": "Защищённый заголовок компактного JWS (документ 1, раздел 9.2; документ 2, раздел 6.1). Состав фиксированный.",
+  "type": "object",
+  "required": [
+    "alg",
+    "typ",
+    "kid"
+  ],
+  "properties": {
+    "alg": {
+      "type": "string",
+      "enum": [
+        "EdDSA",
+        "GOST3410-2012-256"
+      ]
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "alm-lease+jws",
+        "alm-package+jws",
+        "alm-cert+jws",
+        "alm-receipt+jws",
+        "alm-trust+jws",
+        "alm-req+jws",
+        "alm-lic+jws"
+      ]
+    },
+    "kid": {
+      "type": "string",
+      "minLength": 1
+    },
+    "chain": {
+      "type": "array",
+      "description": "Цепочка сертификатов alm-cert+jws от ключа подписи к корню",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "typ": {
+            "const": "alm-lease+jws"
+          }
+        },
+        "required": [
+          "typ"
+        ]
+      },
+      "then": {
+        "required": [
+          "chain"
+        ]
+      }
+    }
+  ]
+}

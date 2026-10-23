@@ -1,0 +1,13 @@
+{
+  "type": "server",
+  "registration_code": "REG-TEST-0001",
+  "server_id": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8",
+  "server_pubkey": "bG9jYWxzZXJ2ZXJwdWJsaWNrZXlmb3J0ZXN0czEyMzQ",
+  "host_fingerprint": {
+    "machine_id": "Qm9hcmQ1c2VyaWFs",
+    "hostname": "bGljZW5zZS1zcnY"
+  },
+  "version": "1.0.0",
+  "nonce": "Zx8c7V6b5N4m3Q2w1E0rT9",
+  "created": "2026-11-02T08:14:58Z"
+}

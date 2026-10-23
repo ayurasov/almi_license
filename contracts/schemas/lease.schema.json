@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/lease.schema.json",
+  "title": "LeaseClaims",
+  "description": "Полезная нагрузка аренды alm-lease+jws (документ 2, раздел 6.2). Время утверждений iat, nbf, exp, server_time — Unix.",
+  "type": "object",
+  "required": [
+    "ver",
+    "iss",
+    "sub",
+    "aud",
+    "iat",
+    "nbf",
+    "seq",
+    "lic",
+    "subject",
+    "capabilities",
+    "policy",
+    "server_time"
+  ],
+  "properties": {
+    "ver": {
+      "type": "integer",
+      "const": 1
+    },
+    "iss": {
+      "type": "string"
+    },
+    "sub": {
+      "type": "string"
+    },
+    "aud": {
+      "type": "string"
+    },
+    "iat": {
+      "type": "integer"
+    },
+    "nbf": {
+      "type": "integer"
+    },
+    "exp": {
+      "type": "integer",
+      "description": "Отсутствует — бессрочное доверие без связи"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "lic": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "status",
+        "valid_from"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "subscription",
+            "perpetual",
+            "trial",
+            "nfr",
+            "free"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended",
+            "revoked"
+          ]
+        },
+        "edition": {
+          "type": "string"
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "support_until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "customer": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "required": [
+        "type",
+        "instance_id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "device",
+            "server_instance",
+            "os_node"
+          ]
+        },
+        "instance_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "fp": {
+          "$ref": "fingerprint.schema.json"
+        },
+        "device_key_thumbprint": {
+          "type": "string"
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "named_users": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "active_users": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "only_count_active": {
+          "type": "boolean"
+        },
+        "concurrent_sessions": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "policy": {
+      "$ref": "policy.schema.json"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "$ref": "message.schema.json"
+      }
+    },
+    "server_time": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": true
+}

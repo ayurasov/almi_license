@@ -1,0 +1,17 @@
+{
+  "id": "notice",
+  "state": "NOTICE",
+  "severity": "warning",
+  "placement": "popup",
+  "text": {
+    "ru": "Срок лицензии истекает через {days_left} дн.",
+    "en": "License expires in {days_left} days."
+  },
+  "action": {
+    "label": {
+      "ru": "Подробнее"
+    },
+    "url": "https://alter-os.ru/renew"
+  },
+  "repeat": "daily"
+}

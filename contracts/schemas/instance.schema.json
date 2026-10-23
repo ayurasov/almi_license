@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/instance.schema.json",
+  "title": "Instance",
+  "description": "Экземпляр продукта (документ 2, разделы 2.2, 2.3, 5.2).",
+  "type": "object",
+  "required": [
+    "instance_id",
+    "subject_type",
+    "os"
+  ],
+  "properties": {
+    "instance_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "subject_type": {
+      "type": "string",
+      "enum": [
+        "device",
+        "server_instance",
+        "os_node"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "os": {
+      "$ref": "os-info.schema.json"
+    }
+  },
+  "additionalProperties": true
+}
