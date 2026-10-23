@@ -8,9 +8,12 @@
     {
       "name": "curl",
       "default-features": false,
-      "features": ["ssl"]
+      "features": [
+        "ssl"
+      ]
     },
     "nlohmann-json",
-    "gtest"
+    "gtest",
+    "cpp-httplib"
   ]
 }

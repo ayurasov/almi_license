@@ -16,7 +16,8 @@ DL_CONFIG ?= Debug
 DL_CMAKE_ARGS ?=
 CLANG_FORMAT := uvx clang-format==23.1.3
 DL_FORMAT_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/*.cpp' 'sdk/cpp/*.h')
-DL_TIDY_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/src/*.cpp')
+# The Windows platform file needs Windows headers: clang-tidy checks it only in a Windows build.
+DL_TIDY_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/src/*.cpp' ':!sdk/cpp/src/platform/win/*')
 
 define not_implemented
 	@echo "$@: not implemented"
