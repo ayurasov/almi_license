@@ -1,0 +1,10 @@
+# gitleaks configuration (used by pre-commit and the CI job "secrets").
+# Default rules plus one exception: dev and test keys of the stands are public by
+# design (docs/specs/07-environments.md, section 3) and live in contracts/vectors/keys/.
+# Decision of 23.10.2026, docs/decisions.md.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public dev/test keys of the stands (dev-root, dev-issuer, ...)"
+paths = ['''^contracts/vectors/keys/''']
