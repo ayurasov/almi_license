@@ -24,6 +24,7 @@ dev = [
     "djangorestframework-stubs==3.16.9",
     "import-linter==2.15",
     "hypothesis==6.170.8",
+    "jsonschema==4.26.0",
 ]
 
 [tool.uv]

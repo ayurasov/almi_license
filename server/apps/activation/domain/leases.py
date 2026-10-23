@@ -38,6 +38,7 @@ def lease_claims(
     capabilities: frozenset[str],
     policy: PolicyParams,
     result: PolicyResult,
+    messages: list[dict[str, Any]],
 ) -> dict[str, Any]:
     unix = int(now.timestamp())
     lic: dict[str, Any] = {
@@ -64,7 +65,7 @@ def lease_claims(
         "limits": {},
         "capabilities": sorted(capabilities),
         "policy": lease_policy(policy),
-        "messages": [],  # texts by message_ids come with E04-04
+        "messages": messages,
         "server_time": unix,
     }
     if result.lease_exp is not None:

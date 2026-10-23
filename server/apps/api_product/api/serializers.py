@@ -4,6 +4,18 @@ from typing import Any
 
 from rest_framework import serializers
 
+# contracts/schemas/license-state.schema.json
+LICENSE_STATES = [
+    "TRIAL",
+    "ACTIVE",
+    "UNLICENSED",
+    "RESTRICTED",
+    "REVOKED",
+    "NOTICE",
+    "GRACE",
+    "BLOCKED",
+]
+
 
 class ProductSerializer(serializers.Serializer[dict[str, Any]]):
     code = serializers.RegexField(r"^[a-z0-9-]{2,64}$")
@@ -45,4 +57,30 @@ class ActivateRequestSerializer(serializers.Serializer[dict[str, Any]]):
             "device_pubkey": serializers.CharField(max_length=64),
             "client_time": serializers.DateTimeField(),
             "usage": serializers.DictField(required=False),
+        }
+
+
+class CheckOsSerializer(serializers.Serializer[dict[str, Any]]):
+    os = OsInfoSerializer()
+    name = serializers.CharField(max_length=128, required=False, allow_blank=True)
+
+
+class CheckRequestSerializer(serializers.Serializer[dict[str, Any]]):
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        # "instance" is an attribute of DRF serializers, so the fields are listed here.
+        return {
+            "lease_seq": serializers.IntegerField(min_value=0),
+            "product": ProductSerializer(),
+            "instance": CheckOsSerializer(),
+            "fingerprint": FingerprintSerializer(required=False),
+            "state": serializers.ChoiceField(LICENSE_STATES),
+            "usage": serializers.DictField(required=False),
+            "acked_directives": serializers.ListField(
+                child=serializers.CharField(max_length=64), required=False, default=list
+            ),
+            "unsupported_directives": serializers.ListField(
+                child=serializers.CharField(max_length=64), required=False, default=list
+            ),
+            "client_time": serializers.DateTimeField(),
+            "last_success_at": serializers.DateTimeField(required=False),
         }

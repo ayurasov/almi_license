@@ -5,7 +5,7 @@ One transaction: lock of the license row, checks, seat count, write, lease, audi
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -31,6 +31,8 @@ from apps.policy.domain import (
     accepts_new_activations,
     effective_policy,
     evaluate,
+    lease_messages,
+    messages_for,
     reserve_pct,
 )
 from infra.errors import DomainError
@@ -60,15 +62,20 @@ class ActivationResult:
     activation_id: str
     lease: str
     policy: PolicyResult
+    messages: list[dict[str, Any]]
+    directives: list[dict[str, Any]]
 
 
 @dataclass(frozen=True)
-class _Terms:
+class Terms:
+    """What a lease of the license is made of: product, edition, functions, policy profile."""
+
     license: LicenseRecord
     product_code: str
     edition: str | None
     capabilities: frozenset[str]
     policy: PolicyParams
+    params: dict[str, Any]
     reserve_pct: int
 
 
@@ -83,36 +90,41 @@ def _find_license(raw_key: str) -> UUID:
     return license_id
 
 
-def _terms(license_: LicenseRecord, request: ActivationRequest, now: datetime) -> _Terms:
-    if license_.status == "revoked":
-        raise DomainError("license_revoked")
+def load_terms(license_: LicenseRecord) -> Terms:
     product = product_info(license_.product_id)
-    edition = edition_code(license_.edition_id)
-    if product.code != request.product_code or (
-        request.edition is not None and request.edition != edition
-    ):
-        raise DomainError("product_mismatch")
     profile = latest_profile(license_.policy_profile_code or product.default_profile_code)
-    policy = effective_policy(profile.params, profile.version, license_.enforcement)
-    if not accepts_new_activations(policy, license_.valid_until, now):
-        raise DomainError("license_expired")
-    return _Terms(
+    return Terms(
         license=license_,
         product_code=product.code,
-        edition=edition,
+        edition=edition_code(license_.edition_id),
         capabilities=capabilities(license_.product_id, license_.edition_id)
         | frozenset(license_.extra_capabilities),
-        policy=policy,
+        policy=effective_policy(profile.params, profile.version, license_.enforcement),
+        params=profile.params,
         reserve_pct=reserve_pct(profile.params, license_.reserve_pct),
     )
 
 
-def _components(fingerprint: dict[str, Any]) -> dict[str, str]:
+def _terms(license_: LicenseRecord, request: ActivationRequest, now: datetime) -> Terms:
+    """Checks of a new activation in the order of prompt I2-04: revoked, product, term."""
+    if license_.status == "revoked":
+        raise DomainError("license_revoked")
+    terms = load_terms(license_)
+    if terms.product_code != request.product_code or (
+        request.edition is not None and request.edition != terms.edition
+    ):
+        raise DomainError("product_mismatch")
+    if not accepts_new_activations(terms.policy, license_.valid_until, now):
+        raise DomainError("license_expired")
+    return terms
+
+
+def components(fingerprint: dict[str, Any]) -> dict[str, str]:
     components: dict[str, str] = fingerprint.get("components", {})
     return components
 
 
-def _take_seat(terms: _Terms) -> bool:
+def _take_seat(terms: Terms) -> bool:
     """in_reserve for the new activation, or seats_exhausted (section 7.4 of document 1)."""
     limit = terms.license.limit
     reserve = math.ceil(limit * terms.reserve_pct / 100)
@@ -126,15 +138,19 @@ def _take_seat(terms: _Terms) -> bool:
     return used >= limit
 
 
-def _issue(
-    activation: Activation, terms: _Terms, now: datetime, issuer: str
+def issue_lease(
+    activation: Activation, terms: Terms, now: datetime, issuer: str, *, revoked: bool = False
 ) -> tuple[str, PolicyResult]:
+    """A new lease with seq = activation.lease_seq + 1; revoked gives the state REVOKED."""
     license_ = terms.license
+    status = "revoked" if revoked else license_.status
+    if revoked:
+        license_ = replace(license_, status=status)
     result = evaluate(
         terms.policy,
         LicenseFacts(
             type=license_.type,
-            status=license_.status,
+            status=status,
             valid_until=license_.valid_until,
             support_until=license_.support_until,
             capabilities=terms.capabilities,
@@ -160,6 +176,7 @@ def _issue(
         capabilities=terms.capabilities,
         policy=terms.policy,
         result=result,
+        messages=lease_messages(terms.params),
     )
     token, digest = sign_lease(claims)
     activation.lease_seq = seq
@@ -190,11 +207,11 @@ def _activate_locked(
         instance_id=request.instance_id,
         status=ActivationStatus.ACTIVE,
     ).first()
-    presented = _components(request.fingerprint)
+    presented = components(request.fingerprint)
 
     if existing is not None:
         same_key = existing.device_pubkey == request.device_pubkey
-        if not same_key and not within_tolerance(_components(existing.fp_components), presented):
+        if not same_key and not within_tolerance(components(existing.fp_components), presented):
             _record_conflict(request, existing, license_id, now)
             return None
         existing.device_pubkey = request.device_pubkey
@@ -204,7 +221,7 @@ def _activate_locked(
         existing.instance_name = request.instance_name
         existing.last_seen_at = now
         existing.save()
-        token, result = _issue(existing, terms, now, issuer)
+        token, result = issue_lease(existing, terms, now, issuer)
         record(
             ACTOR,
             "activation.renewed",
@@ -214,7 +231,7 @@ def _activate_locked(
             ip=request.ip,
             data={"key_changed": not same_key},
         )
-        return ActivationResult(False, existing.external_id, token, result)
+        return _result(False, existing.external_id, token, result, terms)
 
     in_reserve = _take_seat(terms)
     activation = Activation.objects.create(
@@ -232,7 +249,7 @@ def _activate_locked(
         last_seen_at=now,
         created_at=now,
     )
-    token, result = _issue(activation, terms, now, issuer)
+    token, result = issue_lease(activation, terms, now, issuer)
     record(
         ACTOR,
         "activation.created",
@@ -242,7 +259,20 @@ def _activate_locked(
         ip=request.ip,
         data={"license_id": str(license_id), "in_reserve": in_reserve},
     )
-    return ActivationResult(True, activation.external_id, token, result)
+    return _result(True, activation.external_id, token, result, terms)
+
+
+def _result(
+    created: bool, activation_id: str, token: str, result: PolicyResult, terms: Terms
+) -> ActivationResult:
+    return ActivationResult(
+        created=created,
+        activation_id=activation_id,
+        lease=token,
+        policy=result,
+        messages=messages_for(result.message_ids, terms.params),
+        directives=[],
+    )
 
 
 def _record_conflict(
