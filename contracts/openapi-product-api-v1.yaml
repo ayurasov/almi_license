@@ -1,0 +1,989 @@
+openapi: 3.1.0
+info:
+  title: Система лицензирования АЛМИ — Product API v1, Sync API, Integration API, адаптеры совместимости
+  version: 1.0.0
+  description: |
+    Контракт взаимодействия сервера лицензирования с продуктами, локальными серверами и личным кабинетом.
+    Подробные правила — в документе «Спецификация взаимодействия сервера лицензирования с продуктами».
+    Изменения внутри v1 — только добавляющие. Клиенты обязаны игнорировать неизвестные поля.
+servers:
+  - url: https://license.alter-os.ru
+    description: Центральный сервер
+  - url: https://{host}
+    description: Локальный сервер в контуре заказчика
+    variables:
+      host:
+        default: license.corp.local
+tags:
+  - name: product
+    description: Product API v1 — для продуктов (этап 1)
+  - name: seats
+    description: Конкурентные сессии (этап 2)
+  - name: compat
+    description: Адаптеры совместимости (этап 1)
+  - name: sync
+    description: Обмен центрального и локального серверов (этап 1)
+  - name: integration
+    description: Интеграция с личным кабинетом (этап 2)
+
+paths:
+  /.well-known/almi-license:
+    get:
+      tags: [product]
+      operationId: discover
+      summary: Обнаружение сервера
+      responses:
+        '200':
+          description: Сведения о сервере
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Discovery'}
+
+  /api/v1/activations:
+    post:
+      tags: [product]
+      operationId: activate
+      summary: Активация экземпляра продукта
+      parameters:
+        - $ref: '#/components/parameters/Protocol'
+        - $ref: '#/components/parameters/Client'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/AcceptLanguage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ActivateRequest'}
+      responses:
+        '201':
+          description: Создана новая активация
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LeaseResponse'}
+        '200':
+          description: Повторная активация того же экземпляра
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LeaseResponse'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '422': {$ref: '#/components/responses/Problem'}
+        '426': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/activations/{activation_id}/check:
+    post:
+      tags: [product]
+      operationId: check
+      summary: Периодическая проверка и продление аренды
+      parameters:
+        - $ref: '#/components/parameters/ActivationId'
+        - $ref: '#/components/parameters/Protocol'
+        - $ref: '#/components/parameters/Client'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/AcceptLanguage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CheckRequest'}
+      responses:
+        '200':
+          description: Новая аренда, директивы, сообщения
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LeaseResponse'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '410': {$ref: '#/components/responses/Problem'}
+        '412': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/activations/{activation_id}/release:
+    post:
+      tags: [product]
+      operationId: release
+      summary: Освобождение места
+      parameters:
+        - $ref: '#/components/parameters/ActivationId'
+        - $ref: '#/components/parameters/Protocol'
+        - $ref: '#/components/parameters/Client'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReleaseRequest'}
+      responses:
+        '200':
+          description: Место освобождено
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReleaseResponse'}
+        '401': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/trust:
+    get:
+      tags: [product]
+      operationId: getTrust
+      summary: Доверенные ключи, сертификаты ключей выпуска, отзывы
+      responses:
+        '200':
+          description: Пакет доверия
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TrustBundle'}
+
+  /api/v1/events:
+    post:
+      tags: [product]
+      operationId: postEvents
+      summary: События продукта
+      parameters:
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EventsRequest'}
+      responses:
+        '202': {description: Принято}
+        '401': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/offline/requests:
+    post:
+      tags: [product]
+      operationId: processOfflineRequest
+      summary: Обработка файла .alk-req (портал офлайн-активации)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary, description: Файл .alk-req}
+      responses:
+        '200':
+          description: Файл .alk-lic
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AlkFile'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '409': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/activations/{activation_id}/seats:acquire:
+    post:
+      tags: [seats]
+      operationId: acquireSeat
+      summary: Занять конкурентное место (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/ActivationId'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_ref, session_ref]
+              properties:
+                user_ref: {type: string, description: HMAC-хэш логина с солью экземпляра}
+                session_ref: {type: string}
+      responses:
+        '200':
+          description: Место выделено
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SeatToken'}
+        '409': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/activations/{activation_id}/seats:renew:
+    post:
+      tags: [seats]
+      operationId: renewSeat
+      summary: Продлить конкурентное место (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/ActivationId'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seat_token]
+              properties:
+                seat_token: {type: string}
+      responses:
+        '200':
+          description: Продлено
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SeatToken'}
+        '410': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/activations/{activation_id}/seats:release:
+    post:
+      tags: [seats]
+      operationId: releaseSeat
+      summary: Освободить конкурентное место (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/ActivationId'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seat_token]
+              properties:
+                seat_token: {type: string}
+      responses:
+        '204': {description: Освобождено}
+
+  /apps/zammad_organisation_management/api/query/subscription/{subscription_key}:
+    post:
+      tags: [compat]
+      operationId: nextcloudSubscription
+      summary: Адаптер подписки Nextcloud для АльтерОфис Web
+      parameters:
+        - name: subscription_key
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NextcloudSubscriptionRequest'}
+      responses:
+        '200':
+          description: Сведения о подписке
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NextcloudSubscriptionResponse'}
+        '404': {description: Ключ не найден}
+        '429': {description: Превышена частота}
+
+  /api/activate/:
+    get:
+      tags: [compat]
+      operationId: legacyActivateGet
+      summary: Legacy-активация АльтерОС (registration.sh)
+      parameters: &legacyParams
+        - {name: data, in: query, required: true, schema: {type: string, pattern: '^[0-9a-fA-F]{32}$'}, description: MD5 машины}
+        - {name: host, in: query, required: true, schema: {type: string, maxLength: 128}}
+        - {name: lic, in: query, required: true, schema: {type: string}}
+        - {name: format, in: query, required: false, schema: {type: string, enum: [json]}}
+      responses: &legacyResponses
+        '200':
+          description: Результат в формате текущей реализации ЛК (HTML по умолчанию, JSON при format=json)
+          content:
+            text/html:
+              schema: {type: string}
+            application/json:
+              schema: {$ref: '#/components/schemas/LegacyActivateResponse'}
+        '429': {description: Превышена частота}
+    post:
+      tags: [compat]
+      operationId: legacyActivatePost
+      summary: Legacy-активация АльтерОС (registration.sh)
+      parameters: *legacyParams
+      responses: *legacyResponses
+
+  /api/sync/v1/servers/register:
+    post:
+      tags: [sync]
+      operationId: registerServer
+      summary: Регистрация локального сервера
+      parameters:
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ServerRegisterRequest'}
+      responses:
+        '200':
+          description: Зарегистрирован
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ServerRegisterResponse'}
+        '202':
+          description: Ожидает подтверждения оператора
+        '400': {$ref: '#/components/responses/Problem'}
+        '403': {$ref: '#/components/responses/Problem'}
+
+  /api/sync/v1/servers/{server_id}/package:
+    get:
+      tags: [sync]
+      operationId: getPackage
+      summary: Пакет прав локального сервера (полный снимок)
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+        - {name: since_seq, in: query, required: false, schema: {type: integer, minimum: 0}}
+        - $ref: '#/components/parameters/Signature'
+      responses:
+        '200':
+          description: Новый пакет
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AlkFile'}
+        '204': {description: Изменений нет}
+        '403': {$ref: '#/components/responses/Problem'}
+
+  /api/sync/v1/servers/{server_id}/usage:
+    post:
+      tags: [sync]
+      operationId: postUsage
+      summary: Отчёт об использовании от локального сервера
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+        - $ref: '#/components/parameters/Signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AlkFile'}
+      responses:
+        '200':
+          description: Квитанция
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [receipt]
+                properties:
+                  receipt: {type: string, description: JWS alm-receipt+jws}
+        '409': {$ref: '#/components/responses/Problem'}
+
+  /api/integration/v1/licenses:
+    post:
+      tags: [integration]
+      operationId: upsertLicense
+      summary: Создать или обновить лицензию по external_ref (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/IntegrationSignature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/IntegrationLicense'}
+      responses:
+        '201':
+          description: Создана
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/IntegrationLicenseResult'}
+        '200':
+          description: Обновлена
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/IntegrationLicenseResult'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '401': {$ref: '#/components/responses/Problem'}
+
+  /api/integration/v1/licenses/{license_id}/renew:
+    post:
+      tags: [integration]
+      operationId: renewLicense
+      summary: Продление (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/LicenseId'
+        - $ref: '#/components/parameters/IntegrationSignature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valid_until]
+              properties:
+                valid_until: {type: string, format: date-time}
+                support_until: {type: string, format: date-time}
+                quantity: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Продлена
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/IntegrationLicenseResult'}
+
+  /api/integration/v1/licenses/{license_id}/revoke:
+    post:
+      tags: [integration]
+      operationId: revokeLicense
+      summary: Отзыв (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/LicenseId'
+        - $ref: '#/components/parameters/IntegrationSignature'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string, maxLength: 500}
+      responses:
+        '200':
+          description: Отозвана
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/IntegrationLicenseResult'}
+
+  /api/integration/v1/licenses/{license_id}/usage:
+    get:
+      tags: [integration]
+      operationId: getLicenseUsage
+      summary: Остатки по лицензии (этап 2)
+      parameters:
+        - $ref: '#/components/parameters/LicenseId'
+        - $ref: '#/components/parameters/IntegrationSignature'
+      responses:
+        '200':
+          description: Остатки
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LicenseUsage'}
+
+  /api/integration/v1/customers/{external_id}/usage:
+    get:
+      tags: [integration]
+      operationId: getCustomerUsage
+      summary: Остатки по заказчику (этап 2)
+      parameters:
+        - {name: external_id, in: path, required: true, schema: {type: string}}
+        - $ref: '#/components/parameters/IntegrationSignature'
+      responses:
+        '200':
+          description: Остатки
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer_external_id: {type: string}
+                  licenses:
+                    type: array
+                    items: {$ref: '#/components/schemas/LicenseUsage'}
+
+webhooks:
+  licenseEvent:
+    post:
+      tags: [integration]
+      summary: Событие для личного кабинета (этап 2)
+      parameters:
+        - name: ALMI-Webhook-Signature
+          in: header
+          required: true
+          schema: {type: string, example: 't=1765432100, v1=5d41402abc4b2a76b9719d911017c592'}
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WebhookEvent'}
+      responses:
+        '2XX': {description: Принято; иначе повтор}
+
+components:
+  parameters:
+    Protocol:
+      name: ALMI-Protocol
+      in: header
+      required: true
+      schema: {type: integer, enum: [1]}
+    Client:
+      name: ALMI-Client
+      in: header
+      required: true
+      schema: {type: string, example: 'alteroffice-desktop/3.2.0 sdk/1.0.0 (windows 10.0.22631)'}
+    Signature:
+      name: ALMI-Signature
+      in: header
+      required: true
+      description: 'Подпись запроса ключом устройства или сервера; строка подписи — ALMI-REQ-V1\nМЕТОД\nпуть\ncreated\nnonce\nbase64url(sha256(тело))'
+      schema: {type: string, example: 'keyid="act_01JA…", alg="ed25519", created=1765432100, nonce="q2p8…", sig="MEUC…"'}
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, format: uuid}
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema: {type: string, format: uuid}
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      required: false
+      schema: {type: string, example: ru}
+    IntegrationSignature:
+      name: ALMI-Integration-Signature
+      in: header
+      required: true
+      schema: {type: string, example: 't=1765432100, v1=…'}
+    ActivationId:
+      name: activation_id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^act_[0-9A-HJKMNP-TV-Z]{26}$'}
+    ServerId:
+      name: server_id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^srv_[0-9A-HJKMNP-TV-Z]{26}$'}
+    LicenseId:
+      name: license_id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+
+  responses:
+    Problem:
+      description: Ошибка в формате RFC 9457
+      headers:
+        Retry-After:
+          schema: {type: integer}
+          description: Для 429 и 503
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+
+  schemas:
+    Discovery:
+      type: object
+      required: [service, deployment_mode, protocol_versions, endpoints, server_time]
+      properties:
+        service: {type: string, const: almi-license}
+        deployment_mode: {type: string, enum: [central, local]}
+        server_id: {type: string}
+        protocol_versions: {type: array, items: {type: integer}}
+        endpoints:
+          type: object
+          additionalProperties: {type: string}
+        server_time: {type: string, format: date-time}
+        min_sdk_version: {type: string}
+
+    Product:
+      type: object
+      required: [code, version]
+      properties:
+        code: {type: string, pattern: '^[a-z0-9-]{2,64}$', examples: [alteroffice-desktop, alteroffice-web, alteros]}
+        version: {type: string, maxLength: 64}
+        build: {type: string, maxLength: 64}
+        edition: {type: string, maxLength: 64}
+
+    OsInfo:
+      type: object
+      required: [family, name, version, arch]
+      properties:
+        family: {type: string, enum: [windows, linux, macos, other]}
+        name: {type: string, maxLength: 128}
+        version: {type: string, maxLength: 64}
+        arch: {type: string, enum: [x86_64, aarch64, x86, other]}
+
+    Instance:
+      type: object
+      required: [instance_id, subject_type, os]
+      properties:
+        instance_id: {type: string, format: uuid}
+        subject_type: {type: string, enum: [device, server_instance, os_node]}
+        name: {type: string, maxLength: 128}
+        os: {$ref: '#/components/schemas/OsInfo'}
+
+    Fingerprint:
+      type: object
+      required: [scheme, components]
+      properties:
+        scheme: {type: string, const: fp-v1}
+        components:
+          type: object
+          description: 'Хэши компонентов base64url(SHA-256("almi-fp-v1|" + имя + "|" + значение)); значение unknown — компонент недоступен'
+          additionalProperties: {type: string, maxLength: 64}
+
+    Usage:
+      type: object
+      description: Счётчики использования; состав по каталогу продукта
+      properties:
+        named_users: {type: integer, minimum: 0}
+        active_users: {type: integer, minimum: 0}
+        active_users_window_days: {type: integer, minimum: 1}
+        documents_opened: {type: integer, minimum: 0}
+        apps:
+          type: object
+          additionalProperties: true
+      additionalProperties: {type: [number, integer, string, boolean, object]}
+
+    ActivateRequest:
+      type: object
+      required: [product, instance, fingerprint, device_pubkey, client_time]
+      properties:
+        license_key: {type: string, maxLength: 64}
+        trial: {type: boolean, default: false}
+        product: {$ref: '#/components/schemas/Product'}
+        instance: {$ref: '#/components/schemas/Instance'}
+        fingerprint: {$ref: '#/components/schemas/Fingerprint'}
+        device_pubkey: {type: string, description: Открытый ключ Ed25519, base64url}
+        client_time: {type: string, format: date-time}
+        usage: {$ref: '#/components/schemas/Usage'}
+
+    CheckRequest:
+      type: object
+      required: [lease_seq, product, instance, state, client_time]
+      properties:
+        lease_seq: {type: integer, minimum: 0}
+        product: {$ref: '#/components/schemas/Product'}
+        instance:
+          type: object
+          required: [os]
+          properties:
+            os: {$ref: '#/components/schemas/OsInfo'}
+            name: {type: string}
+        fingerprint: {$ref: '#/components/schemas/Fingerprint'}
+        state: {$ref: '#/components/schemas/LicenseState'}
+        usage: {$ref: '#/components/schemas/Usage'}
+        acked_directives: {type: array, items: {type: string}}
+        unsupported_directives: {type: array, items: {type: string}}
+        client_time: {type: string, format: date-time}
+        last_success_at: {type: string, format: date-time}
+
+    ReleaseRequest:
+      type: object
+      required: [reason, client_time]
+      properties:
+        reason: {type: string, enum: [uninstall, user, transfer, directive]}
+        client_time: {type: string, format: date-time}
+
+    ReleaseResponse:
+      type: object
+      required: [activation_id, released_at, receipt]
+      properties:
+        activation_id: {type: string}
+        released_at: {type: string, format: date-time}
+        receipt: {type: string, description: JWS alm-receipt+jws}
+
+    LeaseResponse:
+      type: object
+      required: [activation_id, status, lease, next_check_at, server_time]
+      properties:
+        activation_id: {type: string}
+        status: {type: string, enum: [active]}
+        lease: {type: string, description: Компактный JWS alm-lease+jws}
+        lease_gost: {type: string, description: Аренда с подписью ГОСТ (этап 2, необязательно)}
+        next_check_at: {type: string, format: date-time}
+        server_time: {type: string, format: date-time}
+        messages:
+          type: array
+          items: {$ref: '#/components/schemas/Message'}
+        directives:
+          type: array
+          items: {$ref: '#/components/schemas/Directive'}
+
+    LicenseState:
+      type: string
+      description: Клиент обязан принимать неизвестные значения
+      enum: [TRIAL, UNLICENSED, ACTIVE, NOTICE, GRACE, RESTRICTED, BLOCKED, REVOKED]
+
+    Policy:
+      type: object
+      required: [version, enforcement, notify_before_days, grace_days, expiry_action, check_interval_hours]
+      properties:
+        version: {type: integer}
+        enforcement: {type: string, enum: [enforce, monitor]}
+        notify_before_days: {type: integer, minimum: 0, maximum: 365}
+        grace_days: {type: integer, minimum: 0, maximum: 365}
+        expiry_action: {type: string, enum: [none, restrict, block]}
+        restricted_caps: {type: array, items: {type: string}}
+        restricted_days: {type: [integer, 'null'], minimum: 0}
+        hard_block_mode: {type: string, enum: [read_only, no_start]}
+        read_only_caps: {type: array, items: {type: string}}
+        offline_grace_days: {type: [integer, 'null'], minimum: 1}
+        check_interval_hours: {type: integer, minimum: 1, maximum: 168}
+        release_after_days: {type: integer, minimum: 7, maximum: 365}
+
+    LeaseClaims:
+      type: object
+      description: Полезная нагрузка аренды (для справки; передаётся внутри JWS)
+      required: [ver, iss, sub, aud, iat, nbf, seq, lic, subject, capabilities, policy, server_time]
+      properties:
+        ver: {type: integer, const: 1}
+        iss: {type: string}
+        sub: {type: string}
+        aud: {type: string}
+        iat: {type: integer}
+        nbf: {type: integer}
+        exp: {type: integer, description: Отсутствует — бессрочное доверие без связи}
+        seq: {type: integer, minimum: 1}
+        lic:
+          type: object
+          required: [id, type, status, valid_from]
+          properties:
+            id: {type: string, format: uuid}
+            type: {type: string, enum: [subscription, perpetual, trial, nfr, free]}
+            status: {type: string, enum: [active, suspended, revoked]}
+            edition: {type: string}
+            valid_from: {type: string, format: date-time}
+            valid_until: {type: [string, 'null'], format: date-time}
+            support_until: {type: [string, 'null'], format: date-time}
+            customer:
+              type: object
+              properties:
+                id: {type: string}
+                name: {type: string}
+        subject:
+          type: object
+          required: [type, instance_id]
+          properties:
+            type: {type: string, enum: [device, server_instance, os_node]}
+            instance_id: {type: string, format: uuid}
+            fp: {$ref: '#/components/schemas/Fingerprint'}
+            device_key_thumbprint: {type: string}
+        limits:
+          type: object
+          properties:
+            named_users: {type: [integer, 'null']}
+            active_users: {type: [integer, 'null']}
+            only_count_active: {type: boolean}
+            concurrent_sessions: {type: [integer, 'null']}
+          additionalProperties: true
+        capabilities: {type: array, items: {type: string}}
+        policy: {$ref: '#/components/schemas/Policy'}
+        messages:
+          type: array
+          items: {$ref: '#/components/schemas/Message'}
+        server_time: {type: integer}
+
+    Message:
+      type: object
+      required: [id, severity, placement, text]
+      properties:
+        id: {type: string}
+        state: {$ref: '#/components/schemas/LicenseState'}
+        severity: {type: string, enum: [info, warning, critical]}
+        placement: {type: string, enum: [banner, dialog, about, tray]}
+        text:
+          type: object
+          description: Тексты по языкам; подстановки {days_left}, {valid_until}, {customer}, {used}, {limit}
+          additionalProperties: {type: string}
+        action:
+          type: object
+          properties:
+            label:
+              type: object
+              additionalProperties: {type: string}
+            url: {type: string, format: uri}
+        repeat: {type: string, enum: [once, daily, each_start]}
+
+    Directive:
+      type: object
+      required: [id, type]
+      properties:
+        id: {type: string}
+        type:
+          type: string
+          description: Клиент обязан игнорировать неизвестные типы
+          examples: [refresh_now, update_trust, set_check_interval, show_message, rebind, release, set_server_url, collect_diagnostics]
+        params:
+          type: object
+          additionalProperties: true
+
+    TrustBundle:
+      type: object
+      required: [bundle, roots, issuers, revoked_kids, seq]
+      properties:
+        bundle: {type: string, description: JWS alm-trust+jws, подписан корневым ключом}
+        roots:
+          type: array
+          items:
+            type: object
+            properties:
+              kid: {type: string}
+              alg: {type: string}
+              pub: {type: string}
+              status: {type: string, enum: [active, reserve, retired]}
+        issuers: {type: array, items: {type: string, description: JWS alm-cert+jws}}
+        revoked_kids: {type: array, items: {type: string}}
+        seq: {type: integer}
+
+    EventsRequest:
+      type: object
+      required: [activation_id, events]
+      properties:
+        activation_id: {type: string}
+        events:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            required: [id, type, at]
+            properties:
+              id: {type: string}
+              type: {type: string, examples: [clock_rollback_detected, lease_verification_failed, user_limit_exceeded, state_changed, feature_denied, unknown_state, unsupported_directive]}
+              at: {type: string, format: date-time}
+              data: {type: object, additionalProperties: true}
+
+    SeatToken:
+      type: object
+      required: [seat_token, expires_at]
+      properties:
+        seat_token: {type: string}
+        expires_at: {type: string, format: date-time}
+
+    AlkFile:
+      type: object
+      required: [format, version, payload]
+      properties:
+        format: {type: string, enum: [alk-req, alk-lic, alk, alk-usage]}
+        version: {type: integer, const: 1}
+        payload: {type: string, description: Компактный JWS}
+
+    NextcloudSubscriptionRequest:
+      type: object
+      properties:
+        instanceId: {type: string}
+        userCount: {type: integer}
+        activeUserCount: {type: integer}
+        apps:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              enabled: {type: string}
+              version: {type: string}
+        version: {type: string}
+
+    NextcloudSubscriptionResponse:
+      type: object
+      required: [endDate, extendedSupport, amountOfUsers, onlyCountActiveUsers]
+      properties:
+        endDate: {type: string, format: date}
+        extendedSupport: {type: boolean}
+        amountOfUsers: {type: integer}
+        onlyCountActiveUsers: {type: boolean}
+        accountManagerInfo:
+          type: object
+          properties:
+            name: {type: string}
+            email: {type: string}
+            phone: {type: string}
+
+    LegacyActivateResponse:
+      type: object
+      description: Формат текущей реализации /api/activate/ в ЛК; точные поля фиксируются тестами совместимости
+      additionalProperties: true
+
+    ServerRegisterRequest:
+      type: object
+      required: [registration_code, server_id, server_pubkey, host_fingerprint, version]
+      properties:
+        registration_code: {type: string}
+        server_id: {type: string}
+        server_pubkey: {type: string}
+        host_fingerprint:
+          type: object
+          additionalProperties: {type: string}
+        version: {type: string}
+
+    ServerRegisterResponse:
+      type: object
+      required: [certificate, package]
+      properties:
+        certificate: {type: string, description: JWS alm-cert+jws}
+        package: {$ref: '#/components/schemas/AlkFile'}
+
+    IntegrationLicense:
+      type: object
+      required: [external_ref, customer, article, quantity, valid_from]
+      properties:
+        external_ref: {type: string, description: Серийный номер YY-ARTICLE-DDD-NNNN}
+        order_no: {type: string}
+        customer:
+          type: object
+          required: [external_id, name]
+          properties:
+            external_id: {type: string}
+            name: {type: string}
+            inn: {type: string, pattern: '^[0-9]{10}([0-9]{2})?$'}
+        article: {type: string}
+        quantity: {type: integer, minimum: 1}
+        valid_from: {type: string, format: date-time}
+        valid_until: {type: [string, 'null'], format: date-time}
+        support_until: {type: [string, 'null'], format: date-time}
+        keys: {type: array, items: {type: string}}
+        policy_profile: {type: string}
+
+    IntegrationLicenseResult:
+      type: object
+      required: [license_id, status]
+      properties:
+        license_id: {type: string, format: uuid}
+        status: {type: string, enum: [active, suspended, revoked, expired]}
+
+    LicenseUsage:
+      type: object
+      required: [license_id, total, used, free]
+      properties:
+        license_id: {type: string, format: uuid}
+        external_ref: {type: string}
+        total: {type: integer}
+        used: {type: integer}
+        free: {type: integer}
+        reserve_used: {type: integer}
+        last_activity_at: {type: [string, 'null'], format: date-time}
+        by_version:
+          type: object
+          additionalProperties: {type: integer}
+
+    WebhookEvent:
+      type: object
+      required: [id, type, occurred_at, data]
+      properties:
+        id: {type: string}
+        type:
+          type: string
+          enum: [license.created, license.updated, activation.created, activation.released, seats.threshold, license.expiring, license.state_changed, local_server.usage_imported]
+        occurred_at: {type: string, format: date-time}
+        data: {type: object, additionalProperties: true}
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer}
+        code:
+          type: string
+          description: Клиент обязан обрабатывать неизвестные коды по классу HTTP-статуса
+          examples: [invalid_request, invalid_key_format, signature_invalid, clock_skew, license_revoked, license_expired, product_mismatch, key_not_found, activation_not_found, seats_exhausted, instance_conflict, idempotency_conflict, activation_released, rebind_required, payload_too_large, unsupported_product_version, upgrade_required, rate_limited, internal_error, maintenance]
+        detail: {type: string}
+        request_id: {type: string}
+        server_time: {type: string, format: date-time}
+        user_message:
+          type: object
+          additionalProperties: {type: string}
+        data:
+          type: object
+          additionalProperties: true

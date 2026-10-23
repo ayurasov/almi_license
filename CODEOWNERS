@@ -1,0 +1,6 @@
+# Технический лидер — обязательный ревьюер (раздел 6 docs/specs/06-ai-rules.md)
+/contracts/ @tech-lead
+/server/apps/signing/ @tech-lead
+/server/infra/crypto/ @tech-lead
+/server/apps/policy/ @tech-lead
+/sdk/cpp/src/crypto/ @tech-lead
