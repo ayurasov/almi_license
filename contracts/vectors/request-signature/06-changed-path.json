@@ -1,0 +1,26 @@
+{
+  "name": "06-changed-path",
+  "description": "Подписан путь …/check, запрос отправлен на …/release.",
+  "public_key": "LrsBgVznSq_bD2qq4d6FOpODP61A4eTMiu8E2yKxUaI",
+  "server_now": 1762071300,
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/activations/act_01JABF8Q4W2N8C1R7ZB0Y5K6M3/release",
+    "body": "{\"lease_seq\":17,\"state\":\"ACTIVE\",\"client_time\":\"2026-11-02T08:14:58Z\"}"
+  },
+  "signed": {
+    "keyid": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+    "alg": "ed25519",
+    "created": 1762071300,
+    "nonce": "f93xQNtDa76y3xsWeyyv5Q",
+    "path": "/api/v1/activations/act_01JABF8Q4W2N8C1R7ZB0Y5K6M3/check"
+  },
+  "expected": {
+    "body_sha256": "jA73u219NFSgldYwfnmuqmigJ1jXMGGdBwgobm3YVgI",
+    "signing_string": "ALMI-REQ-V1\nPOST\n/api/v1/activations/act_01JABF8Q4W2N8C1R7ZB0Y5K6M3/check\n1762071300\nf93xQNtDa76y3xsWeyyv5Q\njA73u219NFSgldYwfnmuqmigJ1jXMGGdBwgobm3YVgI",
+    "signature": "LCS3lTJcTp4i6Mj9AT1hydH1ZBP32dMUOKXRpfsHmCJ6Q1MBVus43Qn8olZY0GXFgHECPpv_MVtBYUDE-4JSDQ",
+    "header": "keyid=\"act_01JABF8Q4W2N8C1R7ZB0Y5K6M3\", alg=\"ed25519\", created=1762071300, nonce=\"f93xQNtDa76y3xsWeyyv5Q\", sig=\"LCS3lTJcTp4i6Mj9AT1hydH1ZBP32dMUOKXRpfsHmCJ6Q1MBVus43Qn8olZY0GXFgHECPpv_MVtBYUDE-4JSDQ\"",
+    "valid": false,
+    "error": "signature_invalid"
+  }
+}

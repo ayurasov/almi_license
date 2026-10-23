@@ -83,8 +83,9 @@ contract-check: ## Contract: OpenAPI validity, JSON Schemas, their examples, doc
 	uv run --locked --script tools/contract_check.py
 	@echo "comparison with drf-spectacular: not implemented (comes with Product API endpoints)"
 
-vectors: ## Run reference vectors on the server and in DL — E00-04
-	$(not_implemented)
+vectors: ## Reference vectors: up to date and valid; server and DL runners come with E02-03, E04-01, E13-02
+	uv run --locked --script tools/vectors/generate.py --check
+	@echo "vectors on the server and in DL: not implemented (E02-03, E04-01, E13-02)"
 
 e2e: ## Playwright and API scenarios against dev — E16-04
 	$(not_implemented)

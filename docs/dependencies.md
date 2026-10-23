@@ -55,6 +55,7 @@
 | openapi-spec-validator | 0.9.0 | `make contract-check` (`uvx`) | Валидность `contracts/openapi-product-api-v1.yaml` | I0-03 |
 | jsonschema | 4.26.0 | `tools/contract_check.py` (uv-скрипт, `tools/contract_check.py.lock`) | Проверка JSON Schema 2020-12, примеров и примеров документа 2 | I1-01 |
 | pyyaml | 6.0.3 | `tools/contract_check.py` | Чтение OpenAPI для сверки схем | I1-01 |
+| pynacl | 1.6.2 | `tools/vectors/generate.py` (uv-скрипт, `generate.py.lock`) | Ed25519 для эталонных векторов, независимо от `cryptography` сервера (промпт I1-02) | I1-02 |
 | actions/checkout, actions/setup-node | v7 | CI | | I0-03 |
 | actions/cache | v6 | CI | Кэш бинарных пакетов vcpkg | I0-04 |
 | actions/upload-artifact | v7 | CI | `license_module.dll`, `liblicense_module.so`, заголовок, `lm-demo` | I0-04 |

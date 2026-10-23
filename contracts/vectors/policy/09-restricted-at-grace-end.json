@@ -1,0 +1,62 @@
+{
+  "name": "09-restricted-at-grace-end",
+  "reasoning": "T = VU + 14 дн ровно: отсрочка кончилась, expiry_action = restrict, restricted_days = null → RESTRICTED; минус restricted_caps и support.",
+  "policy": {
+    "version": 3,
+    "enforcement": "enforce",
+    "notify_before_days": 30,
+    "grace_days": 14,
+    "expiry_action": "restrict",
+    "restricted_caps": [
+      "updates",
+      "macros",
+      "collaboration"
+    ],
+    "restricted_days": null,
+    "hard_block_mode": "read_only",
+    "read_only_caps": [
+      "view",
+      "export",
+      "print"
+    ],
+    "offline_grace_days": null,
+    "check_interval_hours": 24,
+    "release_after_days": 30
+  },
+  "license": {
+    "type": "subscription",
+    "status": "active",
+    "valid_until": "2027-10-31T20:59:59Z",
+    "support_until": "2027-10-31T20:59:59Z",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "support",
+      "macros",
+      "collaboration"
+    ]
+  },
+  "now": "2027-11-14T20:59:59Z",
+  "last_success_at": "2027-11-14T20:59:59Z",
+  "expected": {
+    "state": "RESTRICTED",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print"
+    ],
+    "messages_ids": [
+      "restricted.banner",
+      "restricted.feature"
+    ],
+    "lease_exp": null
+  }
+}
