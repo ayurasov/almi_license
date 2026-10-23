@@ -6,9 +6,18 @@ from infra.clock import FrozenClock
 
 
 def event(clock: FrozenClock, seq: int, hash_: str, prev: str = "") -> AuditEvent:
-    return AuditEvent.objects.create(seq=seq, actor="operator:test", action="license.created",
-                                     object_type="license", object_id="6f1c2a4e", at=clock.now(),
-                                     ip="10.0.0.1", data={}, prev_hash=prev, hash=hash_)
+    return AuditEvent.objects.create(
+        seq=seq,
+        actor="operator:test",
+        action="license.created",
+        object_type="license",
+        object_id="6f1c2a4e",
+        at=clock.now(),
+        ip="10.0.0.1",
+        data={},
+        prev_hash=prev,
+        hash=hash_,
+    )
 
 
 @pytest.mark.django_db
