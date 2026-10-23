@@ -94,6 +94,7 @@ class Problem(exceptions.APIException):
         user_message: dict[str, str] | None = None,
         data: dict[str, Any] | None = None,
         server_time: datetime | None = None,
+        retry_after: int | None = None,
     ) -> None:
         if code not in CATALOG:
             raise ValueError(f"{code!r} is not in the error catalog (document 2, section 16)")
@@ -110,6 +111,7 @@ class Problem(exceptions.APIException):
         self.user_message = user_message
         self.data = data
         self.server_time = server_time
+        self.retry_after = retry_after
 
 
 def _problem_of(exc: exceptions.APIException | DomainError) -> Problem:
@@ -117,9 +119,10 @@ def _problem_of(exc: exceptions.APIException | DomainError) -> Problem:
         return Problem(exc.code, exc.detail or None, data=exc.data)
     if isinstance(exc, Problem):
         return exc
+    detail = exc.detail if isinstance(exc.detail, str) else None
     if exc.status_code >= 500:
         return Problem("internal_error")
-    return Problem(_BY_STATUS.get(exc.status_code, "invalid_request"))
+    return Problem(_BY_STATUS.get(exc.status_code, "invalid_request"), detail)
 
 
 def problem_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
@@ -146,6 +149,8 @@ def problem_exception_handler(exc: Exception, context: dict[str, Any]) -> Respon
     if problem.server_time is not None:
         body["server_time"] = problem.server_time.isoformat().replace("+00:00", "Z")
     response = Response(body, status=problem.status_code, content_type=CONTENT_TYPE)
+    if problem.retry_after is not None:
+        response["Retry-After"] = str(problem.retry_after)
     view = context.get("view")
     if problem.status_code == status.HTTP_401_UNAUTHORIZED and view is not None:
         # RFC 9110, 15.5.2: a 401 names the authentication scheme.
