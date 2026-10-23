@@ -1,3 +1,8 @@
-from django.urls import URLPattern
+from django.urls import path
 
-urlpatterns: list[URLPattern] = []
+from almi_license import probes
+
+urlpatterns = [
+    path("health", probes.health, name="health"),
+    path("ready", probes.ready, name="ready"),
+]
