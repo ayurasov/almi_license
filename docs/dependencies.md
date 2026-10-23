@@ -31,6 +31,17 @@
 
 Запланированы стеком, будут добавлены вместе с первым использованием: `cryptography` (E02-02), `hypothesis`, `factory-boy` (I1-03 и далее).
 
+## Модуль DL (`sdk/cpp/vcpkg.json`)
+
+Версии фиксирует `builtin-baseline` vcpkg `23b8a8e7409c2d6346114a88e834165bde79a51c` (23.10.2026); сборка статическая (`x64-linux`, `x64-windows-static`).
+
+| Пакет | Версия | Назначение | Добавлен | Согласовано |
+|---|---|---|---|---|
+| libsodium | 1.0.22 | Ed25519, обнуление секретов (`sodium_memzero`) | I0-04 | Стек `AGENTS.md` |
+| curl[ssl] | 8.23.0 | HTTPS-транспорт; TLS — OpenSSL 3.6.5 (Linux), Schannel (Windows) | I0-04 | Стек `AGENTS.md` |
+| nlohmann-json | 3.12.0 | JSON | I0-04 | Стек `AGENTS.md` |
+| gtest | 1.18.0 | Тесты (`lm_tests`) | I0-04 | Стек `AGENTS.md` |
+
 ## Образы и инструменты CI (не входят в `uv.lock`)
 
 | Компонент | Версия | Где | Назначение | Добавлен |
@@ -43,6 +54,11 @@
 | gitleaks | 8.30.1 (sha256 в `ci.yml`) | CI, pre-commit | Поиск секретов | I0-01, I0-03 |
 | openapi-spec-validator | 0.9.0 | CI (`uvx`) | Валидность `contracts/openapi-product-api-v1.yaml` | I0-03 |
 | actions/checkout, actions/setup-node | v7 | CI | | I0-03 |
+| actions/cache | v6 | CI | Кэш бинарных пакетов vcpkg | I0-04 |
+| actions/upload-artifact | v7 | CI | `license_module.dll`, `liblicense_module.so`, заголовок, `lm-demo` | I0-04 |
+| vcpkg | коммит `builtin-baseline` | CI, локально (`VCPKG_ROOT`) | Зависимости DL | I0-04 |
+| clang-format | 23.1.3 | pre-commit, `make lint-dl` (`uvx`) | Форматирование C++ | I0-01, I0-04 |
+| clang-tidy | 18 (раннер ubuntu-24.04) | `make lint-dl` | Анализ C++ | I0-04 |
 | astral-sh/setup-uv | v10.3.2 | CI | Плавающих тегов после v7 нет | I0-03 |
 
 ## Примечания
