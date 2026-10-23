@@ -39,6 +39,10 @@ docs/           specs/ (документы комплекта), adr/, progress/
 prompts/        промпты итераций I0–I6 и базового цикла истории P0–P12
 ```
 
+## Требования
+
+Docker 24+ с Compose v2, GNU Make, [uv](https://docs.astral.sh/uv/) 0.11+ (линтеры и тесты сервера на хосте), `pre-commit`.
+
 ## Команды
 
 Цели из раздела 5 документа 7. Пока код не написан, цель печатает `not implemented` и завершается с кодом 0.
@@ -46,7 +50,7 @@ prompts/        промпты итераций I0–I6 и базового ци
 | Команда | Действие |
 |---|---|
 | `make help` | Список целей |
-| `make up` / `make down` | Поднять и остановить локальное окружение |
+| `make up` / `make down` | Поднять (ждёт готовности, до 120 с) и остановить локальное окружение: шлюз `http://localhost:8080`, консоль `:5173`, PostgreSQL `:5432` |
 | `make up-local` | То же в режиме `DEPLOYMENT_MODE=local` |
 | `make seed` | Миграции и набор `seed-minimal` |
 | `make test` | Все тесты: `test-server`, `test-console`, `test-dl` |
@@ -56,7 +60,7 @@ prompts/        промпты итераций I0–I6 и базового ци
 | `make e2e` | Playwright и сценарии API против `dev` |
 | `make bundle-airgap` | Собрать комплект изолированного контура локально |
 
-Серверным целям нужен `DATABASE_URL` (PostgreSQL 17), например `postgres://almi:<пароль>@localhost:5432/almi_license`; `DEPLOYMENT_MODE` по умолчанию `central`. `make lint` обращается к настройкам, но не к БД, поэтому работает и без `DATABASE_URL`.
+Серверным целям на хосте нужен `DATABASE_URL` (PostgreSQL 17); при поднятом `make up` это `postgres://almi:dev-only@localhost:5432/almi_license` (пароль только для `dev`, раздел 5 документа 7); `DEPLOYMENT_MODE` по умолчанию `central`. `make lint` обращается к настройкам, но не к БД, поэтому работает и без `DATABASE_URL`.
 
 Хуки перед коммитом (ruff, ruff-format, eslint, clang-format, gitleaks):
 
