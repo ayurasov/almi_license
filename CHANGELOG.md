@@ -9,3 +9,5 @@
 - Локальное окружение `make up` / `up-local` / `down` / `seed`: PostgreSQL 17, API, консоль, Nginx на `http://localhost:8080` (E00-07).
 - Образ сервера `deploy/Dockerfile` (этапы `base`, `dev`, `runtime`; пользователь `app`, UID 10001) (E00-07).
 - CI GitHub Actions: `lint-server`, `contract`, `arch`, `secrets`, `test-server`, `test-dl`, `lint-console`, `test-console` (E00-06).
+- Каркас модуля DL `sdk/cpp`: `license_module` (Windows и Linux), `lm_tests`, `lm-demo`; публичный заголовок `license_module.h` по разделу 15.1 документа 2; все `LM_*` пока возвращают `LM_ERR_NOT_INITIALIZED` (E13-01).
+- `make test-dl`, `make lint-dl`; задачи CI `test-dl` (с ASan/UBSan на Linux и артефактами) и `lint-dl` (E13-01).

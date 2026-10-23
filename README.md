@@ -42,6 +42,7 @@ prompts/        промпты итераций I0–I6 и базового ци
 ## Требования
 
 Docker 24+ с Compose v2, GNU Make, [uv](https://docs.astral.sh/uv/) 0.11+ (линтеры и тесты сервера на хосте), `pre-commit`.
+Модуль DL: CMake 3.28+, GCC или MSVC с C++17, clang-tidy, [vcpkg](https://vcpkg.io) — переменная `VCPKG_ROOT` (зависимости ставятся из `sdk/cpp/vcpkg.json` при первой конфигурации).
 
 ## Команды
 
@@ -53,8 +54,8 @@ Docker 24+ с Compose v2, GNU Make, [uv](https://docs.astral.sh/uv/) 0.11+ (ли
 | `make up` / `make down` | Поднять (ждёт готовности, до 120 с) и остановить локальное окружение: шлюз `http://localhost:8080`, консоль `:5173`, PostgreSQL `:5432` |
 | `make up-local` | То же в режиме `DEPLOYMENT_MODE=local` |
 | `make seed` | Миграции и набор `seed-minimal` |
-| `make test` | Все тесты: `test-server`, `test-console`, `test-dl` |
-| `make lint` | Все линтеры: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy (`make lint-server` — только сервер) |
+| `make test` | Все тесты: `test-server`, `test-console`, `test-dl` (`test-dl`: сборка `sdk/cpp/build`, `DL_CONFIG=Debug`) |
+| `make lint` | Все линтеры: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy (`make lint-server`, `make lint-dl` — по частям) |
 | `make contract-check` | Сверка OpenAPI реализации с `contracts/openapi-product-api-v1.yaml` |
 | `make vectors` | Эталонные векторы на сервере и в DL |
 | `make e2e` | Playwright и сценарии API против `dev` |
