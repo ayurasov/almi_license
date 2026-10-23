@@ -2,7 +2,11 @@
 #define LICENSE_MODULE_H
 #include <stdint.h>
 #ifdef _WIN32
-#  define LM_API __declspec(dllimport)
+#  ifdef LM_BUILDING_DLL              /* v1+ задаётся только при сборке самой библиотеки */
+#    define LM_API __declspec(dllexport)
+#  else
+#    define LM_API __declspec(dllimport)
+#  endif
 #else
 #  define LM_API __attribute__((visibility("default")))
 #endif
@@ -140,6 +144,7 @@ LM_API LM_Result LM_GenerateReleaseRequest(const char* output_file_path);
 LM_API LM_Result LM_SetServerUrl(const char* url);
 LM_API LM_Result LM_GetLastError(char* buffer, int buffer_size); /* user_message последней ошибки, UTF-8 */
 LM_API int       LM_GetAbiVersion(void);
+LM_API LM_Result LM_GetVersion(char* buffer, int buffer_size);  /* v1+ версия модуля SemVer, UTF-8; без инициализации */
 
 #ifdef __cplusplus
 }

@@ -1,10 +1,40 @@
 // Until the module is implemented every LM_* call reports LM_ERR_NOT_INITIALIZED
-// (I0-04); calls that return a flag or a count report "nothing".
+// (I0-04); calls that return a flag or a count report "nothing". LM_GetAbiVersion and
+// LM_GetVersion work without initialization.
 #include <gtest/gtest.h>
+
+#include <cstring>
+#include <string>
 
 #include "license_module.h"
 
 TEST(AbiStub, AbiVersionIsFromHeader) { EXPECT_EQ(LM_GetAbiVersion(), LM_ABI_VERSION); }
+
+TEST(GetVersion, ReturnsCMakeVersionWithoutInitialize) {
+  char buffer[32] = {};
+  ASSERT_EQ(LM_GetVersion(buffer, static_cast<int>(sizeof(buffer))), LM_OK);
+  EXPECT_STREQ(buffer, LM_EXPECTED_VERSION);
+}
+
+TEST(GetVersion, ExactBufferWithTerminatorIsEnough) {
+  std::string buffer(std::strlen(LM_EXPECTED_VERSION) + 1, 'x');
+  ASSERT_EQ(LM_GetVersion(buffer.data(), static_cast<int>(buffer.size())), LM_OK);
+  EXPECT_STREQ(buffer.c_str(), LM_EXPECTED_VERSION);
+}
+
+TEST(GetVersion, ShortBufferIsRejectedAndLeftUntouched) {
+  std::string buffer(std::strlen(LM_EXPECTED_VERSION), 'x');
+  const std::string before = buffer;
+  EXPECT_EQ(LM_GetVersion(buffer.data(), static_cast<int>(buffer.size())), LM_ERR_BUFFER_TOO_SMALL);
+  EXPECT_EQ(buffer, before);
+}
+
+TEST(GetVersion, NullOrEmptyBufferIsRejected) {
+  char buffer[32] = {};
+  EXPECT_EQ(LM_GetVersion(nullptr, 32), LM_ERR_BUFFER_TOO_SMALL);
+  EXPECT_EQ(LM_GetVersion(buffer, 0), LM_ERR_BUFFER_TOO_SMALL);
+  EXPECT_EQ(LM_GetVersion(buffer, -1), LM_ERR_BUFFER_TOO_SMALL);
+}
 
 TEST(AbiStub, InitializationIsNotAvailableYet) {
   EXPECT_EQ(LM_Initialize("1.0.0"), LM_ERR_NOT_INITIALIZED);
