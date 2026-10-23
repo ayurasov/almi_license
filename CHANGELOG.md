@@ -12,4 +12,5 @@
 - Каркас модуля DL `sdk/cpp`: `license_module` (Windows и Linux), `lm_tests`, `lm-demo`; публичный заголовок `license_module.h` по разделу 15.1 документа 2; все `LM_*` пока возвращают `LM_ERR_NOT_INITIALIZED` (E13-01).
 - `make test-dl`, `make lint-dl`; задачи CI `test-dl` (с ASan/UBSan на Linux и артефактами) и `lint-dl` (E13-01).
 - `license_module.h`: `LM_GetVersion` (версия модуля) и `LM_BUILDING_DLL` для экспорта на Windows; раздел 15.1 документа 2 обновлён (E13-01).
+- JSON Schema 2020-12 в `contracts/schemas` (аренда, политика, сообщения, директивы, ошибки, заголовок JWS, офлайн-файлы, `.alk-req`, `config.json`) с примерами; `make contract-check` проверяет схемы, примеры и все json-примеры документа 2 и сверяет схемы с OpenAPI (E00-03).
 
