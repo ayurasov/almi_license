@@ -449,3 +449,24 @@ def test_issued_activation_lease_for_cross_verification(
     (directory / "issued-activation-lease.json").write_text(
         json.dumps(vector, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def test_stored_responses_are_purged_by_the_hourly_task(
+    licensed: Any, issuer: Any, clock: FrozenClock
+) -> None:
+    from django.test import Client as _Client
+
+    from apps.api_product.models import IdempotencyRecord
+    from apps.outbox.domain import enqueue, run_due
+
+    signed_post(
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, request_body(), dev_device_key(), "device"
+    )
+    assert IdempotencyRecord.objects.count() == 1
+    enqueue("api_product.idempotency_purge", {}, now=clock.now())
+    run_due(now=clock.now())
+    assert IdempotencyRecord.objects.count() == 1  # still within 24 h
+    later = clock.now() + timedelta(hours=25)
+    enqueue("api_product.idempotency_purge", {}, now=later)
+    run_due(now=later)
+    assert IdempotencyRecord.objects.count() == 0

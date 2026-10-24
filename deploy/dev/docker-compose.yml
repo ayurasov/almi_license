@@ -34,17 +34,19 @@ services:
       timeout: 3s
       retries: 30
   worker:
-    # Not started by make up until the task queue adds "manage.py run_worker" (E12-01).
-    profiles: [worker]
+    # Task queue and schedule (E12-01): automatic release and other hourly tasks.
     build: { context: ../.., dockerfile: deploy/Dockerfile, target: dev }
     command: python manage.py run_worker
     environment:
       DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-central}
       DATABASE_URL: postgres://almi:dev-only@db:5432/almi_license
+      SIGNING_KEY_FILE: /run/secrets/signing_key
+      SIGNING_CERT_FILE: /run/secrets/signing_cert
       DJANGO_SETTINGS_MODULE: almi_license.settings.dev
+    secrets: [signing_key, signing_cert]
     volumes: [../../server:/app/server]
     depends_on:
-      db: { condition: service_healthy }
+      api: { condition: service_healthy }
   console:
     image: node:22
     working_dir: /app
@@ -87,6 +89,13 @@ services:
     profiles: [local]
     build: { context: ../.., dockerfile: deploy/Dockerfile, target: dev }
     command: python manage.py sync_package --every 60
+    environment: *local-env
+    volumes: [../../server:/app/server, local-key:/var/lib/almi]
+    depends_on: [local-api]
+  local-worker:
+    profiles: [local]
+    build: { context: ../.., dockerfile: deploy/Dockerfile, target: dev }
+    command: python manage.py run_worker
     environment: *local-env
     volumes: [../../server:/app/server, local-key:/var/lib/almi]
     depends_on: [local-api]

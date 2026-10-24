@@ -1,6 +1,7 @@
 # Изменения
 
 ## Unreleased
+- Очередь задач в PostgreSQL и расписание (`manage.py run_worker`, сервис `worker`): повторы с задержкой, один планировщик (E12-01); автоосвобождение активаций без связи дольше `release_after_days` → `released_auto` раз в час (E12-02); очистка записей `Idempotency-Key` старше 24 ч.
 - Скелет репозитория по разделу 14 документа 1: каталоги, `Makefile` с целями-заглушками, `pre-commit`, `.editorconfig`, `.gitignore` (E00-05).
 - Каркас сервера Django 5.2: настройки `base`/`dev`/`ci`/`prod` из переменных окружения; сервер не запускается без `DEPLOYMENT_MODE=central|local` (I0-02).
 - `GET /health` (процесс жив) и `GET /ready` (есть соединение с БД, иначе 503) (I0-02).
