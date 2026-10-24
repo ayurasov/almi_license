@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "metrics": [
+    {"code": "device", "name": {"ru": "Устройство", "en": "Device"}},
+    {"code": "server_instance", "name": {"ru": "Экземпляр сервера", "en": "Server instance"}},
+    {"code": "named_user", "name": {"ru": "Именованный пользователь", "en": "Named user"}},
+    {"code": "active_user", "name": {"ru": "Активный пользователь", "en": "Active user"}},
+    {"code": "os_node", "name": {"ru": "Узел ОС", "en": "OS node"}}
+  ],
+  "products": [
+    {
+      "code": "alteroffice-desktop",
+      "name": {"ru": "АльтерОфис Desktop", "en": "AlterOffice Desktop"},
+      "metric": "device",
+      "subject_type": "device",
+      "editions": [
+        {"code": "standard", "base_capabilities": ["view", "edit", "save", "create", "export", "print", "updates", "support"]},
+        {"code": "professional", "base_capabilities": ["view", "edit", "save", "create", "export", "print", "updates", "support", "macros", "collaboration"]}
+      ],
+      "default_profile": "alteroffice-desktop.commercial"
+    },
+    {
+      "code": "alteroffice-web",
+      "name": {"ru": "АльтерОфис Web", "en": "AlterOffice Web"},
+      "metric": "server_instance",
+      "subject_type": "server_instance",
+      "editions": [
+        {"code": "enterprise", "base_capabilities": ["login", "edit", "new_users", "share_external", "updates", "app:files", "app:calendar", "app:contacts", "app:mail", "app:talk"]}
+      ],
+      "default_profile": "alteroffice-web.commercial"
+    },
+    {
+      "code": "alteros",
+      "name": {"ru": "АльтерОС", "en": "AlterOS"},
+      "metric": "os_node",
+      "subject_type": "os_node",
+      "editions": [{"code": "workstation", "base_capabilities": ["registration", "repo_updates", "support"]}],
+      "default_profile": "alteros.commercial"
+    }
+  ],
+  "profiles": [
+    {
+      "code": "alteroffice-desktop.commercial",
+      "enforcement": "monitor", "notify_before_days": 30, "grace_days": 14,
+      "expiry_action": "restrict", "restricted_caps": ["updates", "macros", "collaboration"],
+      "restricted_days": null, "hard_block_mode": "read_only", "read_only_caps": ["view", "export", "print"],
+      "offline_grace_days": null, "check_interval_hours": 24,
+      "release_after_days": 30, "reserve_pct": 3
+    },
+    {
+      "code": "alteroffice-web.commercial",
+      "enforcement": "monitor", "notify_before_days": 30, "grace_days": 14,
+      "expiry_action": "restrict", "restricted_caps": ["new_users"],
+      "restricted_days": null, "hard_block_mode": "read_only",
+      "read_only_caps": ["login", "app:files", "app:calendar", "app:contacts", "app:mail"],
+      "offline_grace_days": 3, "check_interval_hours": 6,
+      "release_after_days": 30, "reserve_pct": 3
+    },
+    {
+      "code": "alteros.commercial",
+      "enforcement": "monitor", "notify_before_days": 30, "grace_days": 30,
+      "expiry_action": "none", "restricted_caps": [],
+      "restricted_days": null, "hard_block_mode": "read_only", "read_only_caps": [],
+      "offline_grace_days": null, "check_interval_hours": 24,
+      "release_after_days": 30, "reserve_pct": 3
+    }
+  ]
+}
