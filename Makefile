@@ -24,7 +24,7 @@ define not_implemented
 endef
 
 .PHONY: help up down up-local up-pair seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
-	contract-check vectors cross-verify admin-schema e2e bundle-airgap
+	contract-check vectors cross-verify offline-e2e admin-schema e2e bundle-airgap
 
 help: ## Show available targets
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -109,6 +109,12 @@ vectors: ## Reference vectors: up to date and valid; server and DL runners come 
 # Leases signed by the server (issue_jws) are written in the contracts/vectors/jws format and
 # checked by the two independent verifiers: almi-keytool (PyNaCl) and LeaseVerifier (libsodium).
 ISSUED_VECTORS ?= $(abspath $(DL_BUILD))/issued-vectors
+offline-e2e: ## lm-demo (dev trust root) and the server: .alk-req -> .alk-lic -> apply, release (E08-01, E13-09); needs DATABASE_URL
+	cmake -S sdk/cpp -B $(DL_BUILD)-dev -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=dev -DLM_BUILD_TESTS=OFF $(DL_CMAKE_ARGS)
+	cmake --build $(DL_BUILD)-dev --parallel --target lm-demo
+	cd server && LM_DEMO=$(abspath $(DL_BUILD)-dev)/bin/lm-demo uv run pytest -q -p no:cacheprovider \
+		tests/api_product/test_lm_demo_offline.py
+
 cross-verify: ## Server-issued JWS pass almi-keytool and the DL LeaseVerifier (E02-03); needs make test-dl and DATABASE_URL
 	rm -rf $(ISSUED_VECTORS) && mkdir -p $(ISSUED_VECTORS)
 	cd server && ALMI_ISSUED_VECTORS_DIR=$(ISSUED_VECTORS) uv run pytest -q -p no:cacheprovider \

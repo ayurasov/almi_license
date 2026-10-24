@@ -24,6 +24,16 @@ struct RawComponents {
 
 RawComponents CollectComponents();
 
+// The os object of a request (contracts/schemas/os-info.schema.json) and the machine name.
+struct OsInfo {
+  std::string family;   // windows | linux | macos | other
+  std::string name;     // "Windows", "Astra Linux"
+  std::string version;  // "10.0.22631", "1.8"
+  std::string arch;     // x86_64 | aarch64 | x86 | other
+};
+OsInfo DescribeOs();
+std::string HostName();
+
 // Directory of the store: the system one (ProgramData / /var/lib/almi) and the per-user fallback.
 std::filesystem::path SystemStoreDirectory(std::string_view product);
 std::filesystem::path UserStoreDirectory(std::string_view product);

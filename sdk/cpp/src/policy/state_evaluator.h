@@ -19,20 +19,25 @@ const char* StateName(State state) noexcept;
 
 using Capabilities = std::set<std::string>;
 
+inline constexpr std::int64_t kDefaultNotifyBeforeDays = 30;
+inline constexpr std::int64_t kDefaultGraceDays = 14;
+inline constexpr std::int64_t kDefaultCheckIntervalHours = 24;
+inline constexpr std::int64_t kDefaultReleaseAfterDays = 30;
+
 // PolicyParams of engine.py (section 6.4 of document 2).
 struct PolicyParams {
   std::int64_t version = 1;
   std::string enforcement = "enforce";
-  std::int64_t notify_before_days = 30;
-  std::int64_t grace_days = 14;
+  std::int64_t notify_before_days = kDefaultNotifyBeforeDays;
+  std::int64_t grace_days = kDefaultGraceDays;
   std::string expiry_action = "restrict";
   Capabilities restricted_caps;
   std::optional<std::int64_t> restricted_days;
   std::string hard_block_mode = "read_only";
   Capabilities read_only_caps;
   std::optional<std::int64_t> offline_grace_days;
-  std::int64_t check_interval_hours = 24;
-  std::int64_t release_after_days = 30;
+  std::int64_t check_interval_hours = kDefaultCheckIntervalHours;
+  std::int64_t release_after_days = kDefaultReleaseAfterDays;
 
   // The policy object of a lease or a vector; nullopt when a required field is missing.
   static std::optional<PolicyParams> FromJson(const nlohmann::json& data);

@@ -160,8 +160,14 @@ void CheckLease(const json& claims, const Certificate* leaf, const LeaseContext&
   }
 }
 
-json VerifyOrReject(std::string_view token, const std::vector<TrustRoot>& roots, const LeaseContext& context,
-                    std::int64_t now) {
+struct Checked {
+  json claims;
+  std::optional<Certificate> leaf;
+};
+
+// Steps 1–8 of contracts/vectors/README.md for a JWS of the given typ.
+Checked CheckSigned(std::string_view token, const std::vector<TrustRoot>& roots, std::string_view typ,
+                    const std::vector<std::string>& revoked_kids, std::int64_t now) {
   // 1. Size and structure before anything is decoded.
   if (token.size() > kMaxTokenBytes) Reject(VerifyError::kMalformed);
   const auto parts = Split(token);
@@ -174,7 +180,7 @@ json VerifyOrReject(std::string_view token, const std::vector<TrustRoot>& roots,
   if ((*header)["alg"].get<std::string>() != kAlg) Reject(VerifyError::kAlgUnsupported);
   const auto signature = DecodeSignature(parts->signature);
   if (!signature) Reject(VerifyError::kMalformed);
-  if ((*header)["typ"].get<std::string>() != kLeaseTyp) Reject(VerifyError::kTypInvalid);
+  if ((*header)["typ"].get<std::string>() != typ) Reject(VerifyError::kTypInvalid);
 
   // 5. Chain from the root side; the leaf must certify the signing kid.
   const json chain = header->value("chain", json::array());
@@ -197,9 +203,8 @@ json VerifyOrReject(std::string_view token, const std::vector<TrustRoot>& roots,
   }
 
   // 6–7. Revocation and certificate validity.
-  const auto revoked = [&context](const std::string& value) {
-    return std::find(context.revoked_kids.begin(), context.revoked_kids.end(), value) !=
-           context.revoked_kids.end();
+  const auto revoked = [&revoked_kids](const std::string& value) {
+    return std::find(revoked_kids.begin(), revoked_kids.end(), value) != revoked_kids.end();
   };
   if (revoked(kid) || std::any_of(certificates.begin(), certificates.end(),
                                   [&revoked](const Certificate& c) { return revoked(c.kid); })) {
@@ -215,12 +220,17 @@ json VerifyOrReject(std::string_view token, const std::vector<TrustRoot>& roots,
   if (key == nullptr || !SignatureValid(*key, parts->signing_input, *signature)) {
     Reject(VerifyError::kSignatureInvalid);
   }
-
-  // 9–13. Payload.
   auto claims = DecodeObject(parts->payload);
   if (!claims) Reject(VerifyError::kMalformed);
-  CheckLease(*claims, leaf, context, now);
-  return std::move(*claims);
+  return Checked{std::move(*claims), leaf != nullptr ? std::optional<Certificate>(*leaf) : std::nullopt};
+}
+
+json VerifyOrReject(std::string_view token, const std::vector<TrustRoot>& roots, const LeaseContext& context,
+                    std::int64_t now) {
+  Checked checked = CheckSigned(token, roots, kLeaseTyp, context.revoked_kids, now);
+  // 9–14. Payload.
+  CheckLease(checked.claims, checked.leaf ? &*checked.leaf : nullptr, context, now);
+  return std::move(checked.claims);
 }
 
 }  // namespace
@@ -265,6 +275,18 @@ VerifyResult LeaseVerifier::Verify(std::string_view token, const LeaseContext& c
                                    std::int64_t now) const {
   try {
     return VerifyResult{VerifyError::kNone, VerifyOrReject(token, roots_, context, now)};
+  } catch (const Rejection& rejection) {
+    return VerifyResult{rejection.error, nullptr};
+  } catch (const nlohmann::json::exception&) {
+    return VerifyResult{VerifyError::kMalformed, nullptr};
+  }
+}
+
+VerifyResult LeaseVerifier::VerifySigned(std::string_view token, std::string_view typ,
+                                         const std::vector<std::string>& revoked_kids,
+                                         std::int64_t now) const {
+  try {
+    return VerifyResult{VerifyError::kNone, CheckSigned(token, roots_, typ, revoked_kids, now).claims};
   } catch (const Rejection& rejection) {
     return VerifyResult{rejection.error, nullptr};
   } catch (const nlohmann::json::exception&) {

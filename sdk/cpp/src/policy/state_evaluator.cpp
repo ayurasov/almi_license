@@ -6,8 +6,7 @@ namespace lm::policy {
 namespace {
 
 constexpr std::int64_t kHour = 3600;
-constexpr std::int64_t kDay = 24 * kHour;  // engine.py: DAY
-constexpr std::int64_t kDefaultReleaseAfterDays = 30;
+constexpr std::int64_t kDay = 24 * kHour;      // engine.py: DAY
 constexpr std::int64_t kTrialDays = 30;        // TRIAL_DAYS
 constexpr std::int64_t kTrialEndingDays = 5;   // TRIAL_ENDING_DAYS
 constexpr std::int64_t kNoticeDialogDays = 7;  // NOTICE_DIALOG_DAYS
