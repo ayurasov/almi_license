@@ -34,6 +34,8 @@ LEASE_ISSUER = env.str(
 APP_VERSION = env.str("APP_VERSION", default="0.1.0")
 LOCAL_SERVER_KEY_FILE = env.str("LOCAL_SERVER_KEY_FILE", default="")
 TRUST_ROOTS: list[str] = env.list("TRUST_ROOTS", default=[])
+# GET /api/v1/trust: the bundle of almi-keytool export-trust, signed by the root key (E02-04).
+TRUST_BUNDLE_FILE = env.str("TRUST_BUNDLE_FILE", default="")
 # Only for tests and the dev compose: lets a local server talk to http:// central servers.
 ALLOW_PLAIN_HTTP_CENTRAL = env.bool("ALLOW_PLAIN_HTTP_CENTRAL", default=False)
 

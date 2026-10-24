@@ -20,3 +20,21 @@ class RequestNonce(UUIDModel):
 
     def __str__(self) -> str:
         return self.keyid
+
+
+class IdempotencyRecord(UUIDModel):
+    """The first response to a request with an Idempotency-Key, kept 24 hours (E05-02)."""
+
+    scope = models.CharField(max_length=64, help_text="открытый ключ подписи запроса")
+    key = models.CharField(max_length=64)
+    path = models.CharField(max_length=256)
+    body_hash = models.CharField(max_length=64)
+    status = models.PositiveSmallIntegerField()
+    content_type = models.CharField(max_length=64)
+    response = models.TextField()
+    created_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["scope", "key"], name="idempotency_unique_key")
+        ]

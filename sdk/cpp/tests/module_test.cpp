@@ -151,6 +151,7 @@ class FakeServer {
       calls.push_back("activate");
       const json body = json::parse(request.body);
       last_body = body;
+      idempotency_key = request.get_header_value("Idempotency-Key");
       if (refuse_seats) {
         response.status = 409;
         response.set_content(R"({"code":"seats_exhausted","user_message":"Все 10 мест заняты."})",
@@ -206,6 +207,7 @@ class FakeServer {
   Issuer issuer;
   std::vector<std::string> calls;
   json last_body;
+  std::string idempotency_key;
   std::string instance_id;
   std::string device_pubkey;
   std::string activation_id;
@@ -291,6 +293,7 @@ TEST_F(ModuleTest, TrialWithoutLeaseThenOnlineActivation) {
   EXPECT_EQ(body.at("instance").at("os").at("name"), "Astra Linux");
   EXPECT_EQ(body.at("fingerprint").at("scheme"), "fp-v1");
   EXPECT_EQ(body.at("client_time"), "2026-11-02T08:00:00Z");
+  EXPECT_EQ(server.idempotency_key.size(), 36U);  // a UUID
 }
 
 TEST_F(ModuleTest, CheckRenewsTheLeaseAndWorksWithoutNetworkAfterRestart) {

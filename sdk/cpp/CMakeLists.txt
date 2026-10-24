@@ -86,6 +86,10 @@ add_library(license_module_stub SHARED src/stub/license_module_stub.cpp src/vers
 target_include_directories(license_module_stub PUBLIC include PRIVATE src "${CMAKE_BINARY_DIR}/generated")
 target_compile_options(license_module_stub PRIVATE ${LM_WARNINGS})
 target_compile_definitions(license_module_stub PRIVATE LM_BUILDING_DLL)
+if(MSVC)
+  # The stub reads its fixed state with std::getenv once; MSVC deprecates it (C4996) in favour of _dupenv_s.
+  target_compile_definitions(license_module_stub PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
 
 add_executable(lm-demo src/demo/main.cpp)
 target_link_libraries(lm-demo PRIVATE license_module)
