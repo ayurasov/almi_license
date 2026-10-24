@@ -18,6 +18,7 @@
 | openpyxl | 3.1.5 | Разбор XLSX-выгрузки ЛК в режиме `read_only` (E06-01); тянет `et-xmlfile` 2.0.0 | I2-06 | Промпт I2-06 |
 | argon2-cffi | 25.1.0 | Argon2id для паролей консоли (`PASSWORD_HASHERS`, E07-02); тянет `argon2-cffi-bindings` 26.1.0 | I2-07 | Критерий E07-02 документа 3 |
 | django-environ | 0.14.0 | Настройки только из переменных окружения | I0-02 | Промпт I0-02 |
+| croniter | 6.2.4 | Cron-выражения расписания задач (E12-01); тянет `python-dateutil` 2.9.0.post0 (ограничение `constraint-dependencies`: 3.0.0 моложе двух недель) и `six` 1.17.0 | I4-03 | Промпт I4-03 |
 
 ### Разработка и CI (группа `dev`)
 
@@ -32,6 +33,7 @@
 | djangorestframework-stubs | 3.16.9 | Типы DRF для mypy | I0-02 | Документ 6, раздел 4.1 |
 | hypothesis | 6.170.8 | Property-тесты `PolicyEngine` (E04-02) | I2-02 | Стек `AGENTS.md`; промпт I2-02 |
 | jsonschema | 4.26.0 | Контрактные тесты API: ответы по OpenAPI, аренда по `contracts/schemas` (`server/tests/contract.py`) | I2-05 | Уже согласован для `tools/contract_check.py` (I1-01) |
+| types-croniter | 6.2.4.20261006 | Типы croniter для mypy | I4-03 | Промпт I4-03 |
 | types-openpyxl | 3.1.5.20260827 | Типы openpyxl для mypy | I2-06 | Выпуск старше двух недель (20261017 — слишком свежий) |
 | import-linter | 2.15 | Модульные границы (правило 3 `AGENTS.md`) | I0-02 | `AGENTS.md`, документ 7 |
 

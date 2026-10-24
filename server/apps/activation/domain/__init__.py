@@ -1,5 +1,6 @@
 """Domain services of the activation module."""
 
+from apps.activation.domain.autorelease import release_stale_activations
 from apps.activation.domain.check import CheckRequest, check
 from apps.activation.domain.directives import queue_directive
 from apps.activation.domain.keys import device_public_key
@@ -24,6 +25,7 @@ from apps.activation.domain.usage import (
 )
 
 __all__ = [
+    "release_stale_activations",
     "MAX_FILE_BYTES",
     "OfflineRequest",
     "ReleaseResult",

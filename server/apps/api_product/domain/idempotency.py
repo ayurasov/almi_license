@@ -82,3 +82,8 @@ def purge(now: datetime) -> int:
     """Delete records older than the window; run by the background job (E12-01)."""
     deleted, _ = IdempotencyRecord.objects.filter(created_at__lt=now - WINDOW).delete()
     return deleted
+
+
+def run_purge_task(payload: dict[str, object], now: datetime) -> None:
+    """Handler of the hourly purge task in the outbox queue."""
+    purge(now)
