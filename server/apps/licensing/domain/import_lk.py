@@ -19,6 +19,7 @@ from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
 from apps.catalog.domain import edition_code, metric_code, product_info
+from apps.licensing.domain.inn import inn_is_valid
 from apps.licensing.domain.keys import InvalidKeyFormat, key_hash, key_mask, normalize_key
 from apps.licensing.models import ArticleMapping, ImportSession, LicenseKey
 
@@ -225,7 +226,7 @@ def _parse_row(
     if quantity is None:
         errors.append("Количество должно быть целым числом больше нуля")
     inn = _text(_cell(values, columns, "inn"))
-    if _INN.fullmatch(inn) is None:
+    if _INN.fullmatch(inn) is None or not inn_is_valid(inn):
         errors.append("Неверный ИНН")
     issued = _issue_date(_cell(values, columns, "issued"))
     if issued is None:
@@ -264,10 +265,10 @@ def _status(
     license_ = existing.license
     if license_.customer.inn != fields["inn"]:
         return "error", ["Ключ принадлежит другому заказчику"]
+    if license_.product_id != mapping.product_id or license_.edition_id != mapping.edition_id:
+        return "error", ["Ключ выдан на другой продукт или редакцию"]
     same = (
-        license_.product_id == mapping.product_id
-        and license_.edition_id == mapping.edition_id
-        and license_.type == fields["type"]
+        license_.type == fields["type"]
         and license_.limit == fields["limit"]
         and _rfc3339(license_.valid_from) == fields["valid_from"]
         and _rfc3339(license_.valid_until) == fields["valid_until"]

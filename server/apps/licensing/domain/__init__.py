@@ -8,6 +8,7 @@ from apps.licensing.domain.customers import (
     list_customers,
     update_customer,
 )
+from apps.licensing.domain.import_apply import ImportReport, apply_import
 from apps.licensing.domain.import_lk import (
     ImportFileError,
     ImportPreview,
@@ -31,6 +32,7 @@ from apps.licensing.domain.management import (
     transfer_license,
     update_settings,
 )
+from apps.licensing.domain.mappings import MappingData, list_mappings, save_mapping
 
 __all__ = [
     "IssuedKey",
@@ -53,6 +55,11 @@ __all__ = [
     "list_customers",
     "update_customer",
     "ImportFileError",
+    "ImportReport",
+    "MappingData",
+    "list_mappings",
+    "save_mapping",
+    "apply_import",
     "ImportPreview",
     "ImportRow",
     "parse_lk_export",

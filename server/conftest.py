@@ -42,7 +42,7 @@ def license_(product: "Product", clock: FrozenClock) -> "License":
     from apps.licensing.models import Customer, License
 
     customer = Customer.objects.create(
-        name="ООО «Пример»", inn="7701234567", created_at=clock.now()
+        name="ООО «Пример»", inn="7701234560", created_at=clock.now()
     )
     return License.objects.create(
         customer=customer,

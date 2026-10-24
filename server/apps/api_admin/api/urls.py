@@ -3,6 +3,7 @@ from drf_spectacular.views import SpectacularAPIView
 
 from apps.api_admin.api import accounts as acc
 from apps.api_admin.api import catalog as cat
+from apps.api_admin.api import imports as imp
 from apps.api_admin.api import licenses as lic
 from apps.api_admin.api.views import CustomersView, CustomerView, SessionView
 
@@ -34,6 +35,10 @@ urlpatterns = [
     ),
     path("catalog/products/<uuid:product_id>/editions", cat.EditionsView.as_view()),
     path("profiles", cat.ProfilesView.as_view()),
+    path("imports", imp.ImportsView.as_view()),
+    path("imports/<uuid:session_id>/apply", imp.ImportApplyView.as_view()),
+    path("article-mappings", imp.ArticleMappingsView.as_view()),
+    path("article-mappings/<str:aa>", imp.ArticleMappingView.as_view()),
     path("accounts", acc.AccountsView.as_view()),
     path("accounts/<str:username>", acc.AccountView.as_view()),
     path("accounts/<str:username>/password", acc.AccountPasswordView.as_view()),
