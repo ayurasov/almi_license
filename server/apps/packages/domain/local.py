@@ -22,9 +22,9 @@ from django.utils.dateparse import parse_datetime
 
 from apps.audit.domain import record
 from apps.packages.models import Exchange, LocalIdentity
-from apps.signing.domain import ChainInvalid, install_provider, verify_signed
+from apps.signing.domain import ChainInvalid, install_provider, trust_roots, verify_signed
 from infra.crypto.ed25519 import Ed25519Provider, create_key_file, load_key, public_key_text
-from infra.crypto.encoding import b64url_decode, b64url_encode
+from infra.crypto.encoding import b64url_encode
 from infra.errors import DomainError
 from infra.http import send
 from infra.ids import new_ulid
@@ -80,6 +80,14 @@ def local_status() -> LocalStatus:
     )
 
 
+def local_server_id() -> str | None:
+    """server_id of this local server for discovery; None on the central server or before setup."""
+    if settings.DEPLOYMENT_MODE != "local":
+        return None
+    row = _identity()
+    return None if row is None else row.server_id
+
+
 def _key_path() -> Path:
     if not settings.LOCAL_SERVER_KEY_FILE:
         raise _invalid("LOCAL_SERVER_KEY_FILE is not set")
@@ -87,11 +95,7 @@ def _key_path() -> Path:
 
 
 def _roots() -> dict[str, bytes]:
-    roots: dict[str, bytes] = {}
-    for entry in settings.TRUST_ROOTS:
-        kid, _, pub = str(entry).partition(":")
-        if kid and pub:
-            roots[kid] = b64url_decode(pub)
+    roots = trust_roots()
     if not roots:
         raise _invalid("TRUST_ROOTS is not set: packages cannot be checked")
     return roots

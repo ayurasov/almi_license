@@ -13,9 +13,13 @@ from apps.signing.domain.jws import (
     install_provider_factory,
     issue_jws,
 )
+from apps.signing.domain.trust import TrustUnavailable, trust_document, trust_roots
 from apps.signing.domain.verify import ChainInvalid, Verified, verify_signed
 
 __all__ = [
+    "TrustUnavailable",
+    "trust_document",
+    "trust_roots",
     "ChainInvalid",
     "Verified",
     "verify_signed",

@@ -5,6 +5,7 @@
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 #include "crypto/base64url.h"
@@ -49,6 +50,7 @@ constexpr long kHttpCreated = 201;
 constexpr long kHttpUnauthorized = 401;
 constexpr long kHttpServerError = 500;
 constexpr long kHttpClientError = 400;
+constexpr std::string_view kReleaseSuffix = "/release";
 
 // Directive types the module handles (section 6.6 of document 2); others are reported unsupported.
 bool KnownDirective(const std::string& type) {
@@ -460,6 +462,13 @@ Module::Reply Module::Post(const std::string& path, const json& body, const std:
   transport::Request request;
   request.path = path;
   request.headers["Content-Type"] = "application/json";
+  // Activation and release are repeated safely under one key: the server returns its first answer
+  // (E05-02). A new logical operation gets a new key (section 5.2 of document 2).
+  if (path.size() >= kReleaseSuffix.size() &&
+      (path == "/api/v1/activations" ||
+       path.compare(path.size() - kReleaseSuffix.size(), kReleaseSuffix.size(), kReleaseSuffix) == 0)) {
+    request.headers["Idempotency-Key"] = identity::NewInstanceId();
+  }
   Reply reply;
   for (int attempt = 0; attempt < 2; ++attempt) {
     json document = body;
