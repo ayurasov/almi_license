@@ -59,9 +59,10 @@ add_library(lm_internal STATIC src/version.cpp src/trust_roots.cpp src/crypto/ba
                                src/crypto/lease_verifier.cpp src/crypto/device_key.cpp src/crypto/aead.cpp
                                src/identity/instance_identity.cpp src/store/secure_store.cpp
                                src/transport/transport.cpp src/util/rfc3339.cpp src/policy/state_evaluator.cpp
-                               src/state/rollback_guard.cpp src/state/trial_tracker.cpp
+                               src/state/rollback_guard.cpp src/state/trial_tracker.cpp src/module/module.cpp
                                ${LM_PLATFORM_SOURCES})
-target_include_directories(lm_internal PUBLIC src "${CMAKE_BINARY_DIR}/generated")
+# include/: the module core speaks LM_Result and LM_EventType of the public header.
+target_include_directories(lm_internal PUBLIC src include "${CMAKE_BINARY_DIR}/generated")
 target_link_libraries(lm_internal PUBLIC unofficial-sodium::sodium nlohmann_json::nlohmann_json CURL::libcurl
                                          ${LM_PLATFORM_LIBRARIES})
 # No implicit json -> T conversions: they are ambiguous across nlohmann/json versions.
@@ -80,22 +81,34 @@ if(NOT WIN32)
   target_link_options(license_module PRIVATE -Wl,--exclude-libs,ALL -Wl,--no-undefined)
 endif()
 
+# The same ABI with a fixed state for product developers (E13-11): LM_STUB_MODE, LM_STUB_FEATURES.
+add_library(license_module_stub SHARED src/stub/license_module_stub.cpp src/version.cpp)
+target_include_directories(license_module_stub PUBLIC include PRIVATE src "${CMAKE_BINARY_DIR}/generated")
+target_compile_options(license_module_stub PRIVATE ${LM_WARNINGS})
+target_compile_definitions(license_module_stub PRIVATE LM_BUILDING_DLL)
+
 add_executable(lm-demo src/demo/main.cpp)
 target_link_libraries(lm-demo PRIVATE license_module)
 target_compile_options(lm-demo PRIVATE ${LM_WARNINGS})
+# lm-demo over the stub: shows the interface of a product in every fixed state.
+add_executable(lm-demo-stub src/demo/main.cpp)
+target_link_libraries(lm-demo-stub PRIVATE license_module_stub)
+target_compile_options(lm-demo-stub PRIVATE ${LM_WARNINGS})
 
 if(LM_BUILD_TESTS)
   enable_testing()
   find_package(GTest CONFIG REQUIRED)
   find_package(httplib CONFIG REQUIRED)
-  add_executable(lm_tests tests/version_test.cpp tests/abi_stub_test.cpp tests/base64url_test.cpp
+  add_executable(lm_tests tests/version_test.cpp tests/abi_test.cpp tests/base64url_test.cpp
                           tests/lease_verifier_test.cpp tests/device_key_test.cpp tests/aead_test.cpp
                           tests/instance_identity_test.cpp tests/secure_store_test.cpp tests/transport_test.cpp
-                          tests/state_evaluator_test.cpp tests/clock_state_test.cpp)
+                          tests/state_evaluator_test.cpp tests/clock_state_test.cpp
+                          tests/module_test.cpp)
   target_link_libraries(lm_tests PRIVATE license_module lm_internal GTest::gtest_main httplib::httplib)
   target_compile_definitions(lm_tests PRIVATE
     LM_EXPECTED_VERSION="${PROJECT_VERSION}" LM_EXPECTED_TRUST_ROOTS="${LM_TRUST_ROOTS}"
-    LM_VECTORS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../contracts/vectors")
+    LM_VECTORS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../contracts/vectors"
+    LM_DEV_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../deploy/dev")
   include(GoogleTest)
   gtest_discover_tests(lm_tests DISCOVERY_MODE PRE_TEST)
 endif()

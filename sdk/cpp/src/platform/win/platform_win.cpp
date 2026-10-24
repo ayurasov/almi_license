@@ -20,10 +20,12 @@
 #include <winhttp.h>
 #include <winioctl.h>
 
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <memory>
+#include <string>
 #include <system_error>
 
 #include "platform/platform.h"
@@ -202,6 +204,43 @@ RawComponents CollectComponents() {
   components.cpu = CpuIdentification();
   components.mac = FirstPhysicalMac();
   return components;
+}
+
+OsInfo DescribeOs() {
+  OsInfo info{"windows", "Windows", "unknown", "other"};
+  using RtlGetVersionFn = LONG(WINAPI*)(PRTL_OSVERSIONINFOW);
+  if (HMODULE ntdll = GetModuleHandleW(L"ntdll.dll"); ntdll != nullptr) {
+    // RtlGetVersion reports the real version (GetVersionEx is capped by the manifest).
+    const auto fn = reinterpret_cast<RtlGetVersionFn>(GetProcAddress(ntdll, "RtlGetVersion"));
+    RTL_OSVERSIONINFOW version{};
+    version.dwOSVersionInfoSize = sizeof(version);
+    if (fn != nullptr && fn(&version) == 0) {
+      info.version = std::to_string(version.dwMajorVersion) + "." + std::to_string(version.dwMinorVersion) +
+                     "." + std::to_string(version.dwBuildNumber);
+    }
+  }
+  SYSTEM_INFO system{};
+  GetNativeSystemInfo(&system);
+  switch (system.wProcessorArchitecture) {
+    case PROCESSOR_ARCHITECTURE_AMD64:
+      info.arch = "x86_64";
+      break;
+    case PROCESSOR_ARCHITECTURE_ARM64:
+      info.arch = "aarch64";
+      break;
+    case PROCESSOR_ARCHITECTURE_INTEL:
+      info.arch = "x86";
+      break;
+    default:
+      break;
+  }
+  return info;
+}
+
+std::string HostName() {
+  std::array<wchar_t, MAX_COMPUTERNAME_LENGTH + 1> name{};
+  DWORD size = static_cast<DWORD>(name.size());
+  return GetComputerNameW(name.data(), &size) != 0 ? Narrow(name.data()) : std::string();
 }
 
 fs::path SystemStoreDirectory(std::string_view product) {

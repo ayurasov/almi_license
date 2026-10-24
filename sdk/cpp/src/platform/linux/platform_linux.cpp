@@ -4,13 +4,16 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <array>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <map>
 #include <sstream>
 #include <system_error>
@@ -120,6 +123,53 @@ RawComponents CollectComponents() {
   components.cpu = CpuIdentification();
   components.mac = FirstPhysicalMac();
   return components;
+}
+
+namespace {
+
+std::string Unquote(std::string value) {
+  if (value.size() >= 2 && (value.front() == '"' || value.front() == '\'') && value.back() == value.front()) {
+    return value.substr(1, value.size() - 2);
+  }
+  return value;
+}
+
+std::map<std::string, std::string> OsRelease() {
+  std::map<std::string, std::string> fields;
+  std::ifstream stream("/etc/os-release");
+  std::string line;
+  while (std::getline(stream, line)) {
+    const auto equals = line.find('=');
+    if (equals != std::string::npos) fields[line.substr(0, equals)] = Unquote(line.substr(equals + 1));
+  }
+  return fields;
+}
+
+std::string Arch(const std::string& machine) {
+  if (machine == "x86_64" || machine == "amd64") return "x86_64";
+  if (machine == "aarch64" || machine == "arm64") return "aarch64";
+  if (machine.size() == 4 && machine[0] == 'i' && machine.substr(2) == "86") return "x86";
+  return "other";
+}
+
+}  // namespace
+
+OsInfo DescribeOs() {
+  auto fields = OsRelease();
+  utsname system{};
+  std::string machine;
+  if (uname(&system) == 0) {
+    machine.assign(std::begin(system.machine),
+                   std::find(std::begin(system.machine), std::end(system.machine), '\0'));
+  }
+  return {"linux", fields.count("NAME") > 0 ? fields["NAME"] : "Linux",
+          fields.count("VERSION_ID") > 0 ? fields["VERSION_ID"] : "unknown", Arch(machine)};
+}
+
+std::string HostName() {
+  std::array<char, HOST_NAME_MAX + 1> name{};
+  if (gethostname(name.data(), name.size() - 1) != 0) return {};
+  return name.data();
 }
 
 fs::path SystemStoreDirectory(std::string_view product) {

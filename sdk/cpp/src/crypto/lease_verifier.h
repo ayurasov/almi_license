@@ -65,6 +65,12 @@ class LeaseVerifier {
   [[nodiscard]] VerifyResult Verify(std::string_view token, const LeaseContext& context,
                                     std::int64_t now) const;
 
+  // Steps 1–8 only, for other signed objects of the issuer chain: alm-lic+jws (an offline
+  // answer) and alm-receipt+jws (a release receipt). claims are set when the JWS is valid.
+  [[nodiscard]] VerifyResult VerifySigned(std::string_view token, std::string_view typ,
+                                          const std::vector<std::string>& revoked_kids,
+                                          std::int64_t now) const;
+
  private:
   std::vector<TrustRoot> roots_;
 };

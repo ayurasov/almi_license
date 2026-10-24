@@ -168,7 +168,12 @@ jobs:
             build/bin/**/liblicense_module.so*
             build/bin/**/lm-demo
             build/bin/**/lm-demo.exe
+            build/bin/**/license_module_stub.dll
+            build/bin/**/liblicense_module_stub.so*
+            build/bin/**/lm-demo-stub
+            build/bin/**/lm-demo-stub.exe
             build/lib/**/license_module.lib
+            build/lib/**/license_module_stub.lib
             sdk/cpp/include/license_module.h
 
   # Leases signed by the server (issue_jws, a real activation) pass the two independent
@@ -198,6 +203,8 @@ jobs:
             server/uv.lock
             tools/almi-keytool/uv.lock
       - run: make cross-verify DL_BUILD=build
+      # The real module offline: lm-demo with the dev root writes .alk-req and applies .alk-lic.
+      - run: make offline-e2e DL_BUILD=build
 
   lint-dl:
     runs-on: ubuntu-24.04
