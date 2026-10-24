@@ -3,6 +3,98 @@ info:
   title: ALMI License Product API
   version: 1.0.0
 paths:
+  /api/admin/accounts:
+    get:
+      operationId: accounts_list
+      tags:
+      - accounts
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+          description: ''
+    post:
+      operationId: accounts_create
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedPassword'
+          description: ''
+  /api/admin/accounts/{username}:
+    patch:
+      operationId: accounts_update
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountUpdate'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+  /api/admin/accounts/{username}/password:
+    post:
+      operationId: accounts_reset_password
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - accounts
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedPassword'
+          description: ''
   /api/admin/activations:
     get:
       operationId: activations_list
@@ -951,6 +1043,44 @@ paths:
           description: No response body
 components:
   schemas:
+    Account:
+      type: object
+      properties:
+        username:
+          type: string
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        active:
+          type: boolean
+        locked_until:
+          type: string
+          format: date-time
+          nullable: true
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - active
+      - created_at
+      - last_login
+      - locked_until
+      - role
+      - username
+    AccountCreate:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 64
+        role:
+          $ref: '#/components/schemas/ManagedRoleEnum'
+      required:
+      - role
+      - username
     Activation:
       type: object
       properties:
@@ -1218,6 +1348,18 @@ components:
       - key
       - key_mask
       - license_id
+    IssuedPassword:
+      type: object
+      description: The temporary password is shown once; the server keeps only its
+        Argon2id hash.
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        password:
+          type: string
+      required:
+      - account
+      - password
     License:
       type: object
       properties:
@@ -1367,6 +1509,14 @@ components:
       required:
       - reason
       - until
+    ManagedRoleEnum:
+      enum:
+      - operator
+      - admin
+      type: string
+      description: |-
+        * `operator` - operator
+        * `admin` - admin
     Metric:
       type: object
       properties:
@@ -1398,6 +1548,13 @@ components:
       required:
       - code
       - name
+    PatchedAccountUpdate:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/ManagedRoleEnum'
+        active:
+          type: boolean
     PatchedCapabilityUpdate:
       type: object
       properties:

@@ -237,6 +237,28 @@ const en: typeof ru = {
       empty: 'The profile uses the default texts (document 5).',
     },
   },
+  users: {
+    title: 'Console users',
+    create: 'New user',
+    empty: 'No users.',
+    columns: { username: 'Login', role: 'Role', status: 'State', lastLogin: 'Last sign-in', createdAt: 'Created' },
+    role: { operator: 'Operator', admin: 'Administrator', customer_viewer: 'Customer viewer' },
+    status: { active: 'Active', blocked: 'Blocked', locked: 'Sign-in locked until {until}' },
+    block: 'Block',
+    unblock: 'Unblock',
+    reset: 'Reset password',
+    form: { username: 'Login', role: 'Role', save: 'Create', cancel: 'Cancel' },
+    confirmReset: 'Issue a new password to {username}? Current sessions will end.',
+    confirmBlock: 'Block {username}? The session ends at the next request.',
+    confirm: 'Confirm',
+    password: {
+      title: 'Password of {username}',
+      once: 'The password is shown once. Hand it to the user over a secure channel.',
+      close: 'I have saved the password',
+    },
+    saved: 'Saved',
+    never: 'Never',
+  },
 }
 
 export default en

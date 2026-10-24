@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/api/admin/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["accounts_list"];
+        put?: never;
+        post: operations["accounts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/accounts/{username}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["accounts_update"];
+        trace?: never;
+    };
+    "/api/admin/accounts/{username}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["accounts_reset_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/activations": {
         parameters: {
             query?: never;
@@ -429,6 +477,21 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Account: {
+            username: string;
+            role: components["schemas"]["RoleEnum"];
+            active: boolean;
+            /** Format: date-time */
+            locked_until: string | null;
+            /** Format: date-time */
+            last_login: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AccountCreate: {
+            username: string;
+            role: components["schemas"]["ManagedRoleEnum"];
+        };
         Activation: {
             activation_id: string;
             /** Format: uuid */
@@ -552,6 +615,11 @@ export interface components {
             key: string;
             key_mask: string;
         };
+        /** @description The temporary password is shown once; the server keeps only its Argon2id hash. */
+        IssuedPassword: {
+            account: components["schemas"]["Account"];
+            password: string;
+        };
         License: {
             /** Format: uuid */
             id: string;
@@ -616,6 +684,12 @@ export interface components {
             /** Format: date-time */
             until: string;
         };
+        /**
+         * @description * `operator` - operator
+         *     * `admin` - admin
+         * @enum {string}
+         */
+        ManagedRoleEnum: "operator" | "admin";
         Metric: {
             /** Format: uuid */
             readonly id: string;
@@ -629,6 +703,10 @@ export interface components {
             name: {
                 [key: string]: string;
             };
+        };
+        PatchedAccountUpdate: {
+            role?: components["schemas"]["ManagedRoleEnum"];
+            active?: boolean;
         };
         PatchedCapabilityUpdate: {
             name?: {
@@ -787,6 +865,98 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    accounts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"][];
+                };
+            };
+        };
+    };
+    accounts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["AccountCreate"];
+                "multipart/form-data": components["schemas"]["AccountCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedPassword"];
+                };
+            };
+        };
+    };
+    accounts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAccountUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedAccountUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedAccountUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+        };
+    };
+    accounts_reset_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedPassword"];
+                };
+            };
+        };
+    };
     activations_list: {
         parameters: {
             query?: {
