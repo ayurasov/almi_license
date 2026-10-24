@@ -277,6 +277,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/instance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/admin/instance: the deployment mode, readable without a session (E09-01). */
+        get: operations["instance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/licenses": {
         parameters: {
             query?: never;
@@ -732,6 +749,10 @@ export interface components {
             /** Format: uri */
             file: string;
         };
+        /** @description What the console needs before sign-in: the mode of this server (E09-01). */
+        Instance: {
+            mode: components["schemas"]["ModeEnum"];
+        };
         IssuedKey: {
             /** Format: uuid */
             license_id: string;
@@ -828,6 +849,12 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /**
+         * @description * `central` - central
+         *     * `local` - local
+         * @enum {string}
+         */
+        ModeEnum: "central" | "local";
         PatchedAccountUpdate: {
             role?: components["schemas"]["ManagedRoleEnum"];
             active?: boolean;
@@ -1518,6 +1545,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportReport"];
+                };
+            };
+        };
+    };
+    instance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instance"];
                 };
             };
         };

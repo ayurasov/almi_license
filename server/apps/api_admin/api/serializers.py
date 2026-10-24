@@ -351,3 +351,9 @@ class ArticleMappingWriteSerializer(serializers.Serializer[dict[str, Any]]):
 
 class ArticleMappingSerializer(ArticleMappingWriteSerializer):
     aa = serializers.CharField()
+
+
+class InstanceSerializer(serializers.Serializer[dict[str, Any]]):
+    """What the console needs before sign-in: the mode of this server (E09-01)."""
+
+    mode = serializers.ChoiceField(["central", "local"])
