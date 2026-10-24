@@ -11,6 +11,9 @@ export default defineConfig({
   plugins: [vue()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: { proxy: { '/api': { target: apiTarget, changeOrigin: false } } },
+  // Screens are loaded lazily: scan them up front, otherwise the dev server finds new
+  // dependencies on the first visit and reloads the page (it broke the first e2e sign-in).
+  optimizeDeps: { entries: ['index.html', 'src/views/**/*.vue', 'src/components/**/*.vue'] },
   preview: { proxy: { '/api': { target: apiTarget, changeOrigin: false } } },
   test: {
     environment: 'jsdom',

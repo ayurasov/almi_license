@@ -298,3 +298,56 @@ class IssuedPasswordSerializer(serializers.Serializer[dict[str, Any]]):
 
     account = AccountSerializer()
     password = serializers.CharField()
+
+
+class ImportUploadSerializer(serializers.Serializer[dict[str, Any]]):
+    file = serializers.FileField()
+
+
+class ImportRowSerializer(serializers.Serializer[dict[str, Any]]):
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        # "errors" and "fields" are attributes of DRF serializers, so the fields are listed here.
+        return {
+            "row": serializers.IntegerField(),
+            "status": serializers.ChoiceField(["new", "update", "skip", "error"]),
+            "errors": serializers.ListField(child=serializers.CharField()),
+            "fields": serializers.DictField(),
+        }
+
+
+class ImportPreviewSerializer(serializers.Serializer[dict[str, Any]]):
+    session_id = serializers.UUIDField()
+    filename = serializers.CharField()
+    rows = ImportRowSerializer(many=True)
+    summary = serializers.DictField(child=serializers.IntegerField())
+
+
+class ImportErrorSerializer(serializers.Serializer[dict[str, Any]]):
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        return {
+            "row": serializers.IntegerField(),
+            "errors": serializers.ListField(child=serializers.CharField()),
+        }
+
+
+class ImportReportSerializer(serializers.Serializer[dict[str, Any]]):
+    session_id = serializers.UUIDField()
+    created = serializers.IntegerField()
+    updated = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    customers_created = serializers.IntegerField()
+
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        declared = super().get_fields()
+        declared["errors"] = ImportErrorSerializer(many=True)
+        return declared
+
+
+class ArticleMappingWriteSerializer(serializers.Serializer[dict[str, Any]]):
+    product_id = serializers.UUIDField()
+    edition_id = serializers.UUIDField(allow_null=True, required=False, default=None)
+    metric_id = serializers.UUIDField()
+
+
+class ArticleMappingSerializer(ArticleMappingWriteSerializer):
+    aa = serializers.CharField()

@@ -16,8 +16,8 @@ from apps.licensing.domain import ImportFileError, key_hash, parse_lk_export
 from infra.clock import FrozenClock
 
 SAMPLE = Path(__file__).resolve().parents[1] / "fixtures" / "lk-export-sample.xlsx"
-INN = "7701234567"
-OTHER_INN = "7712345678"
+INN = "7701234560"
+OTHER_INN = "7712345671"
 
 pytestmark = pytest.mark.django_db
 
@@ -235,3 +235,63 @@ def test_row_limit(
     header = ["Серийный номер", "Код лицензии", "Артикул", "Количество", "ИНН", "Дата выдачи"]
     with pytest.raises(ImportFileError, match="больше 2 строк"):
         parse_lk_export(workbook(header, *[["x"] * 6] * 3), filename="x.xlsx", now=clock.now())
+
+
+# Confirmation (E06-03) -------------------------------------------------------------------------
+
+
+def test_apply_creates_customers_licenses_and_keys(preview: Any, clock: FrozenClock) -> None:
+    from apps.audit.domain import verify_chain
+    from apps.licensing.domain import apply_import
+    from apps.licensing.models import Customer, ExternalRef, ImportSession, License, LicenseKey
+
+    report = apply_import(preview.session_id, actor="user:op", now=clock.now())
+
+    assert (report.created, report.updated, report.skipped) == (16, 1, 1)
+    assert [e["row"] - 1 for e in report.errors] == list(range(19, 31))
+    assert License.objects.count() == 3 + 16
+    key = LicenseKey.objects.get(key_hash=key_hash(sample_key(1)))
+    assert (key.format, key.key_mask, key.article) == (
+        "legacy",
+        "2601-****-****-0001",
+        "01-00-00-0-00-03-00-00-00",
+    )
+    assert key.license.customer.inn == INN and key.license.limit == 10
+    assert key.license.valid_until == datetime(2027, 1, 31, 20, 59, 59, tzinfo=UTC)
+    assert ExternalRef.objects.filter(license=key.license, system="lk").exists()
+    updated = LicenseKey.objects.get(key_hash=key_hash(sample_key(17))).license
+    assert updated.rights_version == 2
+    assert Customer.objects.filter(inn=INN).count() == 1
+    assert ImportSession.objects.get(id=preview.session_id).status == "applied"
+    assert verify_chain()
+
+
+def test_apply_is_idempotent_by_key(preview: Any, clock: FrozenClock) -> None:
+    from apps.licensing.domain import apply_import
+    from infra.errors import DomainError
+
+    apply_import(preview.session_id, actor="user:op", now=clock.now())
+    with pytest.raises(DomainError):
+        apply_import(preview.session_id, actor="user:op", now=clock.now())
+
+    again = parse_lk_export(SAMPLE.read_bytes(), filename="again.xlsx", now=clock.now())
+    assert again.summary == {"new": 0, "update": 0, "skip": 18, "error": 12}
+    report = apply_import(again.session_id, actor="user:op", now=clock.now())
+    assert (report.created, report.updated, report.skipped) == (0, 0, 18)
+
+
+def test_apply_rechecks_rows_and_refuses_an_old_preview(
+    catalog: dict[str, Any], clock: FrozenClock
+) -> None:
+    from apps.licensing.domain import apply_import
+    from infra.errors import DomainError
+
+    first = parse_lk_export(SAMPLE.read_bytes(), filename="a.xlsx", now=clock.now())
+    second = parse_lk_export(SAMPLE.read_bytes(), filename="b.xlsx", now=clock.now())
+    apply_import(first.session_id, actor="user:op", now=clock.now())
+    report = apply_import(second.session_id, actor="user:op", now=clock.now())
+    assert report.created == 0 and report.skipped == first.summary["new"]
+
+    old = parse_lk_export(SAMPLE.read_bytes(), filename="c.xlsx", now=clock.now())
+    with pytest.raises(DomainError):
+        apply_import(old.session_id, actor="user:op", now=clock.now() + timedelta(hours=25))

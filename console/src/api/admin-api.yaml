@@ -173,6 +173,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/Activation'
           description: ''
+  /api/admin/article-mappings:
+    get:
+      operationId: mappings_list
+      tags:
+      - article-mappings
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleMapping'
+          description: ''
+  /api/admin/article-mappings/{aa}:
+    put:
+      operationId: mappings_save
+      parameters:
+      - in: path
+        name: aa
+        schema:
+          type: string
+        required: true
+      tags:
+      - article-mappings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleMappingWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleMappingWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleMappingWrite'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleMapping'
+          description: ''
   /api/admin/catalog/metrics:
     get:
       operationId: metrics_list
@@ -509,6 +557,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/admin/imports:
+    post:
+      operationId: imports_create
+      description: Preview of the XLSX export; nothing is written to licenses until
+        the confirmation.
+      tags:
+      - imports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+          description: ''
+  /api/admin/imports/{session_id}/apply:
+    post:
+      operationId: imports_apply
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - imports
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportReport'
           description: ''
   /api/admin/licenses:
     get:
@@ -1154,6 +1244,41 @@ components:
         * `released_auto` - released_auto
         * `revoked` - revoked
         * `conflict` - conflict
+    ArticleMapping:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+        aa:
+          type: string
+      required:
+      - aa
+      - metric_id
+      - product_id
+    ArticleMappingWrite:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+      required:
+      - metric_id
+      - product_id
     Capability:
       type: object
       properties:
@@ -1333,6 +1458,103 @@ components:
       - at
       - data
       - seq
+    ImportError:
+      type: object
+      properties:
+        row:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - errors
+      - row
+    ImportPreview:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRow'
+        summary:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - filename
+      - rows
+      - session_id
+      - summary
+    ImportReport:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        created:
+          type: integer
+        updated:
+          type: integer
+        skipped:
+          type: integer
+        customers_created:
+          type: integer
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportError'
+      required:
+      - created
+      - customers_created
+      - errors
+      - session_id
+      - skipped
+      - updated
+    ImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ImportRowStatusEnum'
+        errors:
+          type: array
+          items:
+            type: string
+        fields:
+          type: object
+          additionalProperties: {}
+      required:
+      - errors
+      - fields
+      - row
+      - status
+    ImportRowStatusEnum:
+      enum:
+      - new
+      - update
+      - skip
+      - error
+      type: string
+      description: |-
+        * `new` - new
+        * `update` - update
+        * `skip` - skip
+        * `error` - error
+    ImportUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+      required:
+      - file
     IssuedKey:
       type: object
       properties:

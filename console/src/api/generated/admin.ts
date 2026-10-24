@@ -84,6 +84,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/article-mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mappings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/article-mappings/{aa}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["mappings_save"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/catalog/metrics": {
         parameters: {
             query?: never;
@@ -210,6 +242,39 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["customers_update"];
+        trace?: never;
+    };
+    "/api/admin/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Preview of the XLSX export; nothing is written to licenses until the confirmation. */
+        post: operations["imports_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/imports/{session_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["imports_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/admin/licenses": {
@@ -526,6 +591,23 @@ export interface components {
          * @enum {string}
          */
         ActivationStatusEnum: "active" | "released" | "released_auto" | "revoked" | "conflict";
+        ArticleMapping: {
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            edition_id?: string | null;
+            /** Format: uuid */
+            metric_id: string;
+            aa: string;
+        };
+        ArticleMappingWrite: {
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            edition_id?: string | null;
+            /** Format: uuid */
+            metric_id: string;
+        };
         Capability: {
             /** Format: uuid */
             readonly id: string;
@@ -607,6 +689,48 @@ export interface components {
             data: {
                 [key: string]: unknown;
             };
+        };
+        ImportError: {
+            row: number;
+            errors: string[];
+        };
+        ImportPreview: {
+            /** Format: uuid */
+            session_id: string;
+            filename: string;
+            rows: components["schemas"]["ImportRow"][];
+            summary: {
+                [key: string]: number;
+            };
+        };
+        ImportReport: {
+            /** Format: uuid */
+            session_id: string;
+            created: number;
+            updated: number;
+            skipped: number;
+            customers_created: number;
+            errors: components["schemas"]["ImportError"][];
+        };
+        ImportRow: {
+            row: number;
+            status: components["schemas"]["ImportRowStatusEnum"];
+            errors: string[];
+            fields: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * @description * `new` - new
+         *     * `update` - update
+         *     * `skip` - skip
+         *     * `error` - error
+         * @enum {string}
+         */
+        ImportRowStatusEnum: "new" | "update" | "skip" | "error";
+        ImportUpload: {
+            /** Format: uri */
+            file: string;
         };
         IssuedKey: {
             /** Format: uuid */
@@ -1010,6 +1134,52 @@ export interface operations {
             };
         };
     };
+    mappings_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleMapping"][];
+                };
+            };
+        };
+    };
+    mappings_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aa: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArticleMappingWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["ArticleMappingWrite"];
+                "multipart/form-data": components["schemas"]["ArticleMappingWrite"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleMapping"];
+                };
+            };
+        };
+    };
     metrics_list: {
         parameters: {
             query?: never;
@@ -1304,6 +1474,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    imports_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ImportUpload"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+        };
+    };
+    imports_apply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReport"];
                 };
             };
         };
