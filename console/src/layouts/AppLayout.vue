@@ -7,15 +7,17 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import { SECTIONS } from '@/router'
+import { useInstanceStore } from '@/stores/instance'
 import { useSessionStore } from '@/stores/session'
 
 const { t } = useI18n()
 const router = useRouter()
 const session = useSessionStore()
+const instance = useInstanceStore()
 
 // Console users are managed by an administrator only (E07-09); the server checks it too.
 const items = computed<MenuItem[]>(() =>
-  SECTIONS.filter((name) => name !== 'users' || session.user?.role === 'admin').map((name) => ({
+  SECTIONS.filter((name) => (name !== 'users' || session.user?.role === 'admin') && instance.allows(name)).map((name) => ({
     label: t(`menu.${name}`),
     command: () => void router.push({ name }),
   })),

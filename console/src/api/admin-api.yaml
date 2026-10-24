@@ -600,6 +600,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ImportReport'
           description: ''
+  /api/admin/instance:
+    get:
+      operationId: instance_get
+      description: 'GET /api/admin/instance: the deployment mode, readable without
+        a session (E09-01).'
+      tags:
+      - instance
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+          description: ''
   /api/admin/licenses:
     get:
       operationId: licenses_list
@@ -1555,6 +1571,15 @@ components:
           format: uri
       required:
       - file
+    Instance:
+      type: object
+      description: 'What the console needs before sign-in: the mode of this server
+        (E09-01).'
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+      required:
+      - mode
     IssuedKey:
       type: object
       properties:
@@ -1770,6 +1795,14 @@ components:
       required:
       - code
       - name
+    ModeEnum:
+      enum:
+      - central
+      - local
+      type: string
+      description: |-
+        * `central` - central
+        * `local` - local
     PatchedAccountUpdate:
       type: object
       properties:

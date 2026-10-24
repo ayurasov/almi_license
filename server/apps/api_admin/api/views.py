@@ -1,8 +1,10 @@
 """Admin API views: parse, call the domain, shape the response (AGENTS.md, rule 2)."""
 
 from dataclasses import asdict
+from typing import Any
 from uuid import UUID
 
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
@@ -19,6 +21,7 @@ from apps.api_admin.api.serializers import (
     CustomerQuerySerializer,
     CustomerSerializer,
     CustomerWriteSerializer,
+    InstanceSerializer,
     SessionRequestSerializer,
     SessionSerializer,
 )
@@ -144,3 +147,14 @@ class CustomerView(APIView):
             ip=request.META.get("REMOTE_ADDR"),
         )
         return Response(CustomerSerializer(asdict(customer)).data)
+
+
+class InstanceView(APIView):
+    """GET /api/admin/instance: the deployment mode, readable without a session (E09-01)."""
+
+    authentication_classes: list[type[Any]] = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses={200: InstanceSerializer}, operation_id="instance_get")
+    def get(self, request: Request) -> Response:
+        return Response({"mode": settings.DEPLOYMENT_MODE})

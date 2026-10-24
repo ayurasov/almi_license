@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 import AppLayout from '@/layouts/AppLayout.vue'
+import { useInstanceStore } from '@/stores/instance'
 import { useSessionStore } from '@/stores/session'
 
 export const SECTIONS = [
@@ -50,5 +51,8 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return true
   const session = useSessionStore()
   if (!session.checked) await session.load()
-  return session.user ? true : { name: 'login', query: { next: to.fullPath } }
+  if (!session.user) return { name: 'login', query: { next: to.fullPath } }
+  const instance = useInstanceStore()
+  await instance.load()
+  return typeof to.name === 'string' && !instance.allows(to.name) ? { name: 'licenses' } : true
 })
