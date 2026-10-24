@@ -15,7 +15,9 @@ export const SECTIONS = [
   'users',
 ] as const
 
-const sections: RouteRecordRaw[] = SECTIONS.filter((name) => name !== 'customers').map((name) => ({
+// Sections without their screen yet show a placeholder.
+const READY = new Set(['customers', 'licenses', 'activations'])
+const sections: RouteRecordRaw[] = SECTIONS.filter((name) => !READY.has(name)).map((name) => ({
   path: name,
   name,
   component: () => import('@/views/SectionPlaceholder.vue'),
@@ -30,6 +32,9 @@ export const routes: RouteRecordRaw[] = [
     children: [
       { path: '', redirect: { name: 'customers' } },
       { path: 'customers', name: 'customers', component: () => import('@/views/CustomersView.vue') },
+      { path: 'licenses', name: 'licenses', component: () => import('@/views/LicensesView.vue') },
+      { path: 'licenses/:id', name: 'license', component: () => import('@/views/LicenseCardView.vue') },
+      { path: 'activations', name: 'activations', component: () => import('@/views/ActivationsView.vue') },
       ...sections,
     ],
   },
