@@ -272,3 +272,29 @@ class ProfileSerializer(serializers.Serializer[dict[str, Any]]):
 
 class ProfileSaveSerializer(serializers.Serializer[dict[str, Any]]):
     params = serializers.DictField()
+
+
+class AccountSerializer(serializers.Serializer[dict[str, Any]]):
+    username = serializers.CharField()
+    role = serializers.ChoiceField(["operator", "admin", "customer_viewer"])
+    active = serializers.BooleanField()
+    locked_until = serializers.DateTimeField(allow_null=True)
+    last_login = serializers.DateTimeField(allow_null=True)
+    created_at = serializers.DateTimeField()
+
+
+class AccountCreateSerializer(serializers.Serializer[dict[str, Any]]):
+    username = serializers.CharField(max_length=64)
+    role = serializers.ChoiceField(["operator", "admin"])
+
+
+class AccountUpdateSerializer(serializers.Serializer[dict[str, Any]]):
+    role = serializers.ChoiceField(["operator", "admin"], required=False)
+    active = serializers.BooleanField(required=False)
+
+
+class IssuedPasswordSerializer(serializers.Serializer[dict[str, Any]]):
+    """The temporary password is shown once; the server keeps only its Argon2id hash."""
+
+    account = AccountSerializer()
+    password = serializers.CharField()

@@ -113,5 +113,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ProductStatusEnum": ["active", "reserved", "deprecated"],
         "CapabilityStatusEnum": ["active", "deprecated"],
+        "ManagedRoleEnum": ["operator", "admin"],
+        "RoleEnum": ["operator", "admin", "customer_viewer"],
     },
 }

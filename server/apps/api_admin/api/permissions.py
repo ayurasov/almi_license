@@ -7,7 +7,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
-from apps.iam.domain import OPERATOR_ROLES, account_info
+from apps.iam.domain import ADMIN_ROLE, OPERATOR_ROLES, account_info
 
 
 class ConsoleSession(SessionAuthentication):
@@ -24,6 +24,17 @@ class IsOperator(BasePermission):
             return False
         account = account_info(user)
         return account is not None and account.role in OPERATOR_ROLES
+
+
+class IsAdmin(BasePermission):
+    """Console users are managed by an ALMI administrator only (E07-09)."""
+
+    def has_permission(self, request: Request, view: Any) -> bool:
+        user = request.user
+        if user is None or not user.is_authenticated:
+            return False
+        account = account_info(user)
+        return account is not None and account.role == ADMIN_ROLE
 
 
 class ConsoleSessionScheme(OpenApiAuthenticationExtension):

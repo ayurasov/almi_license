@@ -13,8 +13,12 @@ const { t } = useI18n()
 const router = useRouter()
 const session = useSessionStore()
 
+// Console users are managed by an administrator only (E07-09); the server checks it too.
 const items = computed<MenuItem[]>(() =>
-  SECTIONS.map((name) => ({ label: t(`menu.${name}`), command: () => void router.push({ name }) })),
+  SECTIONS.filter((name) => name !== 'users' || session.user?.role === 'admin').map((name) => ({
+    label: t(`menu.${name}`),
+    command: () => void router.push({ name }),
+  })),
 )
 
 async function signOut(): Promise<void> {
