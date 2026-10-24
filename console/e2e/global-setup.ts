@@ -7,6 +7,7 @@ export default function globalSetup(): void {
   const password = randomBytes(18).toString('base64url')
   const env = { ...process.env, DJANGO_SETTINGS_MODULE: 'almi_license.settings.dev', DEPLOYMENT_MODE: 'central' }
   execFileSync('uv', ['run', 'python', 'manage.py', 'migrate', '--noinput'], { cwd: '../server', env, stdio: 'ignore' })
+  execFileSync('uv', ['run', 'python', 'manage.py', 'loadcatalog'], { cwd: '../server', env, stdio: 'ignore' })
   execFileSync('uv', ['run', 'python', 'manage.py', 'create_account', '--username', username, '--role', 'operator'], {
     cwd: '../server',
     env: { ...env, CONSOLE_PASSWORD: password },
