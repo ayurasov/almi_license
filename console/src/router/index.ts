@@ -14,10 +14,11 @@ export const SECTIONS = [
   'stats',
   'audit',
   'users',
+  'servers',
 ] as const
 
 // Sections without their screen yet show a placeholder.
-const READY = new Set(['customers', 'licenses', 'activations', 'catalog', 'profiles', 'import', 'users'])
+const READY = new Set(['customers', 'licenses', 'activations', 'catalog', 'profiles', 'import', 'users', 'servers'])
 const sections: RouteRecordRaw[] = SECTIONS.filter((name) => !READY.has(name)).map((name) => ({
   path: name,
   name,
@@ -39,6 +40,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'catalog', name: 'catalog', component: () => import('@/views/CatalogView.vue') },
       { path: 'profiles', name: 'profiles', component: () => import('@/views/ProfilesView.vue') },
       { path: 'import', name: 'import', component: () => import('@/views/ImportView.vue') },
+      { path: 'servers', name: 'servers', component: () => import('@/views/ServersView.vue') },
       { path: 'users', name: 'users', component: () => import('@/views/UsersView.vue') },
       ...sections,
     ],

@@ -25,20 +25,11 @@ class LicenseRecord:
     extra_capabilities: tuple[str, ...]
     customer_id: UUID
     customer_name: str
+    metric_id: UUID | None = None
+    updated_at: datetime | None = None
 
 
-def license_id_by_key_hash(key_hash: str) -> UUID | None:
-    """One query whether or not the key exists (no timing difference, prompt I2-04)."""
-    return LicenseKey.objects.filter(key_hash=key_hash).values_list("license_id", flat=True).first()
-
-
-def lock_license(license_id: UUID) -> LicenseRecord:
-    """SELECT … FOR UPDATE of the license row; call inside transaction.atomic()."""
-    row = (
-        License.objects.select_for_update(of=("self",))
-        .select_related("customer")
-        .get(id=license_id)
-    )
+def _record(row: License) -> LicenseRecord:
     return LicenseRecord(
         id=row.id,
         product_id=row.product_id,
@@ -56,4 +47,39 @@ def lock_license(license_id: UUID) -> LicenseRecord:
         extra_capabilities=tuple(row.extra_capabilities),
         customer_id=row.customer_id,
         customer_name=row.customer.name,
+        metric_id=row.metric_id,
+        updated_at=row.updated_at,
     )
+
+
+def license_records(license_ids: list[UUID]) -> list[LicenseRecord]:
+    """Licenses without a lock, for snapshots such as a local server package (E09-02)."""
+    rows = License.objects.select_related("customer").filter(id__in=license_ids).order_by("id")
+    return [_record(row) for row in rows]
+
+
+@dataclass(frozen=True)
+class KeyRecord:
+    key_hash: str
+    key_mask: str
+    license_id: UUID
+
+
+def keys_of(license_ids: list[UUID]) -> list[KeyRecord]:
+    rows = LicenseKey.objects.filter(license_id__in=license_ids).order_by("key_hash")
+    return [KeyRecord(r.key_hash, r.key_mask, r.license_id) for r in rows]
+
+
+def license_id_by_key_hash(key_hash: str) -> UUID | None:
+    """One query whether or not the key exists (no timing difference, prompt I2-04)."""
+    return LicenseKey.objects.filter(key_hash=key_hash).values_list("license_id", flat=True).first()
+
+
+def lock_license(license_id: UUID) -> LicenseRecord:
+    """SELECT … FOR UPDATE of the license row; call inside transaction.atomic()."""
+    row = (
+        License.objects.select_for_update(of=("self",))
+        .select_related("customer")
+        .get(id=license_id)
+    )
+    return _record(row)

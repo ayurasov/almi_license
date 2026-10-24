@@ -17,7 +17,14 @@ from apps.licensing.domain.import_lk import (
 )
 from apps.licensing.domain.inn import inn_is_valid
 from apps.licensing.domain.keys import InvalidKeyFormat, key_hash, key_mask, normalize_key
-from apps.licensing.domain.licenses import LicenseRecord, license_id_by_key_hash, lock_license
+from apps.licensing.domain.licenses import (
+    KeyRecord,
+    LicenseRecord,
+    keys_of,
+    license_id_by_key_hash,
+    license_records,
+    lock_license,
+)
 from apps.licensing.domain.management import (
     IssuedKey,
     LicenseData,
@@ -64,7 +71,10 @@ __all__ = [
     "ImportRow",
     "parse_lk_export",
     "InvalidKeyFormat",
+    "KeyRecord",
     "LicenseRecord",
+    "keys_of",
+    "license_records",
     "key_hash",
     "key_mask",
     "license_id_by_key_hash",

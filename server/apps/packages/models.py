@@ -30,6 +30,13 @@ class LocalServer(UUIDModel):
     last_package_seq = models.PositiveIntegerField(default=0)
     last_report_seq = models.PositiveIntegerField(default=0)
     last_seen_at = models.DateTimeField(null=True, blank=True)
+    registration_code_hash = models.CharField(
+        max_length=64, blank=True, default="", help_text="SHA-256 одноразового кода (E09-02)"
+    )
+    registration_code_expires_at = models.DateTimeField(null=True, blank=True)
+    host_fingerprint = models.JSONField(default=dict, blank=True)
+    version = models.CharField(max_length=64, blank=True, default="")
+    registered_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField()
 
     class Meta:
@@ -71,7 +78,8 @@ class Package(UUIDModel):
     seq = models.PositiveIntegerField()
     issued_at = models.DateTimeField()
     valid_until = models.DateTimeField()
-    hash = models.CharField(max_length=64)
+    hash = models.CharField(max_length=64, help_text="SHA-256 снимка прав без seq и дат")
+    token = models.TextField(blank=True, default="", help_text="JWS alm-package+jws")
 
     class Meta:
         constraints = [

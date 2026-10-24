@@ -8,7 +8,7 @@ import type { components } from '@/api/generated/admin'
 export type Instance = components['schemas']['Instance']
 
 // Sections served by the central server only; on a local server they come with the package.
-export const CENTRAL_SECTIONS = new Set(['catalog', 'profiles', 'import'])
+export const CENTRAL_SECTIONS = new Set(['catalog', 'profiles', 'import', 'servers'])
 
 export const useInstanceStore = defineStore('instance', () => {
   const instance = ref<Instance | null>(null)

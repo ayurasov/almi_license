@@ -24,6 +24,7 @@ from apps.licensing.domain import (
     license_id_by_key_hash,
     lock_license,
 )
+from apps.packages.domain import allocated_seats
 from apps.policy.domain import (
     LicenseFacts,
     PolicyParams,
@@ -128,8 +129,11 @@ def components(fingerprint: dict[str, Any]) -> dict[str, str]:
 
 
 def _take_seat(terms: Terms) -> bool:
-    """in_reserve for the new activation, or seats_exhausted (section 7.4 of document 1)."""
-    limit = terms.license.limit
+    """in_reserve for the new activation, or seats_exhausted (section 7.4 of document 1).
+
+    Seats handed over to local servers are not available on this server (E09-02).
+    """
+    limit = terms.license.limit - allocated_seats(terms.license.id)
     reserve = math.ceil(limit * terms.reserve_pct / 100)
     used = Activation.objects.filter(
         license_id=terms.license.id, status=ActivationStatus.ACTIVE
