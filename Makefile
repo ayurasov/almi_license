@@ -40,9 +40,9 @@ down: ## Stop the dev environment (data volume is kept)
 up-local: ## Start the dev environment with DEPLOYMENT_MODE=local
 	$(MAKE) up DEPLOYMENT_MODE=local
 
-seed: ## Apply migrations and load the seed-minimal data set
+seed: ## Apply migrations and load the initial catalog (fixtures/catalog-v1.json)
 	$(COMPOSE) exec -T api python manage.py migrate --noinput
-	@echo "seed-minimal: not implemented (data set comes with the data model, I1-03)"
+	$(COMPOSE) exec -T api python manage.py loadcatalog
 
 test: test-server test-console test-dl test-keytool ## Run all tests
 
