@@ -84,7 +84,32 @@ def list_products() -> list[dict[str, Any]]:
     return result
 
 
+from apps.catalog.domain.admin import (  # noqa: E402  (admin services use the models above)
+    add_capability,
+    create_metric,
+    create_product,
+    list_metrics,
+    list_profiles,
+    product_details,
+    profile_versions,
+    save_edition,
+    save_profile,
+    update_capability,
+    update_product,
+)
+
 __all__ = [
+    "add_capability",
+    "create_metric",
+    "create_product",
+    "list_metrics",
+    "list_profiles",
+    "product_details",
+    "profile_versions",
+    "save_edition",
+    "save_profile",
+    "update_capability",
+    "update_product",
     "ProductInfo",
     "ProfileNotFound",
     "ProfileVersion",

@@ -36,6 +36,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/catalog/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["metrics_list"];
+        put?: never;
+        post: operations["metrics_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["products_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["products_update"];
+        trace?: never;
+    };
+    "/api/admin/catalog/products/{product_id}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["capabilities_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/products/{product_id}/capabilities/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["capabilities_update"];
+        trace?: never;
+    };
+    "/api/admin/catalog/products/{product_id}/editions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["editions_save"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/customers": {
         parameters: {
             query?: never;
@@ -276,6 +372,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["profiles_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/profiles/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Versions of the profile, newest first. */
+        get: operations["profiles_versions"];
+        put?: never;
+        /** @description A new version of the profile (or the first one); unchanged parameters add nothing. */
+        post: operations["profiles_save"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/session": {
         parameters: {
             query?: never;
@@ -333,6 +463,27 @@ export interface components {
          * @enum {string}
          */
         ActivationStatusEnum: "active" | "released" | "released_auto" | "revoked" | "conflict";
+        Capability: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name?: {
+                [key: string]: string;
+            };
+            status?: components["schemas"]["CapabilityStatusEnum"];
+        };
+        CapabilityCreate: {
+            code: string;
+            name?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description * `active` - active
+         *     * `deprecated` - deprecated
+         * @enum {string}
+         */
+        CapabilityStatusEnum: "active" | "deprecated";
         Customer: {
             /** Format: uuid */
             readonly id: string;
@@ -367,6 +518,22 @@ export interface components {
             name: {
                 [key: string]: string;
             };
+        };
+        EditionDetails: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name?: {
+                [key: string]: string;
+            };
+            base_capabilities?: string[];
+        };
+        EditionSave: {
+            code: string;
+            name?: {
+                [key: string]: string;
+            };
+            base_capabilities?: string[];
         };
         HistoryEvent: {
             seq: number;
@@ -449,12 +616,39 @@ export interface components {
             /** Format: date-time */
             until: string;
         };
+        Metric: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name: {
+                [key: string]: string;
+            };
+        };
+        MetricCreate: {
+            code: string;
+            name: {
+                [key: string]: string;
+            };
+        };
+        PatchedCapabilityUpdate: {
+            name?: {
+                [key: string]: string;
+            };
+            status?: components["schemas"]["CapabilityStatusEnum"];
+        };
         /** @description Fields an operator sends; checks of values are in licensing.domain (AGENTS.md, rule 2). */
         PatchedCustomerWrite: {
             name?: string;
             inn?: string;
             external_id?: string;
             status?: string;
+        };
+        PatchedProductUpdate: {
+            name?: {
+                [key: string]: string;
+            };
+            status?: components["schemas"]["ProductStatusEnum"];
+            default_profile_code?: string;
         };
         PatchedSettings: {
             limit?: number;
@@ -474,6 +668,53 @@ export interface components {
             default_metric_id: string;
             default_metric: string;
             editions: components["schemas"]["Edition"][];
+        };
+        ProductCreate: {
+            code: string;
+            name: {
+                [key: string]: string;
+            };
+            subject_type: components["schemas"]["SubjectTypeEnum"];
+            /** Format: uuid */
+            default_metric_id: string;
+            /** @default  */
+            default_profile_code: string;
+        };
+        ProductDetails: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: {
+                [key: string]: string;
+            };
+            status: components["schemas"]["ProductStatusEnum"];
+            subject_type: components["schemas"]["SubjectTypeEnum"];
+            /** Format: uuid */
+            default_metric_id: string;
+            default_profile_code: string;
+            capabilities: components["schemas"]["Capability"][];
+            editions: components["schemas"]["EditionDetails"][];
+        };
+        /**
+         * @description * `active` - active
+         *     * `reserved` - reserved
+         *     * `deprecated` - deprecated
+         * @enum {string}
+         */
+        ProductStatusEnum: "active" | "reserved" | "deprecated";
+        Profile: {
+            code: string;
+            version: number;
+            params: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        ProfileSave: {
+            params: {
+                [key: string]: unknown;
+            };
         };
         Reason: {
             reason: string;
@@ -500,6 +741,13 @@ export interface components {
             username: string;
             password: string;
         };
+        /**
+         * @description * `device` - device
+         *     * `server_instance` - server_instance
+         *     * `os_node` - os_node
+         * @enum {string}
+         */
+        SubjectTypeEnum: "device" | "server_instance" | "os_node";
         Transfer: {
             reason: string;
             /** Format: uuid */
@@ -588,6 +836,205 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Activation"];
+                };
+            };
+        };
+    };
+    metrics_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Metric"][];
+                };
+            };
+        };
+    };
+    metrics_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetricCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["MetricCreate"];
+                "multipart/form-data": components["schemas"]["MetricCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Metric"];
+                };
+            };
+        };
+    };
+    products_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProductCreate"];
+                "multipart/form-data": components["schemas"]["ProductCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetails"];
+                };
+            };
+        };
+    };
+    products_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetails"];
+                };
+            };
+        };
+    };
+    products_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedProductUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedProductUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedProductUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetails"];
+                };
+            };
+        };
+    };
+    capabilities_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapabilityCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["CapabilityCreate"];
+                "multipart/form-data": components["schemas"]["CapabilityCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetails"];
+                };
+            };
+        };
+    };
+    capabilities_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCapabilityUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCapabilityUpdate"];
+                "multipart/form-data": components["schemas"]["PatchedCapabilityUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetails"];
+                };
+            };
+        };
+    };
+    editions_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditionSave"];
+                "application/x-www-form-urlencoded": components["schemas"]["EditionSave"];
+                "multipart/form-data": components["schemas"]["EditionSave"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetails"];
                 };
             };
         };
@@ -1032,6 +1479,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Product"][];
+                };
+            };
+        };
+    };
+    profiles_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Profile"][];
+                };
+            };
+        };
+    };
+    profiles_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Profile"][];
+                };
+            };
+        };
+    };
+    profiles_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileSave"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProfileSave"];
+                "multipart/form-data": components["schemas"]["ProfileSave"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Profile"];
                 };
             };
         };
