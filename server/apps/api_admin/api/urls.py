@@ -7,6 +7,7 @@ from apps.api_admin.api import imports as imp
 from apps.api_admin.api import licenses as lic
 from apps.api_admin.api import local as loc
 from apps.api_admin.api import servers as srv
+from apps.api_admin.api import stats as sta
 from apps.api_admin.api.views import CustomersView, CustomerView, InstanceView, SessionView
 from infra.modes import central_only, local_only
 
@@ -57,6 +58,8 @@ urlpatterns = [
     path("setup", local_only(loc.SetupView.as_view())),
     path("package", local_only(loc.PackageUploadView.as_view())),
     path("package/sync", local_only(loc.PackageSyncView.as_view())),
+    path("stats", sta.StatsView.as_view()),
+    path("stats/export", sta.StatsExportView.as_view()),
     path("accounts", acc.AccountsView.as_view()),
     path("accounts/<str:username>", acc.AccountView.as_view()),
     path("accounts/<str:username>/password", acc.AccountPasswordView.as_view()),

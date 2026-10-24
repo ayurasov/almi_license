@@ -419,3 +419,41 @@ class SetupRequestSerializer(serializers.Serializer[dict[str, Any]]):
 class SetupResultSerializer(serializers.Serializer[dict[str, Any]]):
     status = LocalStatusSerializer()
     request_file = AlkFileSerializer(allow_null=True)
+
+
+class StatsQuerySerializer(serializers.Serializer[dict[str, Any]]):
+    customer_id = serializers.UUIDField(required=False)
+    product_id = serializers.UUIDField(required=False)
+
+
+class LicenseStatsSerializer(serializers.Serializer[dict[str, Any]]):
+    license_id = serializers.UUIDField()
+    customer_id = serializers.UUIDField()
+    customer_name = serializers.CharField()
+    product = serializers.CharField()
+    type = serializers.CharField()
+    status = serializers.CharField()
+    limit = serializers.IntegerField()
+    active = serializers.IntegerField()
+    in_reserve = serializers.IntegerField()
+    free = serializers.IntegerField()
+    released_auto = serializers.IntegerField()
+    conflicts = serializers.IntegerField()
+    valid_until = serializers.DateTimeField(allow_null=True)
+    last_seen_at = serializers.DateTimeField(allow_null=True)
+    by_version = serializers.DictField(child=serializers.IntegerField())
+    by_os = serializers.DictField(child=serializers.IntegerField())
+
+
+class StatsSerializer(serializers.Serializer[dict[str, Any]]):
+    licenses = serializers.IntegerField()
+    limit = serializers.IntegerField()
+    active = serializers.IntegerField()
+    in_reserve = serializers.IntegerField()
+    free = serializers.IntegerField()
+    released_auto = serializers.IntegerField()
+    conflicts = serializers.IntegerField()
+    last_seen_at = serializers.DateTimeField(allow_null=True)
+    by_version = serializers.DictField(child=serializers.IntegerField())
+    by_os = serializers.DictField(child=serializers.IntegerField())
+    rows = LicenseStatsSerializer(many=True)

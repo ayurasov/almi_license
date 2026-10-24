@@ -342,6 +342,19 @@ const en: typeof ru = {
     upToDate: 'No newer package',
     none: 'No package yet.',
   },
+  stats: {
+    title: 'Statistics',
+    customer: 'Customer',
+    product: 'Product',
+    all: 'All',
+    export: 'Export to XLSX',
+    tiles: { licenses: 'Licenses', limit: 'Seats', active: 'Activated', free: 'Free', reserve: 'In reserve', auto: 'Released automatically', lastSeen: 'Last contact' },
+    columns: { customer: 'Customer', product: 'Product', limit: 'Seats', active: 'Active', reserve: 'Reserve', free: 'Free', auto: 'Auto released', lastSeen: 'Last contact' },
+    versions: 'Product versions',
+    systems: 'Operating systems',
+    empty: 'No data for the chosen filter.',
+    never: '—',
+  },
 }
 
 export default en

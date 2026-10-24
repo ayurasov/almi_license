@@ -116,19 +116,14 @@ def _reason(reason: str) -> str:
     return text
 
 
-def list_licenses(
+def _filtered(
     *,
     product_id: UUID | None = None,
     customer_id: UUID | None = None,
     status: str = "",
     expires_before: datetime | None = None,
     expires_after: datetime | None = None,
-    ordering: str = "valid_until",
-    page: int = 1,
-    page_size: int = 20,
-) -> LicensePage:
-    if ordering not in ORDERINGS or not 1 <= page_size <= MAX_PAGE_SIZE or page < 1:
-        raise _invalid({})
+) -> Any:
     if status and status not in LicenseStatus.values:
         raise _invalid({"status": ["Недопустимое значение."]})
     rows = License.objects.select_related("customer").prefetch_related("keys")
@@ -142,9 +137,41 @@ def list_licenses(
         rows = rows.filter(valid_until__lt=expires_before)
     if expires_after:
         rows = rows.filter(valid_until__gte=expires_after)
-    rows = rows.order_by(ordering, "id")
+    return rows
+
+
+def list_licenses(
+    *,
+    product_id: UUID | None = None,
+    customer_id: UUID | None = None,
+    status: str = "",
+    expires_before: datetime | None = None,
+    expires_after: datetime | None = None,
+    ordering: str = "valid_until",
+    page: int = 1,
+    page_size: int = 20,
+) -> LicensePage:
+    if ordering not in ORDERINGS or not 1 <= page_size <= MAX_PAGE_SIZE or page < 1:
+        raise _invalid({})
+    rows = _filtered(
+        product_id=product_id,
+        customer_id=customer_id,
+        status=status,
+        expires_before=expires_before,
+        expires_after=expires_after,
+    ).order_by(ordering, "id")
     start = (page - 1) * page_size
     return LicensePage(rows.count(), [_data(r) for r in rows[start : start + page_size]])
+
+
+def find_licenses(
+    *, product_id: UUID | None = None, customer_id: UUID | None = None, limit: int = 10_000
+) -> list[LicenseData]:
+    """All licences of the filters, for statistics and its export (E10-01, E10-02)."""
+    rows = _filtered(product_id=product_id, customer_id=customer_id).order_by(
+        "customer__name", "id"
+    )
+    return [_data(r) for r in rows[:limit]]
 
 
 def get_license(license_id: UUID) -> LicenseData:

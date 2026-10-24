@@ -39,11 +39,15 @@ def test_events_form_a_hash_chain() -> None:
 
 
 def test_tampering_breaks_the_chain() -> None:
-    from apps.audit.models import AuditEvent
+    from django.db import connection
 
     record("product", "activation.created", "activation", "act_1", at=AT)
     record("product", "activation.created", "activation", "act_2", at=AT)
-    AuditEvent.objects.filter(seq=1).update(object_id="act_X")
+    # The append-only trigger (E10-03) has to be switched off to tamper with a row at all.
+    with connection.cursor() as cursor:
+        cursor.execute("ALTER TABLE audit_auditevent DISABLE TRIGGER audit_auditevent_append_only")
+        cursor.execute("UPDATE audit_auditevent SET object_id = 'act_X' WHERE seq = 1")
+        cursor.execute("ALTER TABLE audit_auditevent ENABLE TRIGGER audit_auditevent_append_only")
 
     with pytest.raises(ValueError, match="seq 1"):
         verify_chain()
