@@ -359,10 +359,10 @@ def test_idempotency_key_replays_the_first_response(licensed: Any, issuer: Any) 
 
     body = request_body()
     first = signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID), PATH, body, dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, body, dev_device_key(), "device"
     )
     again = signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID), PATH, body, dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, body, dev_device_key(), "device"
     )
 
     assert again.status_code == first.status_code == 201
@@ -374,7 +374,7 @@ def test_idempotency_key_with_another_body_or_malformed(licensed: Any, issuer: A
     from django.test import Client as _Client
 
     signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID),
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID),
         PATH,
         request_body(),
         dev_device_key(),
@@ -382,11 +382,11 @@ def test_idempotency_key_with_another_body_or_malformed(licensed: Any, issuer: A
     )
     other = request_body() | {"client_time": "2026-11-02T08:15:59Z"}
     conflict = signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID), PATH, other, dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, other, dev_device_key(), "device"
     )
     assert conflict.status_code == 409 and code_of(conflict) == "idempotency_conflict"
     bad = signed_post(
-        _Client(HTTP_REPEAT_ID="k1"), PATH, request_body(), dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY="k1"), PATH, request_body(), dev_device_key(), "device"
     )
     assert bad.status_code == 400 and code_of(bad) == "invalid_request"
 
@@ -398,17 +398,17 @@ def test_idempotent_error_is_replayed_and_window_ends(
 
     body = request_body(product={"code": "alteros"})
     first = signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID), PATH, body, dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, body, dev_device_key(), "device"
     )
     again = signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID), PATH, body, dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, body, dev_device_key(), "device"
     )
     assert first.status_code == again.status_code == 403
     assert again["Content-Type"] == "application/problem+json"
     clock.advance(timedelta(hours=25))
     later = request_body(product={"code": "alteros"}) | {"client_time": "2026-11-03T09:15:00Z"}
     fresh = signed_post(
-        _Client(HTTP_REPEAT_ID=REPEAT_ID), PATH, later, dev_device_key(), "device"
+        _Client(HTTP_IDEMPOTENCY_KEY=REPEAT_ID), PATH, later, dev_device_key(), "device"
     )
     assert fresh.status_code == 403
 
