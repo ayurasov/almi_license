@@ -194,3 +194,81 @@ class ProductSerializer(serializers.Serializer[dict[str, Any]]):
     default_metric_id = serializers.UUIDField()
     default_metric = serializers.CharField()
     editions = EditionSerializer(many=True)
+
+
+class MetricSerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.UUIDField(read_only=True)
+    code = serializers.CharField(max_length=32)
+    name = serializers.DictField(child=serializers.CharField())
+
+
+class CapabilitySerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.UUIDField(read_only=True)
+    code = serializers.CharField(max_length=48)
+    name = serializers.DictField(child=serializers.CharField(), required=False)
+    status = serializers.ChoiceField(["active", "deprecated"], required=False)
+
+
+class CapabilityCreateSerializer(serializers.Serializer[dict[str, Any]]):
+    code = serializers.CharField(max_length=48)
+    name = serializers.DictField(child=serializers.CharField(), required=False)
+
+
+class EditionSaveSerializer(serializers.Serializer[dict[str, Any]]):
+    code = serializers.CharField(max_length=32)
+    name = serializers.DictField(child=serializers.CharField(), required=False)
+    base_capabilities = serializers.ListField(child=serializers.CharField(), default=list)
+
+
+class MetricCreateSerializer(serializers.Serializer[dict[str, Any]]):
+    code = serializers.CharField(max_length=32)
+    name = serializers.DictField(child=serializers.CharField())
+
+
+class CapabilityUpdateSerializer(serializers.Serializer[dict[str, Any]]):
+    name = serializers.DictField(child=serializers.CharField(), required=False)
+    status = serializers.ChoiceField(["active", "deprecated"], required=False)
+
+
+class EditionDetailsSerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.UUIDField(read_only=True)
+    code = serializers.CharField(max_length=32)
+    name = serializers.DictField(child=serializers.CharField(), required=False)
+    base_capabilities = serializers.ListField(child=serializers.CharField(), default=list)
+
+
+class ProductDetailsSerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.UUIDField()
+    code = serializers.CharField()
+    name = serializers.DictField(child=serializers.CharField())
+    status = serializers.ChoiceField(["active", "reserved", "deprecated"])
+    subject_type = serializers.ChoiceField(["device", "server_instance", "os_node"])
+    default_metric_id = serializers.UUIDField()
+    default_profile_code = serializers.CharField(allow_blank=True)
+    capabilities = CapabilitySerializer(many=True)
+    editions = EditionDetailsSerializer(many=True)
+
+
+class ProductCreateSerializer(serializers.Serializer[dict[str, Any]]):
+    code = serializers.CharField(max_length=64)
+    name = serializers.DictField(child=serializers.CharField())
+    subject_type = serializers.ChoiceField(["device", "server_instance", "os_node"])
+    default_metric_id = serializers.UUIDField()
+    default_profile_code = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ProductUpdateSerializer(serializers.Serializer[dict[str, Any]]):
+    name = serializers.DictField(child=serializers.CharField(), required=False)
+    status = serializers.ChoiceField(["active", "reserved", "deprecated"], required=False)
+    default_profile_code = serializers.CharField(required=False, allow_blank=True)
+
+
+class ProfileSerializer(serializers.Serializer[dict[str, Any]]):
+    code = serializers.CharField()
+    version = serializers.IntegerField()
+    params = serializers.DictField()
+    created_at = serializers.DateTimeField()
+
+
+class ProfileSaveSerializer(serializers.Serializer[dict[str, Any]]):
+    params = serializers.DictField()

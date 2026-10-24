@@ -1,6 +1,7 @@
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView
 
+from apps.api_admin.api import catalog as cat
 from apps.api_admin.api import licenses as lic
 from apps.api_admin.api.views import CustomersView, CustomerView, SessionView
 
@@ -23,6 +24,16 @@ urlpatterns = [
     path("activations", lic.ActivationsView.as_view()),
     path("activations/<str:activation_id>/release", lic.ActivationReleaseView.as_view()),
     path("products", lic.ProductsView.as_view()),
+    path("catalog/metrics", cat.MetricsView.as_view()),
+    path("catalog/products", cat.CatalogProductsView.as_view()),
+    path("catalog/products/<uuid:product_id>", cat.ProductView.as_view()),
+    path("catalog/products/<uuid:product_id>/capabilities", cat.CapabilitiesView.as_view()),
+    path(
+        "catalog/products/<uuid:product_id>/capabilities/<str:code>", cat.CapabilityView.as_view()
+    ),
+    path("catalog/products/<uuid:product_id>/editions", cat.EditionsView.as_view()),
+    path("profiles", cat.ProfilesView.as_view()),
+    path("profiles/<str:code>", cat.ProfileView.as_view()),
     path(
         "schema",
         SpectacularAPIView.as_view(urlconf="apps.api_admin.api.schema_urls"),

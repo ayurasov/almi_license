@@ -109,4 +109,9 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "ALMI License Product API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # Several "status" choice sets in the Admin API; named after their models.
+    "ENUM_NAME_OVERRIDES": {
+        "ProductStatusEnum": ["active", "reserved", "deprecated"],
+        "CapabilityStatusEnum": ["active", "deprecated"],
+    },
 }

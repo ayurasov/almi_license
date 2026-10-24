@@ -81,6 +81,223 @@ paths:
               schema:
                 $ref: '#/components/schemas/Activation'
           description: ''
+  /api/admin/catalog/metrics:
+    get:
+      operationId: metrics_list
+      tags:
+      - catalog
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Metric'
+          description: ''
+    post:
+      operationId: metrics_create
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetricCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MetricCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MetricCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+          description: ''
+  /api/admin/catalog/products:
+    post:
+      operationId: products_create
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}:
+    get:
+      operationId: products_get
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+    patch:
+      operationId: products_update
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductUpdate'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}/capabilities:
+    post:
+      operationId: capabilities_create
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapabilityCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CapabilityCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CapabilityCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}/capabilities/{code}:
+    patch:
+      operationId: capabilities_update
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCapabilityUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCapabilityUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCapabilityUpdate'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}/editions:
+    post:
+      operationId: editions_save
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditionSave'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EditionSave'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EditionSave'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
   /api/admin/customers:
     get:
       operationId: customers_list
@@ -603,6 +820,78 @@ paths:
                 items:
                   $ref: '#/components/schemas/Product'
           description: ''
+  /api/admin/profiles:
+    get:
+      operationId: profiles_list
+      tags:
+      - profiles
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+          description: ''
+  /api/admin/profiles/{code}:
+    get:
+      operationId: profiles_versions
+      description: Versions of the profile, newest first.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - profiles
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+          description: ''
+    post:
+      operationId: profiles_save
+      description: A new version of the profile (or the first one); unchanged parameters
+        add nothing.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - profiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileSave'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProfileSave'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProfileSave'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
   /api/admin/session:
     get:
       operationId: session_get
@@ -735,6 +1024,45 @@ components:
         * `released_auto` - released_auto
         * `revoked` - revoked
         * `conflict` - conflict
+    Capability:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 48
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/CapabilityStatusEnum'
+      required:
+      - code
+      - id
+    CapabilityCreate:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 48
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+    CapabilityStatusEnum:
+      enum:
+      - active
+      - deprecated
+      type: string
+      description: |-
+        * `active` - active
+        * `deprecated` - deprecated
     Customer:
       type: object
       properties:
@@ -817,6 +1145,43 @@ components:
       - code
       - id
       - name
+    EditionDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        base_capabilities:
+          type: array
+          items:
+            type: string
+      required:
+      - code
+      - id
+    EditionSave:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        base_capabilities:
+          type: array
+          items:
+            type: string
+      required:
+      - code
     HistoryEvent:
       type: object
       properties:
@@ -1002,6 +1367,46 @@ components:
       required:
       - reason
       - until
+    Metric:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+      - id
+      - name
+    MetricCreate:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+      - name
+    PatchedCapabilityUpdate:
+      type: object
+      properties:
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/CapabilityStatusEnum'
     PatchedCustomerWrite:
       type: object
       description: Fields an operator sends; checks of values are in licensing.domain
@@ -1019,6 +1424,17 @@ components:
         status:
           type: string
           maxLength: 16
+    PatchedProductUpdate:
+      type: object
+      properties:
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/ProductStatusEnum'
+        default_profile_code:
+          type: string
     PatchedSettings:
       type: object
       properties:
@@ -1060,6 +1476,104 @@ components:
       - editions
       - id
       - name
+    ProductCreate:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 64
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        subject_type:
+          $ref: '#/components/schemas/SubjectTypeEnum'
+        default_metric_id:
+          type: string
+          format: uuid
+        default_profile_code:
+          type: string
+          default: ''
+      required:
+      - code
+      - default_metric_id
+      - name
+      - subject_type
+    ProductDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/ProductStatusEnum'
+        subject_type:
+          $ref: '#/components/schemas/SubjectTypeEnum'
+        default_metric_id:
+          type: string
+          format: uuid
+        default_profile_code:
+          type: string
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Capability'
+        editions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditionDetails'
+      required:
+      - capabilities
+      - code
+      - default_metric_id
+      - default_profile_code
+      - editions
+      - id
+      - name
+      - status
+      - subject_type
+    ProductStatusEnum:
+      enum:
+      - active
+      - reserved
+      - deprecated
+      type: string
+      description: |-
+        * `active` - active
+        * `reserved` - reserved
+        * `deprecated` - deprecated
+    Profile:
+      type: object
+      properties:
+        code:
+          type: string
+        version:
+          type: integer
+        params:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - code
+      - created_at
+      - params
+      - version
+    ProfileSave:
+      type: object
+      properties:
+        params:
+          type: object
+          additionalProperties: {}
+      required:
+      - params
     Reason:
       type: object
       properties:
@@ -1116,6 +1630,16 @@ components:
       required:
       - password
       - username
+    SubjectTypeEnum:
+      enum:
+      - device
+      - server_instance
+      - os_node
+      type: string
+      description: |-
+        * `device` - device
+        * `server_instance` - server_instance
+        * `os_node` - os_node
     Transfer:
       type: object
       properties:

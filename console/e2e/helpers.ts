@@ -3,8 +3,11 @@ import { expect, type Page } from '@playwright/test'
 export async function signIn(page: Page, path: string): Promise<void> {
   await page.goto(path)
   await expect(page).toHaveURL(/\/login/)
+  // On a cold Vite start the form can mount again after the first fill: wait for the modules.
+  await page.waitForLoadState('networkidle')
   await page.getByLabel('Логин').fill(process.env.E2E_USERNAME ?? '')
   await page.locator('#password').fill(process.env.E2E_PASSWORD ?? '')
+  await expect(page.locator('#password')).toHaveValue(process.env.E2E_PASSWORD ?? '')
   await page.getByRole('button', { name: 'Войти' }).click()
   await expect(page.getByTestId('current-user')).toHaveText(process.env.E2E_USERNAME ?? '')
 }

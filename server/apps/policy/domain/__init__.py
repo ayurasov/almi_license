@@ -15,8 +15,10 @@ from apps.policy.domain.profile import (
     lease_policy,
     reserve_pct,
 )
+from apps.policy.domain.validation import SUBSTITUTIONS, profile_errors
 
 __all__ = [
+    "SUBSTITUTIONS",
     "LicenseFacts",
     "PolicyParams",
     "PolicyResult",
@@ -28,5 +30,6 @@ __all__ = [
     "lease_messages",
     "lease_policy",
     "messages_for",
+    "profile_errors",
     "reserve_pct",
 ]
