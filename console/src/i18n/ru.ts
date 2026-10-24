@@ -345,4 +345,17 @@ export default {
     upToDate: 'Новых пакетов нет',
     none: 'Пакет ещё не загружен.',
   },
+  stats: {
+    title: 'Статистика',
+    customer: 'Заказчик',
+    product: 'Продукт',
+    all: 'Все',
+    export: 'Выгрузить в XLSX',
+    tiles: { licenses: 'Лицензий', limit: 'Мест', active: 'Активировано', free: 'Свободно', reserve: 'В резерве', auto: 'Освобождено автоматически', lastSeen: 'Последний контакт' },
+    columns: { customer: 'Заказчик', product: 'Продукт', limit: 'Мест', active: 'Активно', reserve: 'Резерв', free: 'Свободно', auto: 'Освобождено авт.', lastSeen: 'Последний контакт' },
+    versions: 'Версии продукта',
+    systems: 'Операционные системы',
+    empty: 'Нет данных по выбранным условиям.',
+    never: '—',
+  },
 }

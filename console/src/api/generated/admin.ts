@@ -672,6 +672,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stats/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stats_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -951,6 +983,32 @@ export interface components {
             count: number;
             results: components["schemas"]["License"][];
         };
+        LicenseStats: {
+            /** Format: uuid */
+            license_id: string;
+            /** Format: uuid */
+            customer_id: string;
+            customer_name: string;
+            product: string;
+            type: string;
+            status: string;
+            limit: number;
+            active: number;
+            in_reserve: number;
+            free: number;
+            released_auto: number;
+            conflicts: number;
+            /** Format: date-time */
+            valid_until: string | null;
+            /** Format: date-time */
+            last_seen_at: string | null;
+            by_version: {
+                [key: string]: number;
+            };
+            by_os: {
+                [key: string]: number;
+            };
+        };
         /**
          * @description * `active` - active
          *     * `suspended` - suspended
@@ -1168,6 +1226,24 @@ export interface components {
         SetupResult: {
             status: components["schemas"]["LocalStatus"];
             request_file: components["schemas"]["AlkFile"] | null;
+        };
+        Stats: {
+            licenses: number;
+            limit: number;
+            active: number;
+            in_reserve: number;
+            free: number;
+            released_auto: number;
+            conflicts: number;
+            /** Format: date-time */
+            last_seen_at: string | null;
+            by_version: {
+                [key: string]: number;
+            };
+            by_os: {
+                [key: string]: number;
+            };
+            rows: components["schemas"]["LicenseStats"][];
         };
         /**
          * @description * `device` - device
@@ -2440,6 +2516,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupResult"];
+                };
+            };
+        };
+    };
+    stats_get: {
+        parameters: {
+            query?: {
+                customer_id?: string;
+                product_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stats"];
+                };
+            };
+        };
+    };
+    stats_export: {
+        parameters: {
+            query?: {
+                customer_id?: string;
+                product_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description XLSX */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

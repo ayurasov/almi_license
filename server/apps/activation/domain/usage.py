@@ -64,6 +64,57 @@ def license_usage(license_id: UUID) -> Usage:
     )
 
 
+def usage_by_license(license_ids: list[UUID]) -> dict[UUID, Usage]:
+    """license_usage for many licences with a fixed number of queries (E10-01)."""
+    rows = Activation.objects.filter(license_id__in=license_ids).values(
+        "license_id", "status", "in_reserve", "product_version", "os", "last_seen_at"
+    )
+    counts: dict[UUID, dict[str, Any]] = {
+        lid: {
+            "active": 0,
+            "reserve": 0,
+            "auto": 0,
+            "conflicts": 0,
+            "last": None,
+            "versions": Counter(),
+            "systems": Counter(),
+        }
+        for lid in license_ids
+    }
+    for row in rows:
+        item = counts[row["license_id"]]
+        if row["status"] == ActivationStatus.ACTIVE:
+            item["active"] += 1
+            item["reserve"] += int(row["in_reserve"])
+            item["versions"][row["product_version"]] += 1
+            os = row["os"] or {}
+            item["systems"][f"{os.get('name', '')} {os.get('version', '')}".strip()] += 1
+            if item["last"] is None or row["last_seen_at"] > item["last"]:
+                item["last"] = row["last_seen_at"]
+        elif row["status"] == ActivationStatus.RELEASED_AUTO:
+            item["auto"] += 1
+        elif row["status"] == ActivationStatus.CONFLICT:
+            item["conflicts"] += 1
+    return {
+        lid: Usage(
+            active=c["active"],
+            in_reserve=c["reserve"],
+            released_auto=c["auto"],
+            conflicts=c["conflicts"],
+            last_seen_at=c["last"],
+            by_version=dict(c["versions"]),
+            by_os=dict(c["systems"]),
+        )
+        for lid, c in counts.items()
+    }
+
+
+def activations_of(license_ids: list[UUID], *, limit: int = 100_000) -> list[ActivationData]:
+    """Activations of the licences for the export sheet (E10-02), newest contact first."""
+    rows = Activation.objects.filter(license_id__in=license_ids).order_by("-last_seen_at", "id")
+    return [_data(r) for r in rows[:limit]]
+
+
 def _data(row: Activation) -> ActivationData:
     return ActivationData(
         activation_id=row.external_id,

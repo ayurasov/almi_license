@@ -15,10 +15,12 @@ from apps.activation.domain.service import (
 from apps.activation.domain.usage import (
     ActivationData,
     Usage,
+    activations_of,
     license_usage,
     list_activations,
     release_by_operator,
     revoke_activations,
+    usage_by_license,
 )
 
 __all__ = [
@@ -34,6 +36,8 @@ __all__ = [
     "list_activations",
     "release_by_operator",
     "revoke_activations",
+    "usage_by_license",
+    "activations_of",
     "ActivationRequest",
     "ActivationResult",
     "CheckRequest",

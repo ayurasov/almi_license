@@ -1347,6 +1347,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/SetupResult'
           description: ''
+  /api/admin/stats:
+    get:
+      operationId: stats_get
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - stats
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+          description: ''
+  /api/admin/stats/export:
+    get:
+      operationId: stats_export
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - stats
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: XLSX
 components:
   schemas:
     Account:
@@ -1968,6 +2019,68 @@ components:
       required:
       - count
       - results
+    LicenseStats:
+      type: object
+      properties:
+        license_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        product:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        limit:
+          type: integer
+        active:
+          type: integer
+        in_reserve:
+          type: integer
+        free:
+          type: integer
+        released_auto:
+          type: integer
+        conflicts:
+          type: integer
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        by_version:
+          type: object
+          additionalProperties:
+            type: integer
+        by_os:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - active
+      - by_os
+      - by_version
+      - conflicts
+      - customer_id
+      - customer_name
+      - free
+      - in_reserve
+      - last_seen_at
+      - license_id
+      - limit
+      - product
+      - released_auto
+      - status
+      - type
+      - valid_until
     LicenseStatusEnum:
       enum:
       - active
@@ -2429,6 +2542,51 @@ components:
       required:
       - request_file
       - status
+    Stats:
+      type: object
+      properties:
+        licenses:
+          type: integer
+        limit:
+          type: integer
+        active:
+          type: integer
+        in_reserve:
+          type: integer
+        free:
+          type: integer
+        released_auto:
+          type: integer
+        conflicts:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        by_version:
+          type: object
+          additionalProperties:
+            type: integer
+        by_os:
+          type: object
+          additionalProperties:
+            type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenseStats'
+      required:
+      - active
+      - by_os
+      - by_version
+      - conflicts
+      - free
+      - in_reserve
+      - last_seen_at
+      - licenses
+      - limit
+      - released_auto
+      - rows
     SubjectTypeEnum:
       enum:
       - device
