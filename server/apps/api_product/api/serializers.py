@@ -84,3 +84,35 @@ class CheckRequestSerializer(serializers.Serializer[dict[str, Any]]):
             "client_time": serializers.DateTimeField(),
             "last_success_at": serializers.DateTimeField(required=False),
         }
+
+
+class ReleaseRequestSerializer(serializers.Serializer[dict[str, Any]]):
+    reason = serializers.ChoiceField(["uninstall", "user", "transfer", "directive"])
+    client_time = serializers.DateTimeField()
+
+
+class OfflineActivateSerializer(serializers.Serializer[dict[str, Any]]):
+    """Payload of .alk-req type activate (contracts/schemas/alk-req.schema.json)."""
+
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        return {
+            "license_key": serializers.CharField(max_length=64, trim_whitespace=False),
+            "product": ProductSerializer(),
+            "instance": InstanceSerializer(),
+            "fingerprint": FingerprintSerializer(),
+            "device_pubkey": serializers.CharField(max_length=64),
+        }
+
+
+class OfflineDeviceSerializer(serializers.Serializer[dict[str, Any]]):
+    """Payload of .alk-req types renew and release."""
+
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        return {
+            "activation_id": serializers.CharField(max_length=30),
+            "product": ProductSerializer(),
+            "instance": InstanceSerializer(),
+            "fingerprint": FingerprintSerializer(),
+            "device_pubkey": serializers.CharField(max_length=64),
+            "usage": serializers.DictField(required=False),
+        }
