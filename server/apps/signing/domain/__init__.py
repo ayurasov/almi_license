@@ -10,14 +10,20 @@ from apps.signing.domain.jws import (
     canonical_json,
     current_provider,
     install_provider,
+    install_provider_factory,
     issue_jws,
 )
+from apps.signing.domain.verify import ChainInvalid, Verified, verify_signed
 
 __all__ = [
+    "ChainInvalid",
+    "Verified",
+    "verify_signed",
     "SigningUnavailable",
     "canonical_json",
     "current_provider",
     "install_provider",
+    "install_provider_factory",
     "issue_certificate",
     "issue_jws",
     "issuer_chain",

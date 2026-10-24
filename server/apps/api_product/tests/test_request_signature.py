@@ -17,14 +17,10 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
 from apps.api_product.auth import DeviceSignatureAuthentication, SignedRequest
-from apps.api_product.domain.signature import (
-    NONCE_WINDOW,
-    body_digest,
-    purge_nonces,
-    signing_string,
-)
+from apps.api_product.domain.signature import NONCE_WINDOW, purge_nonces
 from infra.clock import FrozenClock, use_clock
 from infra.crypto.encoding import b64url_decode, b64url_encode
+from infra.request_signing import body_digest, signing_string
 from tests.vectors import VECTORS, key_path
 
 ACTIVATION_ID = "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3"

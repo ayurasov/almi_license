@@ -1122,6 +1122,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlkFile'
           description: ''
+  /api/admin/package:
+    post:
+      operationId: local_package_upload
+      description: A package .alk brought on a medium (files mode, or a replacement
+        in online mode).
+      tags:
+      - package
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStatus'
+          description: ''
+  /api/admin/package/sync:
+    post:
+      operationId: local_package_sync
+      description: Ask the central server for a newer package now (online mode).
+      tags:
+      - package
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStatus'
+          description: ''
   /api/admin/products:
     get:
       operationId: products_list
@@ -1267,6 +1304,49 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/admin/setup:
+    get:
+      operationId: local_status
+      description: 'The first-run wizard: registration code and the central server
+        or files only.'
+      tags:
+      - setup
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStatus'
+          description: ''
+    post:
+      operationId: local_setup
+      description: 'The first-run wizard: registration code and the central server
+        or files only.'
+      tags:
+      - setup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupResult'
+          description: ''
 components:
   schemas:
     Account:
@@ -1596,6 +1676,14 @@ components:
             type: string
       required:
       - code
+    ExchangeEnum:
+      enum:
+      - online
+      - files
+      type: string
+      description: |-
+        * `online` - online
+        * `files` - files
     HistoryEvent:
       type: object
       properties:
@@ -1721,8 +1809,11 @@ components:
       properties:
         mode:
           $ref: '#/components/schemas/ModeEnum'
+        setup_required:
+          type: boolean
       required:
       - mode
+      - setup_required
     IssuedKey:
       type: object
       properties:
@@ -1973,6 +2064,47 @@ components:
         * `pending` - pending
         * `active` - active
         * `revoked` - revoked
+    LocalStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        registered:
+          type: boolean
+        server_id:
+          type: string
+          nullable: true
+        exchange:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ExchangeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        central_url:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+        package_seq:
+          type: integer
+        package_issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        package_valid_until:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - central_url
+      - configured
+      - customer_id
+      - exchange
+      - package_issued_at
+      - package_seq
+      - package_valid_until
+      - registered
+      - server_id
     ManagedRoleEnum:
       enum:
       - operator
@@ -2020,6 +2152,9 @@ components:
       description: |-
         * `central` - central
         * `local` - local
+    NullEnum:
+      enum:
+      - null
     PatchedAccountUpdate:
       type: object
       properties:
@@ -2270,6 +2405,30 @@ components:
       required:
       - password
       - username
+    SetupRequest:
+      type: object
+      properties:
+        registration_code:
+          type: string
+          maxLength: 64
+        central_url:
+          type: string
+          default: ''
+          maxLength: 256
+      required:
+      - registration_code
+    SetupResult:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/LocalStatus'
+        request_file:
+          allOf:
+          - $ref: '#/components/schemas/AlkFile'
+          nullable: true
+      required:
+      - request_file
+      - status
     SubjectTypeEnum:
       enum:
       - device

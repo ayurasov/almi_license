@@ -151,3 +151,15 @@ def release_by_operator(
             data={"reason": text},
         )
     return _data(row)
+
+
+def revoke_activations(activation_ids: list[str], *, now: datetime) -> int:
+    """Activations revoked by the package of a local server (E09-03); their next check gets 403."""
+    rows = Activation.objects.filter(external_id__in=activation_ids, status=ActivationStatus.ACTIVE)
+    count = 0
+    for row in rows:
+        row.status = ActivationStatus.REVOKED
+        row.save(update_fields=["status"])
+        record("package", "activation.revoked", "activation", row.external_id, at=now)
+        count += 1
+    return count

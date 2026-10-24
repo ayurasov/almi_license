@@ -55,6 +55,10 @@ def test_key_issue_is_central_only(console: Console, licensed: Any) -> None:
 
 
 def test_instance_tells_the_mode_without_a_session() -> None:
-    assert Client().get("/api/admin/instance").json() == {"mode": "central"}
+    assert Client().get("/api/admin/instance").json() == {
+        "mode": "central",
+        "setup_required": False,
+    }
     with override_settings(DEPLOYMENT_MODE="local"):
-        assert Client().get("/api/admin/instance").json() == {"mode": "local"}
+        local = Client().get("/api/admin/instance").json()
+        assert local == {"mode": "local", "setup_required": True}

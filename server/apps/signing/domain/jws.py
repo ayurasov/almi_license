@@ -1,6 +1,7 @@
 """issue_jws: compact JWS with the header of section 6.1 of document 2."""
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 from infra.crypto.encoding import b64url_encode
@@ -27,14 +28,26 @@ class SigningUnavailable(RuntimeError):
 
 
 _provider: CryptoProvider | None = None
+# Builds the provider when none is installed: a local server signs with its own key once it is
+# registered, and the key appears at runtime, not at startup (E09-04).
+_factory: Callable[[], CryptoProvider | None] | None = None
 
 
 def install_provider(provider: CryptoProvider | None) -> None:
+    """None drops the current provider; the factory, if any, builds the next one on demand."""
     global _provider
     _provider = provider
 
 
+def install_provider_factory(factory: Callable[[], CryptoProvider | None] | None) -> None:
+    global _factory
+    _factory = factory
+
+
 def current_provider() -> CryptoProvider:
+    global _provider
+    if _provider is None and _factory is not None:
+        _provider = _factory()
     if _provider is None:
         raise SigningUnavailable("signing key is not configured")
     return _provider

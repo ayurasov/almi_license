@@ -15,10 +15,11 @@ export const SECTIONS = [
   'audit',
   'users',
   'servers',
+  'package',
 ] as const
 
 // Sections without their screen yet show a placeholder.
-const READY = new Set(['customers', 'licenses', 'activations', 'catalog', 'profiles', 'import', 'users', 'servers'])
+const READY = new Set(['customers', 'licenses', 'activations', 'catalog', 'profiles', 'import', 'users', 'servers', 'package'])
 const sections: RouteRecordRaw[] = SECTIONS.filter((name) => !READY.has(name)).map((name) => ({
   path: name,
   name,
@@ -40,6 +41,8 @@ export const routes: RouteRecordRaw[] = [
       { path: 'catalog', name: 'catalog', component: () => import('@/views/CatalogView.vue') },
       { path: 'profiles', name: 'profiles', component: () => import('@/views/ProfilesView.vue') },
       { path: 'import', name: 'import', component: () => import('@/views/ImportView.vue') },
+      { path: 'package', name: 'package', component: () => import('@/views/PackageView.vue') },
+      { path: 'setup', name: 'setup', component: () => import('@/views/SetupView.vue') },
       { path: 'servers', name: 'servers', component: () => import('@/views/ServersView.vue') },
       { path: 'users', name: 'users', component: () => import('@/views/UsersView.vue') },
       ...sections,
@@ -56,5 +59,7 @@ router.beforeEach(async (to) => {
   if (!session.user) return { name: 'login', query: { next: to.fullPath } }
   const instance = useInstanceStore()
   await instance.load()
+  // A local server works only after the first-run wizard (E09-01).
+  if (instance.instance?.setup_required && to.name !== 'setup' && to.name !== 'package') return { name: 'setup' }
   return typeof to.name === 'string' && !instance.allows(to.name) ? { name: 'licenses' } : true
 })

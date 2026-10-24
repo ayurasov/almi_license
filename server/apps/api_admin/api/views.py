@@ -27,6 +27,7 @@ from apps.api_admin.api.serializers import (
 )
 from apps.iam.domain import AccountLocked, LoginFailed, account_info, sign_in
 from apps.licensing.domain import create_customer, get_customer, list_customers, update_customer
+from apps.packages.domain import local_status
 from infra.clock import current_clock
 from infra.problems import Problem
 
@@ -157,4 +158,11 @@ class InstanceView(APIView):
 
     @extend_schema(responses={200: InstanceSerializer}, operation_id="instance_get")
     def get(self, request: Request) -> Response:
-        return Response({"mode": settings.DEPLOYMENT_MODE})
+        local = settings.DEPLOYMENT_MODE == "local"
+        status = local_status() if local else None
+        return Response(
+            {
+                "mode": settings.DEPLOYMENT_MODE,
+                "setup_required": status is not None and not status.registered,
+            }
+        )

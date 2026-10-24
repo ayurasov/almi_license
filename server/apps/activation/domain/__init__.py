@@ -18,6 +18,7 @@ from apps.activation.domain.usage import (
     license_usage,
     list_activations,
     release_by_operator,
+    revoke_activations,
 )
 
 __all__ = [
@@ -32,6 +33,7 @@ __all__ = [
     "license_usage",
     "list_activations",
     "release_by_operator",
+    "revoke_activations",
     "ActivationRequest",
     "ActivationResult",
     "CheckRequest",

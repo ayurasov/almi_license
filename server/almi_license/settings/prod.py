@@ -3,13 +3,15 @@
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *
-from .base import SECRET_KEY, env
+from .base import DEPLOYMENT_MODE, SECRET_KEY, env
 
 if not SECRET_KEY:
     raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set")
 
-# A production server never starts without its issuer key.
-SIGNING_REQUIRED = True
+# A production central server never starts without its issuer key; a local server signs with
+# its own key, which the first-run wizard creates (LOCAL_SERVER_KEY_FILE, E09-04).
+SIGNING_REQUIRED = DEPLOYMENT_MODE == "central"
+ALLOW_PLAIN_HTTP_CENTRAL = False
 
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 

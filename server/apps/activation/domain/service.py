@@ -24,7 +24,7 @@ from apps.licensing.domain import (
     license_id_by_key_hash,
     lock_license,
 )
-from apps.packages.domain import allocated_seats
+from apps.packages.domain import allocated_seats, package_terms
 from apps.policy.domain import (
     LicenseFacts,
     PolicyParams,
@@ -97,15 +97,27 @@ def load_terms(license_: LicenseRecord, now: datetime) -> Terms:
     # A lifted block (E01-05) is monitor mode until monitor_until.
     lifted = license_.monitor_until is not None and now < license_.monitor_until
     enforcement = "monitor" if lifted else license_.enforcement
+    params = profile.params
+    package = package_terms()
+    if package is not None and now >= package[0]:
+        # An expired package of a local server (section 13.3 of document 2): the licence ends
+        # with the package, then the policy of the package for this case applies.
+        until, expired = package
+        license_ = replace(
+            license_,
+            valid_until=until if license_.valid_until is None else min(until, license_.valid_until),
+        )
+        params = params | {k: v for k, v in expired.items() if k in ("expiry_action", "grace_days")}
+        enforcement = str(expired.get("enforcement", enforcement)) if not lifted else enforcement
     return Terms(
         license=license_,
         product_code=product.code,
         edition=edition_code(license_.edition_id),
         capabilities=capabilities(license_.product_id, license_.edition_id)
         | frozenset(license_.extra_capabilities),
-        policy=effective_policy(profile.params, profile.version, enforcement),
-        params=profile.params,
-        reserve_pct=reserve_pct(profile.params, license_.reserve_pct),
+        policy=effective_policy(params, profile.version, enforcement),
+        params=params,
+        reserve_pct=reserve_pct(params, license_.reserve_pct),
     )
 
 
@@ -165,6 +177,11 @@ def issue_lease(
         now,
         now,
     )
+    package = package_terms()
+    if package is not None:
+        # A lease of a local server never outlives its package (E09-04).
+        until = package[0] if result.lease_exp is None else min(package[0], result.lease_exp)
+        result = replace(result, lease_exp=until)
     seq = activation.lease_seq + 1
     claims = lease_claims(
         issuer=issuer,
