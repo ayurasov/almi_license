@@ -28,6 +28,11 @@ RawComponents CollectComponents();
 std::filesystem::path SystemStoreDirectory(std::string_view product);
 std::filesystem::path UserStoreDirectory(std::string_view product);
 
+// Directories of the second trial mark (E13-08): another system directory than the store, and a
+// per-user fallback.
+std::filesystem::path SystemMarkDirectory();
+std::filesystem::path UserMarkDirectory();
+
 // Seals data for this machine: DPAPI (machine scope) on Windows; XChaCha20-Poly1305 with a key
 // derived from /etc/machine-id on Linux. Open returns nullopt for data sealed elsewhere or altered.
 std::vector<unsigned char> SealForMachine(const std::vector<unsigned char>& plain, std::string_view context);

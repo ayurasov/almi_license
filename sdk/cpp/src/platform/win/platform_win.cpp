@@ -208,6 +208,10 @@ fs::path SystemStoreDirectory(std::string_view product) {
   return KnownFolder(FOLDERID_ProgramData) / "ALMI" / "License" / std::string(product);
 }
 
+fs::path SystemMarkDirectory() { return KnownFolder(FOLDERID_ProgramData) / "ALMI" / "Marks"; }
+
+fs::path UserMarkDirectory() { return KnownFolder(FOLDERID_LocalAppData) / "ALMI" / "Marks"; }
+
 fs::path UserStoreDirectory(std::string_view product) {
   return KnownFolder(FOLDERID_LocalAppData) / "ALMI" / "License" / std::string(product);
 }

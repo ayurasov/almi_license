@@ -126,6 +126,17 @@ fs::path SystemStoreDirectory(std::string_view product) {
   return fs::path("/var/lib/almi/license") / std::string(product);
 }
 
+fs::path SystemMarkDirectory() { return "/var/lib/almi/marks"; }
+
+fs::path UserMarkDirectory() {
+  const char* cache = std::getenv("XDG_CACHE_HOME");
+  const char* home = std::getenv("HOME");
+  const fs::path base = cache != nullptr && *cache != '\0' ? fs::path(cache)
+                        : home != nullptr                  ? fs::path(home) / ".cache"
+                                                           : fs::temp_directory_path();
+  return base / "almi" / "marks";
+}
+
 fs::path UserStoreDirectory(std::string_view product) {
   const char* data = std::getenv("XDG_DATA_HOME");
   const char* home = std::getenv("HOME");
