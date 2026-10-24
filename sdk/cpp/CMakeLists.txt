@@ -58,7 +58,9 @@ endif()
 add_library(lm_internal STATIC src/version.cpp src/trust_roots.cpp src/crypto/base64url.cpp
                                src/crypto/lease_verifier.cpp src/crypto/device_key.cpp src/crypto/aead.cpp
                                src/identity/instance_identity.cpp src/store/secure_store.cpp
-                               src/transport/transport.cpp ${LM_PLATFORM_SOURCES})
+                               src/transport/transport.cpp src/util/rfc3339.cpp src/policy/state_evaluator.cpp
+                               src/state/rollback_guard.cpp src/state/trial_tracker.cpp
+                               ${LM_PLATFORM_SOURCES})
 target_include_directories(lm_internal PUBLIC src "${CMAKE_BINARY_DIR}/generated")
 target_link_libraries(lm_internal PUBLIC unofficial-sodium::sodium nlohmann_json::nlohmann_json CURL::libcurl
                                          ${LM_PLATFORM_LIBRARIES})
@@ -88,7 +90,8 @@ if(LM_BUILD_TESTS)
   find_package(httplib CONFIG REQUIRED)
   add_executable(lm_tests tests/version_test.cpp tests/abi_stub_test.cpp tests/base64url_test.cpp
                           tests/lease_verifier_test.cpp tests/device_key_test.cpp tests/aead_test.cpp
-                          tests/instance_identity_test.cpp tests/secure_store_test.cpp tests/transport_test.cpp)
+                          tests/instance_identity_test.cpp tests/secure_store_test.cpp tests/transport_test.cpp
+                          tests/state_evaluator_test.cpp tests/clock_state_test.cpp)
   target_link_libraries(lm_tests PRIVATE license_module lm_internal GTest::gtest_main httplib::httplib)
   target_compile_definitions(lm_tests PRIVATE
     LM_EXPECTED_VERSION="${PROJECT_VERSION}" LM_EXPECTED_TRUST_ROOTS="${LM_TRUST_ROOTS}"
