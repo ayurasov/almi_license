@@ -48,6 +48,9 @@ class Activation(UUIDModel):
     activated_at = models.DateTimeField()
     last_seen_at = models.DateTimeField()
     released_at = models.DateTimeField(null=True, blank=True)
+    release_receipt = models.TextField(
+        blank=True, default="", help_text="alm-receipt+jws: a repeated release returns it (E03-05)"
+    )
     created_at = models.DateTimeField()
 
     class Meta:

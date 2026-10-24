@@ -3,6 +3,8 @@
 from apps.activation.domain.check import CheckRequest, check
 from apps.activation.domain.directives import queue_directive
 from apps.activation.domain.keys import device_public_key
+from apps.activation.domain.offline import MAX_FILE_BYTES, OfflineRequest, answer, open_request
+from apps.activation.domain.release import ReleaseResult, release
 from apps.activation.domain.service import ActivationRequest, ActivationResult, activate
 from apps.activation.domain.usage import (
     ActivationData,
@@ -13,6 +15,12 @@ from apps.activation.domain.usage import (
 )
 
 __all__ = [
+    "MAX_FILE_BYTES",
+    "OfflineRequest",
+    "ReleaseResult",
+    "answer",
+    "open_request",
+    "release",
     "ActivationData",
     "Usage",
     "license_usage",
