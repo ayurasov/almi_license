@@ -357,3 +357,40 @@ class InstanceSerializer(serializers.Serializer[dict[str, Any]]):
     """What the console needs before sign-in: the mode of this server (E09-01)."""
 
     mode = serializers.ChoiceField(["central", "local"])
+
+
+class LocalServerSerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.UUIDField()
+    server_id = serializers.CharField()
+    customer_id = serializers.UUIDField()
+    name = serializers.CharField()
+    status = serializers.ChoiceField(["pending", "active", "revoked"])
+    allocations = serializers.DictField(child=serializers.IntegerField())
+    registered = serializers.BooleanField()
+    code_expires_at = serializers.DateTimeField(allow_null=True)
+    last_package_seq = serializers.IntegerField()
+    last_seen_at = serializers.DateTimeField(allow_null=True)
+    created_at = serializers.DateTimeField()
+
+
+class LocalServerCreateSerializer(serializers.Serializer[dict[str, Any]]):
+    customer_id = serializers.UUIDField()
+    name = serializers.CharField(max_length=256)
+    allocations = serializers.DictField(child=serializers.IntegerField(min_value=0))
+
+
+class AllocationsSerializer(serializers.Serializer[dict[str, Any]]):
+    allocations = serializers.DictField(child=serializers.IntegerField(min_value=0))
+
+
+class RegistrationCodeSerializer(serializers.Serializer[dict[str, Any]]):
+    """The code is shown once; the server keeps only its hash (E09-02)."""
+
+    server = LocalServerSerializer()
+    code = serializers.CharField()
+
+
+class AlkFileSerializer(serializers.Serializer[dict[str, Any]]):
+    format = serializers.CharField()
+    version = serializers.IntegerField()
+    payload = serializers.CharField()

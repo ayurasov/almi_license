@@ -1002,6 +1002,126 @@ paths:
               schema:
                 $ref: '#/components/schemas/Usage'
           description: ''
+  /api/admin/local-servers:
+    get:
+      operationId: local_servers_list
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+      tags:
+      - local-servers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocalServer'
+          description: ''
+    post:
+      operationId: local_servers_create
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalServerCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocalServerCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocalServerCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationCode'
+          description: ''
+  /api/admin/local-servers/{server_uuid}/allocations:
+    put:
+      operationId: local_servers_allocations
+      parameters:
+      - in: path
+        name: server_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Allocations'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Allocations'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Allocations'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalServer'
+          description: ''
+  /api/admin/local-servers/{server_uuid}/code:
+    post:
+      operationId: local_servers_new_code
+      parameters:
+      - in: path
+        name: server_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - local-servers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationCode'
+          description: ''
+  /api/admin/local-servers/register-file:
+    post:
+      operationId: local_servers_register_file
+      description: A .alk-req of type server in, the first package .alk out (closed
+        networks).
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlkFile'
+          description: ''
   /api/admin/products:
     get:
       operationId: products_list
@@ -1260,6 +1380,29 @@ components:
         * `released_auto` - released_auto
         * `revoked` - revoked
         * `conflict` - conflict
+    AlkFile:
+      type: object
+      properties:
+        format:
+          type: string
+        version:
+          type: integer
+        payload:
+          type: string
+      required:
+      - format
+      - payload
+      - version
+    Allocations:
+      type: object
+      properties:
+        allocations:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+      - allocations
     ArticleMapping:
       type: object
       properties:
@@ -1756,6 +1899,80 @@ components:
       required:
       - reason
       - until
+    LocalServer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/LocalServerStatusEnum'
+        allocations:
+          type: object
+          additionalProperties:
+            type: integer
+        registered:
+          type: boolean
+        code_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_package_seq:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - allocations
+      - code_expires_at
+      - created_at
+      - customer_id
+      - id
+      - last_package_seq
+      - last_seen_at
+      - name
+      - registered
+      - server_id
+      - status
+    LocalServerCreate:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 256
+        allocations:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+      - allocations
+      - customer_id
+      - name
+    LocalServerStatusEnum:
+      enum:
+      - pending
+      - active
+      - revoked
+      type: string
+      description: |-
+        * `pending` - pending
+        * `active` - active
+        * `revoked` - revoked
     ManagedRoleEnum:
       enum:
       - operator
@@ -1994,6 +2211,17 @@ components:
           maxLength: 1000
       required:
       - reason
+    RegistrationCode:
+      type: object
+      description: The code is shown once; the server keeps only its hash (E09-02).
+      properties:
+        server:
+          $ref: '#/components/schemas/LocalServer'
+        code:
+          type: string
+      required:
+      - code
+      - server
     Renew:
       type: object
       properties:

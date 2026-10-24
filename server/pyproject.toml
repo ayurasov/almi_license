@@ -130,6 +130,8 @@ name = "API modules are imported by nobody but the URL configuration"
 type = "protected"
 protected_modules = ["apps.api_product", "apps.api_admin", "apps.api_sync"]
 allowed_importers = ["almi_license.urls"]
+# Sync API requests carry the same ALMI-Signature as the Product API (section 13.2 of doc. 2).
+ignore_imports = ["apps.api_sync.** -> apps.api_product.domain.signature"]
 
 [[tool.importlinter.contracts]]
 name = "Layers inside a module: api -> domain -> models (docs/specs/06-ai-rules.md, section 4.1)"

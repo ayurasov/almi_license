@@ -486,6 +486,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/local-servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["local_servers_list"];
+        put?: never;
+        post: operations["local_servers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/local-servers/{server_uuid}/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["local_servers_allocations"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/local-servers/{server_uuid}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["local_servers_new_code"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/local-servers/register-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A .alk-req of type server in, the first package .alk out (closed networks). */
+        post: operations["local_servers_register_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/products": {
         parameters: {
             query?: never;
@@ -608,6 +673,16 @@ export interface components {
          * @enum {string}
          */
         ActivationStatusEnum: "active" | "released" | "released_auto" | "revoked" | "conflict";
+        AlkFile: {
+            format: string;
+            version: number;
+            payload: string;
+        };
+        Allocations: {
+            allocations: {
+                [key: string]: number;
+            };
+        };
         ArticleMapping: {
             /** Format: uuid */
             product_id: string;
@@ -829,6 +904,41 @@ export interface components {
             /** Format: date-time */
             until: string;
         };
+        LocalServer: {
+            /** Format: uuid */
+            id: string;
+            server_id: string;
+            /** Format: uuid */
+            customer_id: string;
+            name: string;
+            status: components["schemas"]["LocalServerStatusEnum"];
+            allocations: {
+                [key: string]: number;
+            };
+            registered: boolean;
+            /** Format: date-time */
+            code_expires_at: string | null;
+            last_package_seq: number;
+            /** Format: date-time */
+            last_seen_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        LocalServerCreate: {
+            /** Format: uuid */
+            customer_id: string;
+            name: string;
+            allocations: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * @description * `pending` - pending
+         *     * `active` - active
+         *     * `revoked` - revoked
+         * @enum {string}
+         */
+        LocalServerStatusEnum: "pending" | "active" | "revoked";
         /**
          * @description * `operator` - operator
          *     * `admin` - admin
@@ -947,6 +1057,11 @@ export interface components {
         };
         Reason: {
             reason: string;
+        };
+        /** @description The code is shown once; the server keeps only its hash (E09-02). */
+        RegistrationCode: {
+            server: components["schemas"]["LocalServer"];
+            code: string;
         };
         Renew: {
             /** Format: date-time */
@@ -1890,6 +2005,123 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Usage"];
+                };
+            };
+        };
+    };
+    local_servers_list: {
+        parameters: {
+            query?: {
+                customer_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalServer"][];
+                };
+            };
+        };
+    };
+    local_servers_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalServerCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["LocalServerCreate"];
+                "multipart/form-data": components["schemas"]["LocalServerCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationCode"];
+                };
+            };
+        };
+    };
+    local_servers_allocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Allocations"];
+                "application/x-www-form-urlencoded": components["schemas"]["Allocations"];
+                "multipart/form-data": components["schemas"]["Allocations"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalServer"];
+                };
+            };
+        };
+    };
+    local_servers_new_code: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationCode"];
+                };
+            };
+        };
+    };
+    local_servers_register_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ImportUpload"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlkFile"];
                 };
             };
         };

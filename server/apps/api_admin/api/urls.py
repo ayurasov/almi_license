@@ -5,8 +5,9 @@ from apps.api_admin.api import accounts as acc
 from apps.api_admin.api import catalog as cat
 from apps.api_admin.api import imports as imp
 from apps.api_admin.api import licenses as lic
-from apps.api_admin.api.modes import central_only
+from apps.api_admin.api import servers as srv
 from apps.api_admin.api.views import CustomersView, CustomerView, InstanceView, SessionView
+from infra.modes import central_only
 
 urlpatterns = [
     path("instance", InstanceView.as_view(), name="admin-instance"),
@@ -45,6 +46,13 @@ urlpatterns = [
     path("imports/<uuid:session_id>/apply", central_only(imp.ImportApplyView.as_view())),
     path("article-mappings", central_only(imp.ArticleMappingsView.as_view())),
     path("article-mappings/<str:aa>", central_only(imp.ArticleMappingView.as_view())),
+    path("local-servers", central_only(srv.LocalServersView.as_view())),
+    path("local-servers/register-file", central_only(srv.LocalServerRegisterFileView.as_view())),
+    path("local-servers/<uuid:server_uuid>/code", central_only(srv.LocalServerCodeView.as_view())),
+    path(
+        "local-servers/<uuid:server_uuid>/allocations",
+        central_only(srv.LocalServerAllocationsView.as_view()),
+    ),
     path("accounts", acc.AccountsView.as_view()),
     path("accounts/<str:username>", acc.AccountView.as_view()),
     path("accounts/<str:username>/password", acc.AccountPasswordView.as_view()),

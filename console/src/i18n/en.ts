@@ -12,6 +12,7 @@ const en: typeof ru = {
     stats: 'Statistics',
     audit: 'Audit log',
     users: 'Users',
+    servers: 'Local servers',
   },
   placeholder: 'This section comes in later iterations.',
   login: { title: 'Console sign-in', username: 'User name', password: 'Password', submit: 'Sign in' },
@@ -293,6 +294,25 @@ const en: typeof ru = {
     },
     next: 'Next',
     back: 'Back',
+  },
+  servers: {
+    title: 'Local servers',
+    create: 'New server',
+    empty: 'No local servers.',
+    registerFile: 'Register by file',
+    registerHint: 'Upload the registration request (.alk-req) from the local server wizard to get its first package (.alk).',
+    columns: { name: 'Name', serverId: 'Identifier', status: 'State', seats: 'Seats', package: 'Package', lastSeen: 'Last exchange' },
+    status: { pending: 'Waiting for registration', active: 'Running', revoked: 'Disabled' },
+    newCode: 'New code',
+    form: { customer: 'Customer', name: 'Name', seats: 'Seats on the server', save: 'Create', cancel: 'Cancel' },
+    code: {
+      title: 'Registration code',
+      once: 'The code is shown once and is valid for 7 days. Hand it to the customer administrator.',
+      close: 'I have saved the code',
+    },
+    noLicenses: 'The customer has no active licenses.',
+    never: 'Never',
+    registered: 'The server is registered, the package is saved',
   },
 }
 

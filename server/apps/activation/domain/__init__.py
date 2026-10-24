@@ -5,7 +5,13 @@ from apps.activation.domain.directives import queue_directive
 from apps.activation.domain.keys import device_public_key
 from apps.activation.domain.offline import MAX_FILE_BYTES, OfflineRequest, answer, open_request
 from apps.activation.domain.release import ReleaseResult, release
-from apps.activation.domain.service import ActivationRequest, ActivationResult, activate
+from apps.activation.domain.service import (
+    ActivationRequest,
+    ActivationResult,
+    Terms,
+    activate,
+    load_terms,
+)
 from apps.activation.domain.usage import (
     ActivationData,
     Usage,
@@ -29,7 +35,9 @@ __all__ = [
     "ActivationRequest",
     "ActivationResult",
     "CheckRequest",
+    "Terms",
     "activate",
+    "load_terms",
     "check",
     "device_public_key",
     "queue_directive",
