@@ -97,8 +97,14 @@ from apps.catalog.domain.admin import (  # noqa: E402  (admin services use the m
     update_capability,
     update_product,
 )
+from apps.catalog.domain.package import (  # noqa: E402
+    package_product,
+    save_package_profile,
+)
 
 __all__ = [
+    "package_product",
+    "save_package_profile",
     "add_capability",
     "create_metric",
     "create_product",

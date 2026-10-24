@@ -2,6 +2,15 @@
 
 from uuid import UUID
 
+from apps.packages.domain.local import (
+    LocalStatus,
+    SetupResult,
+    import_package,
+    local_status,
+    package_terms,
+    setup,
+    sync_package,
+)
 from apps.packages.domain.servers import (
     IssuedCode,
     Registration,
@@ -26,6 +35,13 @@ def license_allocated(license_id: UUID) -> bool:
 
 
 __all__ = [
+    "LocalStatus",
+    "SetupResult",
+    "import_package",
+    "local_status",
+    "package_terms",
+    "setup",
+    "sync_package",
     "IssuedCode",
     "Registration",
     "ServerData",

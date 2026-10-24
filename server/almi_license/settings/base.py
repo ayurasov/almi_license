@@ -28,6 +28,15 @@ LEASE_ISSUER = env.str(
     else f"urn:almi:ls:{env.str('SERVER_ID', default='')}",
 )
 
+# Local server (E09): its Ed25519 key file (a volume, written once by the first-run wizard) and
+# the public keys of the trust roots that packages are checked against, as "kid:pub" entries.
+# Version of the image, sent by a local server at registration.
+APP_VERSION = env.str("APP_VERSION", default="0.1.0")
+LOCAL_SERVER_KEY_FILE = env.str("LOCAL_SERVER_KEY_FILE", default="")
+TRUST_ROOTS: list[str] = env.list("TRUST_ROOTS", default=[])
+# Only for tests and the dev compose: lets a local server talk to http:// central servers.
+ALLOW_PLAIN_HTTP_CENTRAL = env.bool("ALLOW_PLAIN_HTTP_CENTRAL", default=False)
+
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [

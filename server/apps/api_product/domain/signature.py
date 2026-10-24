@@ -4,7 +4,6 @@ Order of checks: header format, alg, nonce format, clock window, signature, nonc
 A nonce is remembered only after a valid signature, so forged requests cannot use up nonces.
 """
 
-import hashlib
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -13,9 +12,9 @@ from django.db import IntegrityError, transaction
 
 from apps.api_product.models import RequestNonce
 from infra.crypto.ed25519 import Ed25519Provider
-from infra.crypto.encoding import b64url_decode, b64url_encode
+from infra.crypto.encoding import b64url_decode
+from infra.request_signing import signing_string
 
-VERSION = b"ALMI-REQ-V1"
 ALG = "ed25519"
 DEVICE_KEYID = "device"
 CLOCK_TOLERANCE = timedelta(seconds=300)
@@ -70,15 +69,6 @@ def parse_header(value: str) -> SignatureHeader:
         nonce=str(values["nonce"]),
         sig=str(values["sig"]),
     )
-
-
-def body_digest(body: bytes) -> str:
-    return b64url_encode(hashlib.sha256(body).digest())
-
-
-def signing_string(method: str, path: str, created: int, nonce: str, body: bytes) -> bytes:
-    lines = [VERSION.decode(), method.upper(), path, str(created), nonce, body_digest(body)]
-    return "\n".join(lines).encode("utf-8")
 
 
 def _decode(text: str, size: int) -> bytes:

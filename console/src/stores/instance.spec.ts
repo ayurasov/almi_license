@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe('useInstanceStore', () => {
   it('hides central sections on a local server and loads the mode once', async () => {
-    const get = vi.spyOn(api, 'GET').mockResolvedValue({ data: { mode: 'local' }, response: new Response() })
+    const get = vi.spyOn(api, 'GET').mockResolvedValue({ data: { mode: 'local', setup_required: false }, response: new Response() })
     const store = useInstanceStore()
     await store.load()
     await store.load()
@@ -21,12 +21,14 @@ describe('useInstanceStore', () => {
     expect(store.allows('catalog')).toBe(false)
     expect(store.allows('import')).toBe(false)
     expect(store.allows('licenses')).toBe(true)
+    expect(store.allows('package')).toBe(true)
   })
 
   it('allows everything on the central server', async () => {
-    vi.spyOn(api, 'GET').mockResolvedValue({ data: { mode: 'central' }, response: new Response() })
+    vi.spyOn(api, 'GET').mockResolvedValue({ data: { mode: 'central', setup_required: false }, response: new Response() })
     const store = useInstanceStore()
     await store.load()
     expect(store.allows('catalog')).toBe(true)
+    expect(store.allows('package')).toBe(false)
   })
 })

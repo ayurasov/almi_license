@@ -23,7 +23,7 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
+.PHONY: help up down up-local up-pair seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
 	contract-check vectors cross-verify admin-schema e2e bundle-airgap
 
 help: ## Show available targets
@@ -39,6 +39,10 @@ down: ## Stop the dev environment (data volume is kept)
 
 up-local: ## Start the dev environment with DEPLOYMENT_MODE=local
 	$(MAKE) up DEPLOYMENT_MODE=local
+
+up-pair: ## Central server plus a local server (profile local, API http://localhost:8090) — E09
+	$(COMPOSE) --profile local up -d --build --wait --wait-timeout 180
+	@echo "central http://localhost:8080; local server API http://localhost:8090 (wizard: central http://api:8000)"
 
 seed: ## Apply migrations and load the initial catalog (fixtures/catalog-v1.json)
 	$(COMPOSE) exec -T api python manage.py migrate --noinput

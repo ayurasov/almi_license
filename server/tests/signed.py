@@ -7,9 +7,9 @@ from typing import Any
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from django.test import Client
 
-from apps.api_product.domain.signature import signing_string
 from infra.clock import current_clock
 from infra.crypto.encoding import b64url_decode, b64url_encode
+from infra.request_signing import signing_string
 from tests.vectors import key_path
 
 

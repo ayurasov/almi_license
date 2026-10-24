@@ -357,6 +357,7 @@ class InstanceSerializer(serializers.Serializer[dict[str, Any]]):
     """What the console needs before sign-in: the mode of this server (E09-01)."""
 
     mode = serializers.ChoiceField(["central", "local"])
+    setup_required = serializers.BooleanField()
 
 
 class LocalServerSerializer(serializers.Serializer[dict[str, Any]]):
@@ -394,3 +395,27 @@ class AlkFileSerializer(serializers.Serializer[dict[str, Any]]):
     format = serializers.CharField()
     version = serializers.IntegerField()
     payload = serializers.CharField()
+
+
+class LocalStatusSerializer(serializers.Serializer[dict[str, Any]]):
+    configured = serializers.BooleanField()
+    registered = serializers.BooleanField()
+    server_id = serializers.CharField(allow_null=True)
+    exchange = serializers.ChoiceField(["online", "files"], allow_null=True)
+    central_url = serializers.CharField(allow_blank=True)
+    customer_id = serializers.UUIDField(allow_null=True)
+    package_seq = serializers.IntegerField()
+    package_issued_at = serializers.DateTimeField(allow_null=True)
+    package_valid_until = serializers.DateTimeField(allow_null=True)
+
+
+class SetupRequestSerializer(serializers.Serializer[dict[str, Any]]):
+    registration_code = serializers.CharField(max_length=64)
+    central_url = serializers.CharField(
+        max_length=256, required=False, allow_blank=True, default=""
+    )
+
+
+class SetupResultSerializer(serializers.Serializer[dict[str, Any]]):
+    status = LocalStatusSerializer()
+    request_file = AlkFileSerializer(allow_null=True)

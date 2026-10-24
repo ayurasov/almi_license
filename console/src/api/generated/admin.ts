@@ -551,6 +551,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A package .alk brought on a medium (files mode, or a replacement in online mode). */
+        post: operations["local_package_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/package/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Ask the central server for a newer package now (online mode). */
+        post: operations["local_package_sync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/products": {
         parameters: {
             query?: never;
@@ -615,6 +649,24 @@ export interface paths {
         post: operations["session_create"];
         /** @description Console session: GET who is signed in, POST sign in, DELETE sign out (E07-02). */
         delete: operations["session_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The first-run wizard: registration code and the central server or files only. */
+        get: operations["local_status"];
+        put?: never;
+        /** @description The first-run wizard: registration code and the central server or files only. */
+        post: operations["local_setup"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -772,6 +824,12 @@ export interface components {
             };
             base_capabilities?: string[];
         };
+        /**
+         * @description * `online` - online
+         *     * `files` - files
+         * @enum {string}
+         */
+        ExchangeEnum: "online" | "files";
         HistoryEvent: {
             seq: number;
             /** Format: date-time */
@@ -827,6 +885,7 @@ export interface components {
         /** @description What the console needs before sign-in: the mode of this server (E09-01). */
         Instance: {
             mode: components["schemas"]["ModeEnum"];
+            setup_required: boolean;
         };
         IssuedKey: {
             /** Format: uuid */
@@ -939,6 +998,20 @@ export interface components {
          * @enum {string}
          */
         LocalServerStatusEnum: "pending" | "active" | "revoked";
+        LocalStatus: {
+            configured: boolean;
+            registered: boolean;
+            server_id: string | null;
+            exchange: (components["schemas"]["ExchangeEnum"] | components["schemas"]["NullEnum"]) | null;
+            central_url: string;
+            /** Format: uuid */
+            customer_id: string | null;
+            package_seq: number;
+            /** Format: date-time */
+            package_issued_at: string | null;
+            /** Format: date-time */
+            package_valid_until: string | null;
+        };
         /**
          * @description * `operator` - operator
          *     * `admin` - admin
@@ -965,6 +1038,8 @@ export interface components {
          * @enum {string}
          */
         ModeEnum: "central" | "local";
+        /** @enum {unknown} */
+        NullEnum: null;
         PatchedAccountUpdate: {
             role?: components["schemas"]["ManagedRoleEnum"];
             active?: boolean;
@@ -1084,6 +1159,15 @@ export interface components {
         SessionRequest: {
             username: string;
             password: string;
+        };
+        SetupRequest: {
+            registration_code: string;
+            /** @default  */
+            central_url: string;
+        };
+        SetupResult: {
+            status: components["schemas"]["LocalStatus"];
+            request_file: components["schemas"]["AlkFile"] | null;
         };
         /**
          * @description * `device` - device
@@ -2126,6 +2210,48 @@ export interface operations {
             };
         };
     };
+    local_package_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ImportUpload"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalStatus"];
+                };
+            };
+        };
+    };
+    local_package_sync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalStatus"];
+                };
+            };
+        };
+    };
     products_list: {
         parameters: {
             query?: never;
@@ -2271,6 +2397,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    local_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalStatus"];
+                };
+            };
+        };
+    };
+    local_setup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SetupRequest"];
+                "multipart/form-data": components["schemas"]["SetupRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupResult"];
+                };
             };
         };
     };

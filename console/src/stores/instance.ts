@@ -9,6 +9,8 @@ export type Instance = components['schemas']['Instance']
 
 // Sections served by the central server only; on a local server they come with the package.
 export const CENTRAL_SECTIONS = new Set(['catalog', 'profiles', 'import', 'servers'])
+// Sections of a local server only: its package and the first-run wizard.
+export const LOCAL_SECTIONS = new Set(['package', 'setup'])
 
 export const useInstanceStore = defineStore('instance', () => {
   const instance = ref<Instance | null>(null)
@@ -22,8 +24,14 @@ export const useInstanceStore = defineStore('instance', () => {
   }
 
   function allows(section: string): boolean {
-    return !(local.value && CENTRAL_SECTIONS.has(section))
+    return local.value ? !CENTRAL_SECTIONS.has(section) : !LOCAL_SECTIONS.has(section)
   }
 
-  return { instance, local, load, allows }
+  /** After the wizard or a package upload the server is registered: ask again. */
+  async function reload(): Promise<Instance | null> {
+    instance.value = null
+    return load()
+  }
+
+  return { instance, local, load, reload, allows }
 })

@@ -9,6 +9,7 @@ The private key never reaches repr, logs, exceptions, pickles or copies.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -127,3 +128,20 @@ class Ed25519Provider:
 
     def __deepcopy__(self, memo: object) -> NoReturn:
         raise TypeError("Ed25519Provider holds a private key and cannot be copied")
+
+
+def create_key_file(path: Path) -> None:
+    """A new Ed25519 seed (OS CSPRNG) in a file readable by the owner only; never overwrites."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    seed = Ed25519PrivateKey.generate().private_bytes_raw()
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="ascii") as handle:
+        handle.write(b64url_encode(seed) + "\n")
+
+
+def load_key(path: Path) -> Ed25519PrivateKey:
+    return _load_seed(path)
+
+
+def public_key_text(key: Ed25519PrivateKey) -> str:
+    return b64url_encode(_raw_public(key))

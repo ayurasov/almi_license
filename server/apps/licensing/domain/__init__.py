@@ -40,6 +40,7 @@ from apps.licensing.domain.management import (
     update_settings,
 )
 from apps.licensing.domain.mappings import MappingData, list_mappings, save_mapping
+from apps.licensing.domain.package import PackageLicense, replace_package_licenses
 
 __all__ = [
     "IssuedKey",
@@ -64,6 +65,8 @@ __all__ = [
     "ImportFileError",
     "ImportReport",
     "MappingData",
+    "PackageLicense",
+    "replace_package_licenses",
     "list_mappings",
     "save_mapping",
     "apply_import",
