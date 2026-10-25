@@ -12,6 +12,7 @@ from apps.api_admin.api import serializers as s
 from apps.api_admin.api.common import valid
 from apps.api_admin.api.licenses import _Operator
 from apps.packages.domain import (
+    accept_usage,
     create_server,
     list_servers,
     new_code,
@@ -94,3 +95,21 @@ class LocalServerRegisterFileView(_Operator):
         response = Response(document)
         response["Content-Disposition"] = f'attachment; filename="{server_id}.alk"'
         return response
+
+
+class LocalServerUsageFileView(_Operator):
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(
+        request={"multipart/form-data": s.ImportUploadSerializer},
+        responses={200: s.UsageReceiptSerializer},
+        operation_id="local_servers_usage_file",
+    )
+    def post(self, request: Request) -> Response:
+        """A .alk-usage of a local server in a closed network (E09-06); the receipt goes back to
+        the server with its next package."""
+        upload = valid(s.ImportUploadSerializer(data=request.data))["file"]
+        receipt = accept_usage(
+            upload.read(), now=current_clock().now(), ip=request.META.get("REMOTE_ADDR")
+        )
+        return Response(s.UsageReceiptSerializer(asdict(receipt)).data)

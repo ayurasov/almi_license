@@ -246,3 +246,17 @@ def customer_objects(license_ids: list[UUID]) -> frozenset[tuple[str, str]]:
         [("license", str(license_id)) for license_id in license_ids]
         + [("activation", external_id) for external_id in activations]
     )
+
+
+def released_between(license_ids: list[UUID], since: datetime, until: datetime) -> dict[UUID, int]:
+    """Activations released (by the product, the operator or automatically) in [since, until)."""
+    result = dict.fromkeys(license_ids, 0)
+    rows = Activation.objects.filter(
+        license_id__in=license_ids,
+        status__in=(ActivationStatus.RELEASED, ActivationStatus.RELEASED_AUTO),
+        released_at__gte=since,
+        released_at__lt=until,
+    )
+    for license_id in rows.values_list("license_id", flat=True):
+        result[license_id] += 1
+    return result

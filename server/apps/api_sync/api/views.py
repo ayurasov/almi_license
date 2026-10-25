@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.api_sync.api.auth import ServerSignatureAuthentication, SignedServer
-from apps.packages.domain import package_since, register
+from apps.packages.domain import accept_usage, package_since, register
 from infra.clock import current_clock
 from infra.problems import Problem
 
@@ -51,3 +51,21 @@ class PackageView(APIView):
             raise Problem("invalid_request", "since_seq is a non-negative integer")
         document = package_since(server_id, int(raw), now=current_clock().now())
         return Response(status=204) if document is None else Response(document)
+
+
+class UsageView(APIView):
+    """POST /api/sync/v1/servers/{server_id}/usage (postUsage): a .alk-usage, the receipt back."""
+
+    authentication_classes = [ServerSignatureAuthentication]
+
+    def post(self, request: Request, server_id: str) -> Response:
+        signed = cast(SignedServer, request.auth)
+        if signed.server_id != server_id:
+            raise Problem("signature_invalid")
+        receipt = accept_usage(
+            request.body,
+            server_id=server_id,
+            now=current_clock().now(),
+            ip=request.META.get("REMOTE_ADDR"),
+        )
+        return Response({"receipt": receipt.receipt})

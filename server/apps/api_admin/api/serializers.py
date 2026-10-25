@@ -426,6 +426,8 @@ class LocalStatusSerializer(serializers.Serializer[dict[str, Any]]):
     package_issued_at = serializers.DateTimeField(allow_null=True)
     package_valid_until = serializers.DateTimeField(allow_null=True)
     package_expires_soon = serializers.BooleanField()
+    report_seq = serializers.IntegerField(help_text="Last usage report built (E09-05)")
+    receipt_seq = serializers.IntegerField(help_text="Last report acknowledged by the central")
 
 
 class SetupRequestSerializer(serializers.Serializer[dict[str, Any]]):
@@ -466,6 +468,7 @@ class LicenseStatsSerializer(serializers.Serializer[dict[str, Any]]):
     user_limit = serializers.IntegerField(allow_null=True)
     users_exceeded = serializers.BooleanField()
     state = serializers.CharField(allow_blank=True)
+    local_active = serializers.IntegerField(help_text="Active on local servers (last reports)")
 
 
 class StatsSerializer(serializers.Serializer[dict[str, Any]]):
@@ -512,3 +515,9 @@ class AuditEventSerializer(serializers.Serializer[dict[str, Any]]):
 class AuditPageSerializer(serializers.Serializer[dict[str, Any]]):
     count = serializers.IntegerField()
     results = AuditEventSerializer(many=True)
+
+
+class UsageReceiptSerializer(serializers.Serializer[dict[str, Any]]):
+    server_id = serializers.CharField()
+    report_seq = serializers.IntegerField()
+    receipt = serializers.CharField(help_text="JWS alm-receipt+jws")

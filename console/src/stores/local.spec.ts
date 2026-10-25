@@ -16,6 +16,8 @@ const status: LocalStatus = {
   package_issued_at: null,
   package_valid_until: null,
   package_expires_soon: false,
+  report_seq: 0,
+  receipt_seq: 0,
 }
 
 beforeEach(() => {
@@ -49,5 +51,15 @@ describe('useLocalStore', () => {
     const store = useLocalStore()
     expect((await store.sync()).package_seq).toBe(2)
     expect(post).toHaveBeenCalledWith('/api/admin/package/sync')
+  })
+
+  it('builds a usage report and reloads the status', async () => {
+    const report = { format: 'alk-usage' as const, version: 1, payload: 'h.p.s' }
+    const post = vi.spyOn(api, 'POST').mockResolvedValue({ data: report, response: new Response() })
+    vi.spyOn(api, 'GET').mockResolvedValue({ data: { ...status, report_seq: 1 }, response: new Response() })
+    const store = useLocalStore()
+    expect(await store.usageReport()).toEqual(report)
+    expect(post).toHaveBeenCalledWith('/api/admin/usage-report')
+    expect(store.status?.report_seq).toBe(1)
   })
 })

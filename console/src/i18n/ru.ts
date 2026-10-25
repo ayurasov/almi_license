@@ -316,6 +316,8 @@ export default {
   },
   servers: {
     packageExpires: 'Пакет истекает {date}',
+    usageFile: 'Загрузить отчёт .alk-usage',
+    usageAccepted: 'Отчёт № {seq} принят; квитанция уйдёт с ближайшим пакетом.',
     title: 'Локальные серверы',
     create: 'Новый сервер',
     empty: 'Локальных серверов нет.',
@@ -349,6 +351,9 @@ export default {
     toPackage: 'Перейти к пакету',
   },
   packagePage: {
+    report: 'Сформировать отчёт',
+    reports: 'Отчёты об использовании',
+    reportState: 'отправлено {sent}, подтверждено {acked}',
     expiresSoon: 'Пакет действует до {date}. Получите новый пакет у центрального сервера: после срока лицензии продуктов перейдут в состояние по политике пакета.',
     title: 'Пакет прав',
     server: 'Сервер',
@@ -394,7 +399,7 @@ export default {
     all: 'Все',
     export: 'Выгрузить в XLSX',
     tiles: { licenses: 'Лицензий', limit: 'Мест', active: 'Активировано', free: 'Свободно', reserve: 'В резерве', auto: 'Освобождено автоматически', lastSeen: 'Последний контакт' },
-    columns: { customer: 'Заказчик', product: 'Продукт', limit: 'Мест', active: 'Активно', reserve: 'Резерв', free: 'Свободно', auto: 'Освобождено авт.', lastSeen: 'Последний контакт', users: 'Пользователей' },
+    columns: { customer: 'Заказчик', product: 'Продукт', limit: 'Мест', active: 'Активно', reserve: 'Резерв', free: 'Свободно', auto: 'Освобождено авт.', lastSeen: 'Последний контакт', users: 'Пользователей', local: 'На локальных серверах' },
     usersExceeded: 'Превышен лимит пользователей',
     versions: 'Версии продукта',
     systems: 'Операционные системы',

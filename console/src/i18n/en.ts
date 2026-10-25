@@ -313,6 +313,8 @@ const en: typeof ru = {
   },
   servers: {
     packageExpires: 'Package expires {date}',
+    usageFile: 'Upload a .alk-usage report',
+    usageAccepted: 'Report {seq} accepted; the receipt goes with the next package.',
     title: 'Local servers',
     create: 'New server',
     empty: 'No local servers.',
@@ -346,6 +348,9 @@ const en: typeof ru = {
     toPackage: 'Go to the package',
   },
   packagePage: {
+    report: 'Build a report',
+    reports: 'Usage reports',
+    reportState: 'sent {sent}, acknowledged {acked}',
     expiresSoon: 'The package is valid until {date}. Get a new package from the central server: after that date the licences of products follow the policy of the package.',
     title: 'Rights package',
     server: 'Server',
@@ -391,7 +396,7 @@ const en: typeof ru = {
     all: 'All',
     export: 'Export to XLSX',
     tiles: { licenses: 'Licenses', limit: 'Seats', active: 'Activated', free: 'Free', reserve: 'In reserve', auto: 'Released automatically', lastSeen: 'Last contact' },
-    columns: { customer: 'Customer', product: 'Product', limit: 'Seats', active: 'Active', reserve: 'Reserve', free: 'Free', auto: 'Auto released', lastSeen: 'Last contact', users: 'Users' },
+    columns: { customer: 'Customer', product: 'Product', limit: 'Seats', active: 'Active', reserve: 'Reserve', free: 'Free', auto: 'Auto released', lastSeen: 'Last contact', users: 'Users', local: 'On local servers' },
     usersExceeded: 'User limit exceeded',
     versions: 'Product versions',
     systems: 'Operating systems',

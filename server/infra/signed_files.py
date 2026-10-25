@@ -4,6 +4,7 @@ local server that the receiver may not know yet), so the signature is checked wi
 before any other field of the payload is used."""
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -41,9 +42,15 @@ def _segment(text: str, what: str) -> bytes:
         raise FileRefused(f"{what} is not base64url") from None
 
 
-def open_signed_file(
-    content: bytes, *, file_format: str, typ: str, key_field: str, max_bytes: int
-) -> SignedFile:
+@dataclass(frozen=True)
+class _Parsed:
+    header: dict[str, Any]
+    payload: dict[str, Any]
+    signing_input: bytes
+    signature: bytes
+
+
+def _parse(content: bytes, *, file_format: str, typ: str, max_bytes: int) -> _Parsed:
     if len(content) > max_bytes:
         raise FileRefused(f"file is larger than {max_bytes // 1024} KiB")
     container = _json(content, "file")
@@ -63,11 +70,39 @@ def open_signed_file(
     payload = _json(_segment(parts[1], "JWS payload"), "JWS payload")
     if not isinstance(payload, dict):
         raise FileRefused("JWS payload is not an object")
-    key = payload.get(key_field)
-    raw_key = _segment(key, key_field) if isinstance(key, str) else b""
     signature = _segment(parts[2], "JWS signature")
-    if len(raw_key) != PUBLIC_KEY_SIZE or len(signature) != SIGNATURE_SIZE:
-        raise SignatureMismatch(key_field)
-    if not Ed25519Provider.verify(f"{parts[0]}.{parts[1]}".encode("ascii"), signature, raw_key):
-        raise SignatureMismatch(key_field)
-    return SignedFile(header, payload)
+    return _Parsed(header, payload, f"{parts[0]}.{parts[1]}".encode("ascii"), signature)
+
+
+def _verify(parsed: _Parsed, raw_key: bytes, what: str) -> SignedFile:
+    if len(raw_key) != PUBLIC_KEY_SIZE or len(parsed.signature) != SIGNATURE_SIZE:
+        raise SignatureMismatch(what)
+    if not Ed25519Provider.verify(parsed.signing_input, parsed.signature, raw_key):
+        raise SignatureMismatch(what)
+    return SignedFile(parsed.header, parsed.payload)
+
+
+def open_signed_file(
+    content: bytes, *, file_format: str, typ: str, key_field: str, max_bytes: int
+) -> SignedFile:
+    """The JWS is checked with the key in its own payload field key_field."""
+    parsed = _parse(content, file_format=file_format, typ=typ, max_bytes=max_bytes)
+    key = parsed.payload.get(key_field)
+    raw_key = _segment(key, key_field) if isinstance(key, str) else b""
+    return _verify(parsed, raw_key, key_field)
+
+
+def open_file_of_known_key(
+    content: bytes,
+    *,
+    file_format: str,
+    typ: str,
+    max_bytes: int,
+    key_of: Callable[[str], bytes | None],
+) -> SignedFile:
+    """The JWS is checked with the key the receiver keeps for the kid of the header (a .alk-usage
+    of a registered local server); an unknown kid is a signature mismatch."""
+    parsed = _parse(content, file_format=file_format, typ=typ, max_bytes=max_bytes)
+    kid = parsed.header.get("kid")
+    raw_key = key_of(kid) if isinstance(kid, str) else None
+    return _verify(parsed, raw_key or b"", "kid")

@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from apps.api_admin.api import serializers as s
 from apps.api_admin.api.common import actor_of, valid
 from apps.api_admin.api.permissions import ConsoleSession, IsAdmin, IsOperator
-from apps.packages.domain import import_package, local_status, setup, sync_package
+from apps.packages.domain import build_report, import_package, local_status, setup, sync_package
 from infra.clock import current_clock
 from infra.problems import Problem
 
@@ -93,3 +93,20 @@ class PackageSyncView(APIView):
     def post(self, request: Request) -> Response:
         sync_package(now=current_clock().now())
         return Response(s.LocalStatusSerializer(asdict(local_status(current_clock().now()))).data)
+
+
+class UsageReportView(APIView):
+    """A new usage report .alk-usage of this server as a file (files exchange, E09-05)."""
+
+    authentication_classes = [ConsoleSession]
+    permission_classes = [IsOperator]
+
+    @extend_schema(
+        request=None, responses={200: s.AlkFileSerializer}, operation_id="local_usage_report"
+    )
+    def post(self, request: Request) -> Response:
+        context = _context(request)
+        document, seq = build_report(actor=context["actor"], now=context["now"])
+        response = Response(document)
+        response["Content-Disposition"] = f'attachment; filename="usage-{seq}.alk-usage"'
+        return response

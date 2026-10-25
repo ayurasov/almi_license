@@ -12,6 +12,7 @@ from apps.packages.domain.local import (
     setup,
     sync_package,
 )
+from apps.packages.domain.local_usage import ReportState, build_report, report_state, send_report
 from apps.packages.domain.servers import (
     IssuedCode,
     Registration,
@@ -27,6 +28,7 @@ from apps.packages.domain.servers import (
     server_public_key,
     set_allocations,
 )
+from apps.packages.domain.usage import UsageReceipt, accept_usage, local_active
 from apps.packages.models import Allocation
 
 
@@ -36,6 +38,13 @@ def license_allocated(license_id: UUID) -> bool:
 
 
 __all__ = [
+    "ReportState",
+    "UsageReceipt",
+    "accept_usage",
+    "build_report",
+    "local_active",
+    "report_state",
+    "send_report",
     "LocalStatus",
     "SetupResult",
     "import_package",

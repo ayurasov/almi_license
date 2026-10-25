@@ -9,6 +9,7 @@ import { NetworkError } from '@/api/problem'
 type Schemas = components['schemas']
 export type LocalStatus = Schemas['LocalStatus']
 export type SetupResult = Schemas['SetupResult']
+export type AlkFile = Schemas['AlkFile']
 
 function required<T>(data: T | undefined): T {
   if (data === undefined) throw new NetworkError('empty response')
@@ -48,5 +49,13 @@ export const useLocalStore = defineStore('local', () => {
     return status.value
   }
 
-  return { status, load, setup, upload, sync }
+  /** A new usage report .alk-usage to save and hand over to the central server (E09-05). */
+  async function usageReport(): Promise<AlkFile> {
+    const { data } = await api.POST('/api/admin/usage-report')
+    const report = required(data)
+    await load()
+    return report
+  }
+
+  return { status, load, setup, upload, sync, usageReport }
 })

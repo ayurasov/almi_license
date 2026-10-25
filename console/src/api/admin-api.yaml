@@ -1259,6 +1259,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlkFile'
           description: ''
+  /api/admin/local-servers/usage-file:
+    post:
+      operationId: local_servers_usage_file
+      description: |-
+        A .alk-usage of a local server in a closed network (E09-06); the receipt goes back to
+        the server with its next package.
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageReceipt'
+          description: ''
   /api/admin/package:
     post:
       operationId: local_package_upload
@@ -1538,6 +1561,22 @@ paths:
                 type: string
                 format: binary
           description: XLSX
+  /api/admin/usage-report:
+    post:
+      operationId: local_usage_report
+      description: A new usage report .alk-usage of this server as a file (files exchange,
+        E09-05).
+      tags:
+      - usage-report
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlkFile'
+          description: ''
 components:
   schemas:
     Account:
@@ -2280,6 +2319,9 @@ components:
           type: boolean
         state:
           type: string
+        local_active:
+          type: integer
+          description: Active on local servers (last reports)
       required:
       - active
       - by_os
@@ -2292,6 +2334,7 @@ components:
       - last_seen_at
       - license_id
       - limit
+      - local_active
       - product
       - released_auto
       - state
@@ -2453,6 +2496,12 @@ components:
           nullable: true
         package_expires_soon:
           type: boolean
+        report_seq:
+          type: integer
+          description: Last usage report built (E09-05)
+        receipt_seq:
+          type: integer
+          description: Last report acknowledged by the central
       required:
       - central_url
       - configured
@@ -2462,7 +2511,9 @@ components:
       - package_issued_at
       - package_seq
       - package_valid_until
+      - receipt_seq
       - registered
+      - report_seq
       - server_id
     Metric:
       type: object
@@ -2911,6 +2962,20 @@ components:
       - in_reserve
       - last_seen_at
       - released_auto
+    UsageReceipt:
+      type: object
+      properties:
+        server_id:
+          type: string
+        report_seq:
+          type: integer
+        receipt:
+          type: string
+          description: JWS alm-receipt+jws
+      required:
+      - receipt
+      - report_seq
+      - server_id
   securitySchemes:
     consoleSession:
       type: apiKey

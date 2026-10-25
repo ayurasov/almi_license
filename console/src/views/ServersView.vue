@@ -101,6 +101,17 @@ async function registerFile(event: Event): Promise<void> {
   if (fileInput.value) fileInput.value.value = ''
 }
 
+async function usageFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  await run(async () => {
+    const receipt = await store.uploadUsage(file)
+    toast.add({ severity: 'success', summary: t('servers.usageAccepted', { seq: receipt.report_seq }), life: 3000 })
+  })
+  input.value = ''
+}
+
 function seats(server: LocalServer): number {
   return Object.values(server.allocations).reduce((total, value) => total + value, 0)
 }
@@ -123,6 +134,18 @@ function seats(server: LocalServer): number {
           accept=".alk-req,application/json"
           data-testid="register-file"
           @change="registerFile"
+        >
+        <label
+          class="p-button p-button-secondary"
+          for="usage-file"
+        >{{ t('servers.usageFile') }}</label>
+        <input
+          id="usage-file"
+          class="hidden"
+          type="file"
+          accept=".alk-usage,application/json"
+          data-testid="usage-file"
+          @change="usageFile"
         >
         <Button
           :label="t('servers.create')"

@@ -43,6 +43,7 @@ class LicenseStats:
     user_limit: int | None = None
     users_exceeded: bool = False
     state: str = ""
+    local_active: int = 0
 
 
 @dataclass(frozen=True)
@@ -64,11 +65,13 @@ class Summary:
 def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = None) -> Summary:
     # activation records usage through stats
     from apps.activation.domain import active_activation_ids, usage_by_license
+    from apps.packages.domain import local_active
 
     licenses = find_licenses(customer_id=customer_id, product_id=product_id)
     usage = usage_by_license([lic.id for lic in licenses])
     active_ids = active_activation_ids([lic.id for lic in licenses])
     counters = latest_usage([i for ids in active_ids.values() for i in ids])
+    on_local = local_active([lic.id for lic in licenses])  # reports of local servers (E09-06)
     products: dict[UUID, str] = {}
     rows: list[LicenseStats] = []
     versions: Counter[str] = Counter()
@@ -102,6 +105,7 @@ def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = 
                 user_limit=user_limit,
                 users_exceeded=users is not None and user_limit is not None and users > user_limit,
                 state=lic.state,
+                local_active=on_local.get(lic.id, 0),
             )
         )
         versions.update(used.by_version)
