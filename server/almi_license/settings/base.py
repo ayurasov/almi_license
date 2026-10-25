@@ -71,6 +71,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "almi_license.middleware.RequestMetrics",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -132,4 +133,13 @@ SPECTACULAR_SETTINGS = {
         "CapabilityStatusEnum": ["active", "deprecated"],
         "RoleEnum": ["operator", "admin", "customer_viewer"],
     },
+}
+
+# JSON lines on stdout (E15-05; section 11 of document 7): the host keeps them 14 days.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"json": {"()": "infra.logs.JsonFormatter"}},
+    "handlers": {"stdout": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "root": {"handlers": ["stdout"], "level": env.str("LOG_LEVEL", default="INFO")},
 }
