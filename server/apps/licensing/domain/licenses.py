@@ -1,7 +1,8 @@
 """License lookup and locking for seat accounting (AGENTS.md, rule 6)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from apps.licensing.models import License, LicenseKey
@@ -27,6 +28,7 @@ class LicenseRecord:
     customer_name: str
     metric_id: UUID | None = None
     updated_at: datetime | None = None
+    limits: dict[str, Any] = field(default_factory=dict)
 
 
 def _record(row: License) -> LicenseRecord:
@@ -49,6 +51,7 @@ def _record(row: License) -> LicenseRecord:
         customer_name=row.customer.name,
         metric_id=row.metric_id,
         updated_at=row.updated_at,
+        limits=dict(row.limits),
     )
 
 
@@ -83,3 +86,9 @@ def lock_license(license_id: UUID) -> LicenseRecord:
         .get(id=license_id)
     )
     return _record(row)
+
+
+def counts_active_only(limits: dict[str, Any]) -> bool:
+    """Users of a server product are counted active only (lease limits.only_count_active)."""
+    default = "active_users" in limits and "named_users" not in limits
+    return bool(limits.get("only_count_active", default))

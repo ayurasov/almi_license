@@ -126,3 +126,12 @@ def update_customer(
         if changed:
             record(actor, "customer.updated", "customer", str(row.id), at=now, ip=ip, data=changed)
     return _data(row)
+
+
+def customer_manager(customer_id: UUID) -> dict[str, str] | None:
+    """The account manager of the customer, {name, email, phone}, from Customer.contact.manager."""
+    contact = Customer.objects.filter(id=customer_id).values_list("contact", flat=True).first()
+    manager = contact.get("manager") if isinstance(contact, dict) else None
+    if not isinstance(manager, dict):
+        return None
+    return {key: str(manager.get(key, "")) for key in ("name", "email", "phone")}

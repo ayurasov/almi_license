@@ -148,6 +148,34 @@ def test_settings_and_mode(console: Console, licensed: Any) -> None:
     assert bad.status_code == 400 and "reserve_pct" in bad.json()["data"]["fields"]
 
 
+def test_user_limits_go_to_the_lease(
+    console: Console, licensed: Any, issuer: Any, server_clock: FrozenClock
+) -> None:
+    from tests.api_product.test_activate import activate, claims_of, request_body
+
+    response = console.patch(
+        url(licensed, "settings"), {"limits": {"named_users": 500, "only_count_active": False}}
+    )
+    assert response.status_code == 200
+    assert response.json()["limits"] == {
+        "named_users": 500,
+        "active_users": None,
+        "only_count_active": False,
+    }
+    lease = activate(request_body()).json()["lease"]
+    assert claims_of(lease)["limits"] == {"named_users": 500, "only_count_active": False}
+
+    for bad in ({"named_users": 0}, {"active_users": "many"}):
+        refused = console.patch(url(licensed, "settings"), {"limits": bad})
+        assert refused.status_code == 400, bad
+    cleared = console.patch(url(licensed, "settings"), {"limits": {}})
+    assert cleared.json()["limits"] == {
+        "named_users": None,
+        "active_users": None,
+        "only_count_active": False,
+    }
+
+
 def test_transfer_to_another_customer(console: Console, licensed: Any, clock: FrozenClock) -> None:
     from apps.licensing.models import Customer
 

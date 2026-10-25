@@ -1,0 +1,8 @@
+{
+  "provisional": true,
+  "request": {
+    "path": "/apps/zammad_organisation_management/api/query/subscription/{key}",
+    "body": {"instanceId": "oc8kz3m1vq2a", "userCount": 3, "activeUserCount": 1, "apps": {}, "version": "28.0.4.1"}
+  },
+  "response": {"status": 404, "body": {"message": "Subscription not found"}}
+}

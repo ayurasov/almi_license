@@ -38,3 +38,34 @@ class IdempotencyRecord(UUIDModel):
         constraints = [
             models.UniqueConstraint(fields=["scope", "key"], name="idempotency_unique_key")
         ]
+
+
+class RateCounter(UUIDModel):
+    """Requests of one key in one fixed window (section 4.7 of document 2).
+
+    A counter is shared by all processes of the server, unlike the cache of LK 2.0 (document 8,
+    section 3.2). Keys never hold a licence key or an IP in clear: callers pass a hash.
+    """
+
+    key = models.CharField(max_length=128)
+    window_start = models.DateTimeField()
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["key", "window_start"], name="rate_counter_window")
+        ]
+        indexes = [models.Index(fields=["window_start"], name="rate_counter_start")]
+
+    def __str__(self) -> str:
+        return self.key
+
+
+class RateBlock(UUIDModel):
+    """A key blocked until a moment (legacy /api/activate/: an IP after repeated errors)."""
+
+    key = models.CharField(max_length=128, unique=True)
+    until = models.DateTimeField()
+
+    def __str__(self) -> str:
+        return self.key

@@ -47,6 +47,14 @@ class CustomerQuerySerializer(serializers.Serializer[dict[str, Any]]):
     page_size = serializers.IntegerField(required=False, default=20)
 
 
+class LimitsSerializer(serializers.Serializer[dict[str, Any]]):
+    """User limits of a server product (lease "limits", section 6.2 of document 2)."""
+
+    named_users = serializers.IntegerField(required=False, allow_null=True)
+    active_users = serializers.IntegerField(required=False, allow_null=True)
+    only_count_active = serializers.BooleanField(required=False, default=False)
+
+
 class LicenseSerializer(serializers.Serializer[dict[str, Any]]):
     id = serializers.UUIDField()
     customer_id = serializers.UUIDField()
@@ -65,6 +73,7 @@ class LicenseSerializer(serializers.Serializer[dict[str, Any]]):
     policy_profile_code = serializers.CharField(allow_blank=True)
     rights_version = serializers.IntegerField()
     key_masks = serializers.ListField(child=serializers.CharField())
+    limits = LimitsSerializer()
 
 
 class LicensePageSerializer(serializers.Serializer[dict[str, Any]]):
@@ -117,6 +126,7 @@ class SettingsSerializer(serializers.Serializer[dict[str, Any]]):
     reserve_pct = serializers.IntegerField(required=False, allow_null=True)
     metric_id = serializers.UUIDField(required=False)
     enforcement = serializers.CharField(required=False, allow_blank=True)
+    limits = LimitsSerializer(required=False)
 
 
 class TransferSerializer(ReasonSerializer):
@@ -443,6 +453,9 @@ class LicenseStatsSerializer(serializers.Serializer[dict[str, Any]]):
     last_seen_at = serializers.DateTimeField(allow_null=True)
     by_version = serializers.DictField(child=serializers.IntegerField())
     by_os = serializers.DictField(child=serializers.IntegerField())
+    users = serializers.IntegerField(allow_null=True, help_text="Reported by server instances")
+    user_limit = serializers.IntegerField(allow_null=True)
+    users_exceeded = serializers.BooleanField()
 
 
 class StatsSerializer(serializers.Serializer[dict[str, Any]]):

@@ -85,5 +85,10 @@ def purge(now: datetime) -> int:
 
 
 def run_purge_task(payload: dict[str, object], now: datetime) -> None:
-    """Handler of the hourly purge task in the outbox queue."""
+    """Handler of the hourly purge task: stored responses, nonces and rate counters."""
+    from apps.api_product.domain.ratelimit import purge_counters
+    from apps.api_product.domain.signature import purge_nonces
+
     purge(now)
+    purge_nonces(now)
+    purge_counters(now)

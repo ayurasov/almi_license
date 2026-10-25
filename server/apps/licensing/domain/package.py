@@ -4,7 +4,7 @@ Licences that left the package are suspended (their seats went back to the centr
 another server) and may come back with a later package; keys follow their licences.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -27,6 +27,7 @@ class PackageLicense:
     capabilities: list[str]
     profile_code: str
     reserve_pct: int | None
+    limits: dict[str, Any] = field(default_factory=dict)
 
 
 def replace_package_licenses(
@@ -66,6 +67,7 @@ def replace_package_licenses(
                 "policy_profile_code": item.profile_code,
                 "enforcement": "",
                 "extra_capabilities": sorted(item.capabilities),
+                "limits": item.limits,
                 "updated_at": now,
             },
             create_defaults={
@@ -82,6 +84,7 @@ def replace_package_licenses(
                 "status": item.status,
                 "policy_profile_code": item.profile_code,
                 "extra_capabilities": sorted(item.capabilities),
+                "limits": item.limits,
                 "created_at": now,
                 "updated_at": now,
             },

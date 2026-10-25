@@ -2,6 +2,7 @@
 // Actions of the license card (E07-04): every action goes through this confirmation dialog;
 // revoke, suspend, lift block and transfer need a reason (prompt I3-01).
 import Button from 'primevue/button'
+import Checkbox from 'primevue/checkbox'
 import DatePicker from 'primevue/datepicker'
 import Dialog from 'primevue/dialog'
 import InputNumber from 'primevue/inputnumber'
@@ -33,6 +34,8 @@ const form = reactive({
   limit: null as number | null,
   reservePct: null as number | null,
   enforcement: '',
+  userLimit: null as number | null,
+  onlyActive: false,
   customerId: '',
   document: '',
 })
@@ -63,6 +66,8 @@ watch(visible, (open) => {
     limit: props.license.limit,
     reservePct: props.license.reserve_pct,
     enforcement: props.license.enforcement,
+    userLimit: props.license.limits.named_users ?? props.license.limits.active_users ?? null,
+    onlyActive: props.license.limits.only_count_active,
     customerId: '',
     document: '',
   })
@@ -94,12 +99,21 @@ async function run(): Promise<License> {
         limit: form.limit ?? undefined,
         reserve_pct: form.reservePct,
         enforcement: form.enforcement,
+        limits: userLimits(),
       })
     case 'transfer':
       return store.transfer(id, { customer_id: form.customerId, reason: form.reason, document: form.document })
     case null:
       throw new Error('no action')
   }
+}
+
+// A server product counts named or only active users against one limit (E11-01).
+function userLimits(): { named_users?: number; active_users?: number; only_count_active: boolean } {
+  if (form.userLimit === null) return { only_count_active: false }
+  return form.onlyActive
+    ? { active_users: form.userLimit, only_count_active: true }
+    : { named_users: form.userLimit, only_count_active: false }
 }
 
 async function confirm(): Promise<void> {
@@ -179,6 +193,21 @@ async function confirm(): Promise<void> {
           option-label="label"
           option-value="value"
         />
+        <label for="action-users">{{ t('licenses.dialog.userLimit') }}</label>
+        <InputNumber
+          v-model="form.userLimit"
+          input-id="action-users"
+          :min="1"
+          data-testid="action-user-limit"
+        />
+        <div class="check">
+          <Checkbox
+            v-model="form.onlyActive"
+            input-id="action-only-active"
+            binary
+          />
+          <label for="action-only-active">{{ t('licenses.dialog.onlyActive') }}</label>
+        </div>
       </template>
 
       <template v-if="action === 'liftBlock'">
@@ -251,6 +280,11 @@ async function confirm(): Promise<void> {
 .action-form {
   display: grid;
   gap: 0.4rem;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .action-buttons {
   display: flex;

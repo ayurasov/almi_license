@@ -15,7 +15,8 @@ from uuid import UUID
 from openpyxl import Workbook
 
 from apps.catalog.domain import product_info
-from apps.licensing.domain import find_licenses
+from apps.licensing.domain import counts_active_only, find_licenses
+from apps.stats.domain.usage import latest_usage
 
 MAX_ACTIVATION_ROWS = 100_000
 
@@ -38,6 +39,9 @@ class LicenseStats:
     last_seen_at: datetime | None
     by_version: dict[str, int]
     by_os: dict[str, int]
+    users: int | None = None
+    user_limit: int | None = None
+    users_exceeded: bool = False
 
 
 @dataclass(frozen=True)
@@ -56,16 +60,22 @@ class Summary:
 
 
 def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = None) -> Summary:
-    from apps.activation.domain import usage_by_license  # activation records usage through stats
+    # activation records usage through stats
+    from apps.activation.domain import active_activation_ids, usage_by_license
 
     licenses = find_licenses(customer_id=customer_id, product_id=product_id)
     usage = usage_by_license([lic.id for lic in licenses])
+    active_ids = active_activation_ids([lic.id for lic in licenses])
+    counters = latest_usage([i for ids in active_ids.values() for i in ids])
     products: dict[UUID, str] = {}
     rows: list[LicenseStats] = []
     versions: Counter[str] = Counter()
     systems: Counter[str] = Counter()
     for lic in licenses:
         used = usage[lic.id]
+        users, user_limit = _users(
+            lic.limits, [counters[i] for i in active_ids[lic.id] if i in counters]
+        )
         if lic.product_id not in products:
             products[lic.product_id] = product_info(lic.product_id).code
         rows.append(
@@ -86,6 +96,9 @@ def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = 
                 last_seen_at=used.last_seen_at,
                 by_version=used.by_version,
                 by_os=used.by_os,
+                users=users,
+                user_limit=user_limit,
+                users_exceeded=users is not None and user_limit is not None and users > user_limit,
             )
         )
         versions.update(used.by_version)
@@ -104,6 +117,17 @@ def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = 
         by_os=dict(systems),
         rows=rows,
     )
+
+
+def _users(limits: dict[str, Any], counters: list[dict[str, Any]]) -> tuple[int | None, int | None]:
+    """Users reported by the instances of a server product and the limit they are counted against.
+
+    only_count_active (or a limit of active users alone) counts active users (E11-02).
+    """
+    field = "active_users" if counts_active_only(limits) else "named_users"
+    reported = [c[field] for c in counters if isinstance(c.get(field), int)]
+    limit = limits.get("named_users", limits.get("active_users"))
+    return (sum(reported) if reported else None), limit
 
 
 def _cell(value: Any) -> Any:
@@ -132,6 +156,8 @@ def stats_workbook(*, customer_id: UUID | None = None, product_id: UUID | None =
             "Конфликты",
             "Действует до (UTC)",
             "Последний контакт (UTC)",
+            "Пользователей",
+            "Лимит пользователей",
         ]
     )
     for row in summary.rows:
@@ -152,6 +178,8 @@ def stats_workbook(*, customer_id: UUID | None = None, product_id: UUID | None =
                     row.conflicts,
                     row.valid_until,
                     row.last_seen_at,
+                    row.users,
+                    row.user_limit,
                 )
             ]
         )

@@ -6,6 +6,7 @@ import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import Message from 'primevue/message'
 import Select from 'primevue/select'
+import Tag from 'primevue/tag'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -14,6 +15,12 @@ import type { components } from '@/api/generated/admin'
 import { type LicenseStats, useStatsStore } from '@/stores/stats'
 
 type Option = { value: string; label: string }
+
+// "520 / 500": users reported by server instances against the licence limit (E11-02)
+function users(row: LicenseStats): string {
+  const used = String(row.users ?? 0)
+  return row.user_limit === null ? used : `${used} / ${String(row.user_limit)}`
+}
 
 const { t, d } = useI18n()
 const store = useStatsStore()
@@ -170,6 +177,19 @@ async function exportXlsx(): Promise<void> {
         field="released_auto"
         :header="t('stats.columns.auto')"
       />
+      <Column :header="t('stats.columns.users')">
+        <template #body="{ data }">
+          <template v-if="(data as LicenseStats).users !== null">
+            {{ users(data as LicenseStats) }}
+            <Tag
+              v-if="(data as LicenseStats).users_exceeded"
+              :value="t('stats.usersExceeded')"
+              severity="danger"
+              data-testid="users-exceeded"
+            />
+          </template>
+        </template>
+      </Column>
       <Column :header="t('stats.columns.lastSeen')">
         <template #body="{ data }">
           {{ (data as LicenseStats).last_seen_at ? d(new Date((data as LicenseStats).last_seen_at ?? '')) : t('stats.never') }}
