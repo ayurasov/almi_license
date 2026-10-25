@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import AbstractBaseUser, User
+from django.contrib.auth.models import AbstractBaseUser, AnonymousUser, User
 from django.db import transaction
 
 from apps.audit.domain import record
@@ -241,8 +241,10 @@ def account_info(user: AbstractBaseUser) -> AccountInfo | None:
     return AccountInfo(user.get_username(), account.role, account.customer_id)
 
 
-def viewer_customer(user: AbstractBaseUser) -> UUID | None:
+def viewer_customer(user: AbstractBaseUser | AnonymousUser) -> UUID | None:
     """The only customer a customer viewer may see; None for ALMI staff (E07-08)."""
+    if not isinstance(user, AbstractBaseUser):
+        return None
     info = account_info(user)
     return info.customer_id if info is not None and info.role == VIEWER_ROLE else None
 
