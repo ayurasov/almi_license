@@ -219,6 +219,6 @@ def test_wizard_and_mode_endpoints(
     files = admin.post("/api/admin/setup", {"registration_code": "AAAAA-BBBBB"})
     assert files.status_code == 200
     assert files.json()["request_file"]["format"] == "alk-req"
-    assert sign_in("operator", clock).get("/api/admin/setup").status_code == 400
+    assert sign_in("operator", clock).get("/api/admin/setup").status_code == 403
     with override_settings(DEPLOYMENT_MODE="central"):
         assert admin.get("/api/admin/setup").status_code == 404

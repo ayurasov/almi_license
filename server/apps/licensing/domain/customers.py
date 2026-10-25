@@ -69,7 +69,7 @@ def list_customers(
 def get_customer(customer_id: UUID) -> CustomerData:
     row = Customer.objects.filter(id=customer_id).first()
     if row is None:
-        raise DomainError("invalid_request", "customer not found")
+        raise DomainError("not_found", "customer not found")
     return _data(row)
 
 
@@ -117,7 +117,7 @@ def update_customer(
     with transaction.atomic():
         row = Customer.objects.select_for_update().filter(id=customer_id).first()
         if row is None:
-            raise DomainError("invalid_request", "customer not found")
+            raise DomainError("not_found", "customer not found")
         clean = _validated(values, row)
         changed = {key: value for key, value in clean.items() if getattr(row, key) != value}
         for key, value in changed.items():

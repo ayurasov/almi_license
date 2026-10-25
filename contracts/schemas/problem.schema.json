@@ -23,7 +23,7 @@
     },
     "code": {
       "type": "string",
-      "description": "Клиент обязан обрабатывать неизвестные коды по классу HTTP-статуса",
+      "description": "Клиент обязан обрабатывать неизвестные коды по классу HTTP-статуса. Коды validation_failed, not_authenticated, forbidden, not_found — только Admin API (консоль)",
       "examples": [
         "invalid_request",
         "invalid_key_format",
@@ -44,7 +44,11 @@
         "upgrade_required",
         "rate_limited",
         "internal_error",
-        "maintenance"
+        "maintenance",
+        "validation_failed",
+        "not_authenticated",
+        "forbidden",
+        "not_found"
       ]
     },
     "detail": {

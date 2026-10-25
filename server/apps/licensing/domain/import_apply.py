@@ -173,7 +173,7 @@ def apply_import(
     with transaction.atomic():
         session = ImportSession.objects.select_for_update().filter(id=session_id).first()
         if session is None:
-            raise DomainError("invalid_request", "import session not found")
+            raise DomainError("not_found", "import session not found")
         if session.status != ImportSessionStatus.DRAFT:
             raise DomainError(
                 "invalid_request",

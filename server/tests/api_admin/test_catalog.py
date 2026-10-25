@@ -96,7 +96,7 @@ def test_catalog_rejects_bad_codes(console: Console, licensed: Any) -> None:
     )
     assert "code" in fields(duplicate)
     missing = console.get("/api/admin/catalog/products/00000000-0000-0000-0000-000000000000")
-    assert missing.status_code == 400
+    assert missing.status_code == 404
 
 
 def test_profile_change_is_a_new_version(console: Console, licensed: Any) -> None:
@@ -156,7 +156,7 @@ def test_profile_accepts_messages_and_the_catalog_fixture(console: Console, lice
 
 def test_profile_code_and_unknown_profile(console: Console, licensed: Any) -> None:
     assert "code" in fields(console.post("/api/admin/profiles/nodot", {"params": POLICY}))
-    assert console.get("/api/admin/profiles/missing.commercial").status_code == 400
+    assert console.get("/api/admin/profiles/missing.commercial").status_code == 404
 
 
 def test_catalog_requires_an_operator(client: Any, licensed: Any) -> None:

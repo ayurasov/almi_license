@@ -231,7 +231,11 @@ class ActivationsView(_Reader):
         if scope is not None:
             # A customer viewer sees the activations of one of its licences at a time.
             if query.get("license_id") is None:
-                raise Problem("invalid_request", "license_id is required")
+                raise Problem(
+                    "validation_failed",
+                    "license_id is required",
+                    data={"fields": {"license_id": ["Выберите лицензию."]}},
+                )
             get_license(query["license_id"], customer_id=scope)
         count, items = list_activations(**query)
         return Response(

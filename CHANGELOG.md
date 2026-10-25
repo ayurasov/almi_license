@@ -1,6 +1,8 @@
 # Изменения
 
 ## Unreleased
+- Контракт 1.1.0: 403 `license_revoked` у `check`; коды Admin API `validation_failed`, `not_authenticated`, `forbidden`, `not_found`; `LM_ERR_STORE_CORRUPTED` (−17) у `LM_Initialize[Ex]`.
+- `AGENTS.md`: «Критичные модули» вместо обязательного ревью ТЛ; ветки по версиям.
 - Публичная страница консоли `/offline` — портал офлайн-активации: `.alk-req` → `.alk-lic` без входа (E08-02).
 - Лимиты частоты Product API раздела 4.7: активация, проверка, офлайн-портал — 429 с `Retry-After`, настройки `RATE_LIMIT_*` (E05-03).
 - Комплект локального сервера для изолированного контура `make bundle-airgap`: образы, compose, установка, проверка, резервные копии, обновление с откатом (E15-04); точки входа образа `api` (Gunicorn + Uvicorn), `worker`, `migrate`, `manage`.

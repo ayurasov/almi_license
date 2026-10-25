@@ -83,5 +83,5 @@ def test_bad_file_and_bad_mapping(console: Console, licensed: Any) -> None:
 
 def test_viewer_cannot_import(clock: FrozenClock) -> None:
     viewer = sign_in("customer_viewer", clock)
-    assert upload(viewer, SAMPLE.read_bytes()).status_code == 400
-    assert viewer.get("/api/admin/article-mappings").status_code == 400
+    assert upload(viewer, SAMPLE.read_bytes()).status_code == 403
+    assert viewer.get("/api/admin/article-mappings").status_code == 403

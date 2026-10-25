@@ -34,6 +34,7 @@ typedef enum {
     LM_ERR_NOT_INITIALIZED = -14,     /* v1+ */
     LM_ERR_BUFFER_TOO_SMALL = -15,    /* v1+ */
     LM_ERR_UPGRADE_REQUIRED = -16,    /* v1+ 426 */
+    LM_ERR_STORE_CORRUPTED = -17,     /* v1+ только LM_Initialize[Ex]: хранилище повреждено и создано заново, модуль работает */
     LM_ERR_INTERNAL = -99
 } LM_Result;
 

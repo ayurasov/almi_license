@@ -19,6 +19,10 @@ CONTENT_TYPE = "application/problem+json"
 CATALOG: dict[str, tuple[int, str]] = {
     "invalid_request": (400, "Нарушен формат запроса"),
     "invalid_key_format": (400, "Неверный формат ключа"),
+    "validation_failed": (400, "Ошибка в полях запроса"),
+    "not_authenticated": (401, "Нужен вход в консоль"),
+    "forbidden": (403, "Недостаточно прав"),
+    "not_found": (404, "Объект не найден"),
     "signature_invalid": (401, "Подпись запроса неверна"),
     "clock_skew": (401, "Отклонение времени"),
     "license_revoked": (403, "Лицензия отозвана"),
@@ -41,6 +45,14 @@ CATALOG: dict[str, tuple[int, str]] = {
 
 # Texts shown to the user (section 5 of document 5); {used}, {limit} come from data.
 USER_MESSAGES: dict[str, dict[str, str]] = {
+    "forbidden": {
+        "ru": "Недостаточно прав для этого действия.",
+        "en": "You do not have permission for this action.",
+    },
+    "not_found": {
+        "ru": "Объект не найден или недоступен.",
+        "en": "The object was not found or is not available.",
+    },
     "invalid_key_format": {
         "ru": "Ключ введён неверно. Проверьте его и попробуйте снова.",
         "en": "The key is incorrect. Check it and try again.",
@@ -81,6 +93,14 @@ _BY_STATUS = {
     status.HTTP_413_REQUEST_ENTITY_TOO_LARGE: "payload_too_large",
     status.HTTP_429_TOO_MANY_REQUESTS: "rate_limited",
 }
+# The Admin API (console) has its own codes for a session, rights, objects and fields
+# (section 16 of document 2, question 23); the Product and Sync APIs keep theirs.
+ADMIN_PREFIX = "/api/admin/"
+_ADMIN_BY_STATUS = _BY_STATUS | {
+    status.HTTP_401_UNAUTHORIZED: "not_authenticated",
+    status.HTTP_403_FORBIDDEN: "forbidden",
+    status.HTTP_404_NOT_FOUND: "not_found",
+}
 
 
 class Problem(exceptions.APIException):
@@ -114,23 +134,35 @@ class Problem(exceptions.APIException):
         self.retry_after = retry_after
 
 
-def _problem_of(exc: exceptions.APIException | DomainError) -> Problem:
+def _problem_of(exc: exceptions.APIException | DomainError, *, admin: bool) -> Problem:
     if isinstance(exc, DomainError):
-        return Problem(exc.code, exc.detail or None, data=exc.data)
-    if isinstance(exc, Problem):
-        return exc
-    detail = exc.detail if isinstance(exc.detail, str) else None
-    if exc.status_code >= 500:
+        problem = Problem(exc.code, exc.detail or None, data=exc.data)
+    elif isinstance(exc, Problem):
+        problem = exc
+    elif exc.status_code >= 500:
         return Problem("internal_error")
-    return Problem(_BY_STATUS.get(exc.status_code, "invalid_request"), detail)
+    else:
+        detail = exc.detail if isinstance(exc.detail, str) else None
+        by_status = _ADMIN_BY_STATUS if admin else _BY_STATUS
+        return Problem(by_status.get(exc.status_code, "invalid_request"), detail)
+    if admin and problem.problem_code == "invalid_request" and "fields" in (problem.data or {}):
+        # Errors of the fields of a console form.
+        return Problem(
+            "validation_failed",
+            str(problem.detail),
+            user_message=problem.user_message,
+            data=problem.data,
+        )
+    return problem
 
 
 def problem_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
     """DRF EXCEPTION_HANDLER: every APIException becomes problem+json; others propagate (500)."""
     if not isinstance(exc, exceptions.APIException | DomainError):
         return None
-    problem = _problem_of(exc)
     request = context.get("request")
+    admin = request is not None and request.path.startswith(ADMIN_PREFIX)
+    problem = _problem_of(exc, admin=admin)
     request_id = (request.META.get("HTTP_X_REQUEST_ID") if request is not None else None) or (
         uuid.uuid4().hex
     )
