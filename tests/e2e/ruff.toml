@@ -1,0 +1,9 @@
+# The rules of the server (server/pyproject.toml) for the end-to-end scenarios.
+extend = "../../server/pyproject.toml"
+
+[lint.per-file-ignores]
+"*.py" = [
+    "S101",    # pytest uses assert
+    "TID251",  # the stand models the wall clock of a device, outside the server process
+    "S310",    # requests go to the stand URL only
+]

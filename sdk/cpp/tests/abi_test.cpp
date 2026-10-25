@@ -10,6 +10,19 @@
 
 #include "license_module.h"
 
+namespace {
+
+// Trial marks of these tests stay in their directory (a build with test roots honours it).
+void SetMarkDir(const std::filesystem::path& directory) {
+#ifdef _WIN32
+  _putenv_s("LM_TEST_MARK_DIR", directory.string().c_str());
+#else
+  setenv("LM_TEST_MARK_DIR", directory.string().c_str(), 1);  // NOLINT(concurrency-mt-unsafe)
+#endif
+}
+
+}  // namespace
+
 TEST(AbiStub, AbiVersionIsFromHeader) { EXPECT_EQ(LM_GetAbiVersion(), LM_ABI_VERSION); }
 
 TEST(GetVersion, ReturnsCMakeVersionWithoutInitialize) {
@@ -86,6 +99,7 @@ TEST(Abi, InitializeExGivesATrialWithoutAServer) {
   const auto directory = std::filesystem::temp_directory_path() / "lm-abi-test";
   std::filesystem::remove_all(directory);
   const std::string data_dir = directory.string();
+  SetMarkDir(directory / "marks");
   LM_Config config{};
   config.struct_size = sizeof(config);
   EXPECT_EQ(LM_InitializeEx(&config), LM_ERR_INTERNAL);  // no product code
@@ -139,7 +153,8 @@ TEST(Abi, InitializeExGivesATrialWithoutAServer) {
 TEST(Abi, CorruptedStoreIsReportedOnceAndReset) {
   const auto directory = std::filesystem::temp_directory_path() / "lm-abi-corrupted";
   std::filesystem::remove_all(directory);
-  const std::string data_dir = directory.string();
+  const std::string data_dir = (directory / "data").string();
+  SetMarkDir(directory / "marks");
   LM_Config config{};
   config.struct_size = sizeof(config);
   config.product_code = "alteroffice-desktop";
@@ -164,5 +179,26 @@ TEST(Abi, CorruptedStoreIsReportedOnceAndReset) {
   LM_Shutdown();
   EXPECT_EQ(LM_InitializeEx(&config), LM_OK);  // the store was written again
   LM_Shutdown();
+  std::filesystem::remove_all(directory);
+}
+
+TEST(Abi, TrialMarkIsOutsideTheDataOfTheProduct) {
+  // A reinstall that deletes the data directory does not start a new trial (E16-04).
+  const auto directory = std::filesystem::temp_directory_path() / "lm-abi-mark";
+  std::filesystem::remove_all(directory);
+  const std::string data_dir = (directory / "data").string();
+  SetMarkDir(directory / "marks");
+  LM_Config config{};
+  config.struct_size = sizeof(config);
+  config.product_code = "alteroffice-desktop";
+  config.app_version = "3.2.0";
+  config.data_dir = data_dir.c_str();
+  config.flags = 1;
+  ASSERT_EQ(LM_InitializeEx(&config), LM_OK);
+  LM_LicenseStatus status{};
+  ASSERT_EQ(LM_GetStatus(&status), LM_OK);
+  LM_Shutdown();
+  EXPECT_TRUE(std::filesystem::exists(directory / "marks" / "alteroffice-desktop.mark"));
+  EXPECT_FALSE(std::filesystem::exists(directory / "data" / "marks"));
   std::filesystem::remove_all(directory);
 }

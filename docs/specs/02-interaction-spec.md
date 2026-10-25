@@ -972,7 +972,7 @@ typedef struct {
     const char* product_code;         /* "alteroffice-desktop" */
     const char* app_version;
     const char* server_url;           /* NULL = из config.json */
-    const char* data_dir;             /* NULL = по умолчанию для ОС */
+    const char* data_dir;             /* NULL = по умолчанию для ОС; метку триала не переносит */
     const char* locale;               /* "ru" */
     uint32_t flags;                   /* LM_FLAG_NO_BACKGROUND_CHECK = 1 */
 } LM_Config;

@@ -50,6 +50,12 @@ PRODUCT_RATE_LIMITS = {
     "offline_ip": env.int("RATE_LIMIT_OFFLINE_IP", default=10),  # files per hour
     "offline_captcha_ip": env.int("RATE_LIMIT_OFFLINE_CAPTCHA_IP", default=30),  # per hour
 }
+# Test stands only: the server time moves by the seconds in this file (E16-04, StandClock).
+CLOCK_OFFSET_FILE = env.str("CLOCK_OFFSET_FILE", default="")
+if CLOCK_OFFSET_FILE:
+    from infra.clock import StandClock, install_clock
+
+    install_clock(StandClock(CLOCK_OFFSET_FILE))
 # The offline portal asks for a captcha after this many files from one address an hour (question
 # 45); 0 turns it off.
 OFFLINE_CAPTCHA_AFTER = env.int("OFFLINE_CAPTCHA_AFTER", default=5)

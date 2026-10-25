@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <memory>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -13,6 +14,13 @@
 namespace lm::transport {
 
 namespace {
+
+bool IsContentType(const std::string& name) {
+  constexpr std::string_view kName = "content-type";
+  return name.size() == kName.size() &&
+         std::equal(name.begin(), name.end(), kName.begin(),
+                    [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == b; });
+}
 
 struct CurlDeleter {
   void operator()(CURL* handle) const noexcept { curl_easy_cleanup(handle); }
@@ -125,10 +133,14 @@ Response Transport::Attempt(const Request& request, const std::optional<Signer>&
     response.failure = Failure::kNetwork;
     return response;
   }
-  curl_slist* raw_headers = curl_slist_append(nullptr, "Content-Type: application/json");
-  raw_headers = curl_slist_append(raw_headers, "Accept: application/json, application/problem+json");
-  for (const auto& [name, value] : request.headers)
+  curl_slist* raw_headers = curl_slist_append(nullptr, "Accept: application/json, application/problem+json");
+  bool typed = false;
+  for (const auto& [name, value] : request.headers) {
+    typed = typed || IsContentType(name);
     raw_headers = curl_slist_append(raw_headers, (name + ": " + value).c_str());
+  }
+  // One Content-Type only: two are joined by the server into an unknown media type.
+  if (!typed) raw_headers = curl_slist_append(raw_headers, "Content-Type: application/json");
   if (signer && signer->key != nullptr) {
     const crypto::SignatureInput input{request.method, request.path, request.body, options_.now(),
                                        crypto::NewNonce()};

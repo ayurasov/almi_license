@@ -262,6 +262,7 @@ class ModuleTest : public testing::Test {
     settings.app_version = "3.2.0";
     settings.server_url = url;
     settings.data_dir = directory_;
+    settings.mark_dir = directory_ / "marks";
     settings.background_check = false;
     settings.sealer = TestSealer();
     settings.clock = &clock_;
