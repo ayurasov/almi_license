@@ -121,3 +121,23 @@ def test_bad_seats_new_code_and_forged_file(console: Console, licensed: Any, iss
         HTTP_X_CSRFTOKEN=console.token,
     )
     assert seats.json()["allocations"] == {str(licensed.id): 2}
+
+
+def test_package_expiry_warning(
+    console: Console, licensed: Any, issuer: Any, server_clock: FrozenClock
+) -> None:
+    from datetime import timedelta
+
+    body = {
+        "customer_id": str(licensed.customer_id),
+        "name": "ЦОД",
+        "allocations": {str(licensed.id): 3},
+    }
+    code = console.post("/api/admin/local-servers", body).json()["code"]
+    upload(console, server_request(LocalServerClient(), code))
+    [server] = console.get("/api/admin/local-servers").json()
+    assert server["package_valid_until"] is not None
+    assert server["package_expires_soon"] is False
+    server_clock.advance(timedelta(days=365 - 30))  # the package is valid 365 days
+    [server] = console.get("/api/admin/local-servers").json()
+    assert server["package_expires_soon"] is True

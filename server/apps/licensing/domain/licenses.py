@@ -29,6 +29,7 @@ class LicenseRecord:
     metric_id: UUID | None = None
     updated_at: datetime | None = None
     limits: dict[str, Any] = field(default_factory=dict)
+    state: str = ""
 
 
 def _record(row: License) -> LicenseRecord:
@@ -52,6 +53,7 @@ def _record(row: License) -> LicenseRecord:
         metric_id=row.metric_id,
         updated_at=row.updated_at,
         limits=dict(row.limits),
+        state=row.state,
     )
 
 
@@ -92,3 +94,18 @@ def counts_active_only(limits: dict[str, Any]) -> bool:
     """Users of a server product are counted active only (lease limits.only_count_active)."""
     default = "active_users" in limits and "named_users" not in limits
     return bool(limits.get("only_count_active", default))
+
+
+def license_ids(*, batch: int = 1000) -> list[list[UUID]]:
+    """Ids of all licences in batches (background recalculation, E12-03)."""
+    ids = list(License.objects.order_by("id").values_list("id", flat=True))
+    return [ids[i : i + batch] for i in range(0, len(ids), batch)]
+
+
+def save_states(states: dict[UUID, str], *, at: datetime) -> None:
+    """Computed states of licences; not a change of rights (no rights_version, no audit)."""
+    rows = list(License.objects.filter(id__in=list(states)))
+    for row in rows:
+        row.state = states[row.id]
+        row.state_at = at
+    License.objects.bulk_update(rows, ["state", "state_at"])

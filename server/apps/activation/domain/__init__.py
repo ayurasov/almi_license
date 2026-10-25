@@ -13,6 +13,7 @@ from apps.activation.domain.service import (
     activate,
     load_terms,
 )
+from apps.activation.domain.states import recompute_states
 from apps.activation.domain.usage import (
     ActivationData,
     Usage,
@@ -28,6 +29,7 @@ from apps.activation.domain.usage import (
 
 __all__ = [
     "release_stale_activations",
+    "recompute_states",
     "MAX_FILE_BYTES",
     "OfflineRequest",
     "ReleaseResult",

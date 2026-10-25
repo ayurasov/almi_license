@@ -38,6 +38,17 @@ export default {
       limit: 'Мест',
       validUntil: 'Действует до',
       enforcement: 'Режим',
+      state: 'Состояние',
+    },
+    state: {
+      TRIAL: 'Пробный период',
+      ACTIVE: 'Активна',
+      NOTICE: 'Скоро истекает',
+      GRACE: 'Отсрочка',
+      RESTRICTED: 'Ограничена',
+      BLOCKED: 'Заблокирована',
+      REVOKED: 'Отозвана',
+      UNLICENSED: 'Без лицензии',
     },
     status: { active: 'Действует', suspended: 'Приостановлена', revoked: 'Отозвана' },
     type: { subscription: 'Подписка', perpetual: 'Бессрочная', trial: 'Пробная', nfr: 'NFR', free: 'Бесплатная' },
@@ -304,6 +315,7 @@ export default {
     back: 'Назад',
   },
   servers: {
+    packageExpires: 'Пакет истекает {date}',
     title: 'Локальные серверы',
     create: 'Новый сервер',
     empty: 'Локальных серверов нет.',
@@ -337,6 +349,7 @@ export default {
     toPackage: 'Перейти к пакету',
   },
   packagePage: {
+    expiresSoon: 'Пакет действует до {date}. Получите новый пакет у центрального сервера: после срока лицензии продуктов перейдут в состояние по политике пакета.',
     title: 'Пакет прав',
     server: 'Сервер',
     exchange: 'Обмен',

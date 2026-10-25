@@ -108,6 +108,14 @@ const sortOrder = computed(() => (query.value.ordering.startsWith('-') ? -1 : 1)
 function open(license: License): void {
   void router.push({ name: 'license', params: { id: license.id } })
 }
+
+// Hourly state of the licence (E12-03): green while it works fully, red when restricted or worse.
+function stateSeverity(state: string): 'success' | 'warn' | 'danger' | 'secondary' {
+  if (state === 'ACTIVE' || state === 'TRIAL') return 'success'
+  if (state === 'NOTICE' || state === 'GRACE') return 'warn'
+  if (state === 'RESTRICTED' || state === 'BLOCKED' || state === 'REVOKED') return 'danger'
+  return 'secondary'
+}
 </script>
 
 <template>
@@ -222,6 +230,16 @@ function open(license: License): void {
       >
         <template #body="{ data }">
           {{ (data as License).valid_until ? d(new Date((data as License).valid_until ?? '')) : t('licenses.perpetual') }}
+        </template>
+      </Column>
+      <Column :header="t('licenses.columns.state')">
+        <template #body="{ data }">
+          <Tag
+            v-if="(data as License).state"
+            :value="t(`licenses.state.${(data as License).state}`)"
+            :severity="stateSeverity((data as License).state)"
+            data-testid="license-state"
+          />
         </template>
       </Column>
       <Column :header="t('licenses.columns.enforcement')">

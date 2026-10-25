@@ -32,7 +32,12 @@ class LocalServersView(_Operator):
     def get(self, request: Request) -> Response:
         raw = request.query_params.get("customer_id")
         customer = UUID(raw) if raw else None
-        return Response([s.LocalServerSerializer(asdict(x)).data for x in list_servers(customer)])
+        return Response(
+            [
+                s.LocalServerSerializer(asdict(x)).data
+                for x in list_servers(customer, now=current_clock().now())
+            ]
+        )
 
     @extend_schema(
         request=s.LocalServerCreateSerializer,

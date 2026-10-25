@@ -31,6 +31,7 @@ from infra.signed_files import FileRefused, SignatureMismatch, open_signed_file
 
 CODE_TTL = timedelta(days=7)
 PACKAGE_DAYS = timedelta(days=365)
+PACKAGE_WARNING = timedelta(days=30)
 CERTIFICATE_DAYS = timedelta(days=730)
 PACKAGE_TYP = "alm-package+jws"
 CODE_ALPHABET = "".join(c for c in string.ascii_uppercase + string.digits if c not in "0O1I")
@@ -53,6 +54,8 @@ class ServerData:
     last_package_seq: int
     last_seen_at: datetime | None
     created_at: datetime
+    package_valid_until: datetime | None = None
+    package_expires_soon: bool = False
 
 
 @dataclass(frozen=True)
@@ -78,7 +81,13 @@ def _new_code() -> str:
     return "-".join(groups)
 
 
-def _data(row: LocalServer) -> ServerData:
+def package_expires_soon(valid_until: datetime | None, now: datetime) -> bool:
+    """The console warns PACKAGE_WARNING before the package of a local server ends (E12-04)."""
+    return valid_until is not None and valid_until - now <= PACKAGE_WARNING
+
+
+def _data(row: LocalServer, now: datetime | None = None) -> ServerData:
+    latest = row.packages.order_by("-seq").values_list("valid_until", flat=True).first()
     return ServerData(
         id=row.id,
         server_id=row.external_id,
@@ -91,6 +100,8 @@ def _data(row: LocalServer) -> ServerData:
         last_package_seq=row.last_package_seq,
         last_seen_at=row.last_seen_at,
         created_at=row.created_at,
+        package_valid_until=latest,
+        package_expires_soon=now is not None and package_expires_soon(latest, now),
     )
 
 
@@ -105,11 +116,13 @@ def allocated_seats(license_id: UUID) -> int:
     return sum(Allocation.objects.filter(license_id=license_id).values_list("seats", flat=True))
 
 
-def list_servers(customer_id: UUID | None = None) -> list[ServerData]:
+def list_servers(
+    customer_id: UUID | None = None, *, now: datetime | None = None
+) -> list[ServerData]:
     rows = LocalServer.objects.order_by("-created_at")
     if customer_id is not None:
         rows = rows.filter(customer_id=customer_id)
-    return [_data(row) for row in rows]
+    return [_data(row, now) for row in rows]
 
 
 def _check_allocations(

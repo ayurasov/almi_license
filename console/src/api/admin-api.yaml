@@ -1946,6 +1946,13 @@ components:
             type: string
         limits:
           $ref: '#/components/schemas/Limits'
+        state:
+          type: string
+          description: Hourly state by PolicyEngine
+        state_at:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - customer_id
       - customer_name
@@ -1960,6 +1967,8 @@ components:
       - product_id
       - reserve_pct
       - rights_version
+      - state
+      - state_at
       - status
       - support_until
       - type
@@ -2076,6 +2085,8 @@ components:
           nullable: true
         users_exceeded:
           type: boolean
+        state:
+          type: string
       required:
       - active
       - by_os
@@ -2090,6 +2101,7 @@ components:
       - limit
       - product
       - released_auto
+      - state
       - status
       - type
       - user_limit
@@ -2166,6 +2178,13 @@ components:
         created_at:
           type: string
           format: date-time
+        package_valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        package_expires_soon:
+          type: boolean
+          description: Less than 30 days left (E12-04)
       required:
       - allocations
       - code_expires_at
@@ -2175,6 +2194,8 @@ components:
       - last_package_seq
       - last_seen_at
       - name
+      - package_expires_soon
+      - package_valid_until
       - registered
       - server_id
       - status
@@ -2237,11 +2258,14 @@ components:
           type: string
           format: date-time
           nullable: true
+        package_expires_soon:
+          type: boolean
       required:
       - central_url
       - configured
       - customer_id
       - exchange
+      - package_expires_soon
       - package_issued_at
       - package_seq
       - package_valid_until
@@ -2602,6 +2626,10 @@ components:
           type: object
           additionalProperties:
             type: integer
+        by_state:
+          type: object
+          additionalProperties:
+            type: integer
         rows:
           type: array
           items:
@@ -2609,6 +2637,7 @@ components:
       required:
       - active
       - by_os
+      - by_state
       - by_version
       - conflicts
       - free

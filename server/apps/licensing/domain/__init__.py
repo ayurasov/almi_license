@@ -24,8 +24,10 @@ from apps.licensing.domain.licenses import (
     counts_active_only,
     keys_of,
     license_id_by_key_hash,
+    license_ids,
     license_records,
     lock_license,
+    save_states,
 )
 from apps.licensing.domain.management import (
     IssuedKey,
@@ -83,6 +85,8 @@ __all__ = [
     "LicenseRecord",
     "counts_active_only",
     "keys_of",
+    "license_ids",
+    "save_states",
     "license_records",
     "key_hash",
     "key_mask",

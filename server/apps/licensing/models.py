@@ -99,6 +99,13 @@ class License(UUIDModel):
         help_text="Пусто — из профиля",
     )
     extra_capabilities = models.JSONField(default=list, blank=True)
+    state = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        help_text="Состояние по PolicyEngine на state_at: ежечасный пересчёт (E12-03)",
+    )
+    state_at = models.DateTimeField(null=True, blank=True)
     limits = models.JSONField(
         default=dict,
         blank=True,

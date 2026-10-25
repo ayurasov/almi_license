@@ -958,6 +958,10 @@ export interface components {
             rights_version: number;
             key_masks: string[];
             limits: components["schemas"]["Limits"];
+            /** @description Hourly state by PolicyEngine */
+            state: string;
+            /** Format: date-time */
+            state_at: string | null;
         };
         LicenseCreate: {
             /** Format: uuid */
@@ -1013,6 +1017,7 @@ export interface components {
             users: number | null;
             user_limit: number | null;
             users_exceeded: boolean;
+            state: string;
         };
         /**
          * @description * `active` - active
@@ -1052,6 +1057,10 @@ export interface components {
             last_seen_at: string | null;
             /** Format: date-time */
             created_at: string;
+            /** Format: date-time */
+            package_valid_until: string | null;
+            /** @description Less than 30 days left (E12-04) */
+            package_expires_soon: boolean;
         };
         LocalServerCreate: {
             /** Format: uuid */
@@ -1081,6 +1090,7 @@ export interface components {
             package_issued_at: string | null;
             /** Format: date-time */
             package_valid_until: string | null;
+            package_expires_soon: boolean;
         };
         /**
          * @description * `operator` - operator
@@ -1254,6 +1264,9 @@ export interface components {
                 [key: string]: number;
             };
             by_os: {
+                [key: string]: number;
+            };
+            by_state: {
                 [key: string]: number;
             };
             rows: components["schemas"]["LicenseStats"][];
