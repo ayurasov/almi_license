@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { productApi } from '@/api/client'
+import { ApiError } from '@/api/problem'
 
 import { answerName, useOfflineStore } from './offline'
 
@@ -29,6 +30,29 @@ describe('useOfflineStore', () => {
     expect(await store.process(new File([new Uint8Array(64 * 1024 + 1)], 'big.alk-req'))).toBeNull()
     expect(store.tooLarge).toBe(true)
     expect(post).not.toHaveBeenCalled()
+  })
+})
+
+describe('captcha (question 45)', () => {
+  it('loads a captcha when the server asks and sends the answer with the next try', async () => {
+    const problem = { type: 't', title: 't', status: 400, code: 'captcha_required' }
+    const post = vi
+      .spyOn(productApi, 'POST')
+      .mockRejectedValueOnce(new ApiError(problem))
+      .mockResolvedValueOnce({ data: document, response: new Response() })
+    vi.spyOn(productApi, 'GET').mockResolvedValue({
+      data: { captcha_id: 'c1', image: 'data:image/png;base64,AA', expires_at: '2026-11-02T08:10:00Z' },
+      response: new Response(),
+    })
+    const store = useOfflineStore()
+    const file = new File(['{}'], 'pc.alk-req')
+    await expect(store.process(file)).rejects.toBeInstanceOf(ApiError)
+    expect(store.captcha?.captcha_id).toBe('c1')
+    await store.process(file, 'ACE34')
+    const form = (post.mock.calls[1]?.[1] as unknown as { bodySerializer: () => FormData }).bodySerializer()
+    expect(form.get('captcha_id')).toBe('c1')
+    expect(form.get('captcha_answer')).toBe('ACE34')
+    expect(store.captcha).toBeNull()
   })
 })
 

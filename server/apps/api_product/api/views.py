@@ -39,6 +39,7 @@ from apps.api_product.api.serializers import (
     ReleaseRequestSerializer,
 )
 from apps.api_product.auth import DeviceSignatureAuthentication, SignedRequest
+from apps.api_product.domain.captcha import captcha_needed, issue_captcha, solved
 from apps.api_product.domain.idempotency import (
     InvalidKey,
     KeyConflict,
@@ -46,7 +47,12 @@ from apps.api_product.domain.idempotency import (
     remember,
     replay,
 )
-from apps.api_product.domain.limits import limit_activation, limit_check, limit_offline
+from apps.api_product.domain.limits import (
+    limit_activation,
+    limit_captcha,
+    limit_check,
+    limit_offline,
+)
 from apps.api_product.domain.ratelimit import Limited
 from apps.packages.domain import local_server_id
 from apps.signing.domain import TrustUnavailable, trust_document
@@ -315,6 +321,10 @@ class OfflineRequestView(DeniedCounted):
         ip = request.META.get("REMOTE_ADDR")
         with _limited():
             limit_offline(ip=ip, now=now)
+        if captcha_needed(ip, now=now) and not solved(
+            request.data.get("captcha_id"), request.data.get("captcha_answer"), now=now
+        ):
+            raise Problem("captcha_required")
         offline = open_request(upload.read(), now=now)
         document, instance_id = _answer(offline, now, ip)
         response = Response(document)
@@ -376,6 +386,26 @@ def _lease_response(result: ActivationResult, now: datetime, status: int) -> Res
         },
         status=status,
     )
+
+
+class OfflineCaptchaView(APIView):
+    """GET /api/v1/offline/captcha (getOfflineCaptcha): a new portal captcha (question 45)."""
+
+    authentication_classes: list[type[Any]] = []
+    permission_classes: list[type[Any]] = []
+
+    def get(self, request: Request) -> Response:
+        now = current_clock().now()
+        with _limited():
+            limit_captcha(ip=request.META.get("REMOTE_ADDR"), now=now)
+        issued = issue_captcha(now=now)
+        return Response(
+            {
+                "captcha_id": issued.captcha_id,
+                "image": issued.image,
+                "expires_at": rfc3339(issued.expires_at),
+            }
+        )
 
 
 class TrustView(APIView):

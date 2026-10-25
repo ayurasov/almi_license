@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
 import Card from 'primevue/card'
+import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -14,16 +16,27 @@ const { t, locale } = useI18n()
 const store = useOfflineStore()
 const error = ref('')
 const busy = ref(false)
+const captchaAnswer = ref('')
+// The file waits here while the user solves a captcha.
+let pending: File | null = null
 
 async function choose(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
+  pending = file
+  await send()
+}
+
+async function send(): Promise<void> {
+  if (!pending) return
   busy.value = true
   error.value = ''
+  const answerText = captchaAnswer.value
+  captchaAnswer.value = ''
   try {
-    const answer = await store.process(file)
+    const answer = await store.process(pending, answerText)
     if (answer) download(answer.name, answer.document)
   } catch (failure) {
     error.value =
@@ -77,6 +90,41 @@ function again(): void {
           >
             {{ error }}
           </Message>
+          <form
+            v-if="store.captcha"
+            class="captcha"
+            data-testid="offline-captcha"
+            @submit.prevent="send"
+          >
+            <img
+              :src="store.captcha.image"
+              :alt="t('offline.captchaImage')"
+              width="200"
+              height="70"
+            >
+            <label for="captcha-answer">{{ t('offline.captchaAnswer') }}</label>
+            <InputText
+              id="captcha-answer"
+              v-model="captchaAnswer"
+              autocomplete="off"
+              maxlength="16"
+              data-testid="captcha-answer"
+            />
+            <div class="captcha-actions">
+              <Button
+                type="submit"
+                :label="t('offline.captchaSend')"
+                :loading="busy"
+                data-testid="captcha-send"
+              />
+              <Button
+                :label="t('offline.captchaOther')"
+                severity="secondary"
+                text
+                @click="store.loadCaptcha"
+              />
+            </div>
+          </form>
           <Message
             v-if="store.answer"
             severity="success"
@@ -119,5 +167,14 @@ function again(): void {
 }
 .hidden {
   display: none;
+}
+.captcha {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+.captcha-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 </style>

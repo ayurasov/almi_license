@@ -48,7 +48,11 @@ PRODUCT_RATE_LIMITS = {
     "check_ip": env.int("RATE_LIMIT_CHECK_IP", default=100),  # per minute
     "check_activation": env.int("RATE_LIMIT_CHECK_ACTIVATION", default=12),  # per hour
     "offline_ip": env.int("RATE_LIMIT_OFFLINE_IP", default=10),  # files per hour
+    "offline_captcha_ip": env.int("RATE_LIMIT_OFFLINE_CAPTCHA_IP", default=30),  # per hour
 }
+# The offline portal asks for a captcha after this many files from one address an hour (question
+# 45); 0 turns it off.
+OFFLINE_CAPTCHA_AFTER = env.int("OFFLINE_CAPTCHA_AFTER", default=5)
 # General support line shown by AlterOffice Web when a customer has no account manager (E11-01).
 SUPPORT_CONTACT = {
     "name": env.str("SUPPORT_CONTACT_NAME", default="Техническая поддержка АльтерСофт"),

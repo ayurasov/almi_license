@@ -45,6 +45,7 @@
         "rate_limited",
         "internal_error",
         "maintenance",
+        "captcha_required",
         "validation_failed",
         "not_authenticated",
         "forbidden",

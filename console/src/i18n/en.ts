@@ -37,6 +37,10 @@ const en: typeof ru = {
     ready: 'The answer file {name} is ready. If the download did not start, click “Download again”.',
     again: 'Download again',
     signIn: 'Console sign-in',
+    captchaImage: 'Characters to check',
+    captchaAnswer: 'Enter the characters from the picture',
+    captchaSend: 'Send',
+    captchaOther: 'Another picture',
   },
   errors: {
     network: 'The server is unreachable. Check the connection and try again.',
