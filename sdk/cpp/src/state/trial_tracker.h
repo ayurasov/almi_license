@@ -23,6 +23,11 @@ class TrialTracker {
   // The mark file in the system directory of the platform, next to but outside the store.
   static TrialTracker ForProduct(const std::string& product);
 
+  // preferred when it can be created and written to, fallback otherwise (ForProduct: the system
+  // directory, then the user directory when the process has no rights there).
+  static std::filesystem::path MarkDirectory(const std::filesystem::path& preferred,
+                                             const std::filesystem::path& fallback);
+
   // first_launch for StateEvaluator; starts the trial at trusted_now when nothing is known.
   // Entries may change (the caller saves the store when store_changed is set).
   struct Start {

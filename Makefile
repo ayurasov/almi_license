@@ -144,7 +144,8 @@ e2e: ## Playwright scenarios of the console against a local server (needs DATABA
 backup-drill: ## Backup, restore into almi_restore_drill, compare rows, verify the audit chain (E15-03); needs DATABASE_URL and Docker
 	@test -n "$$DATABASE_URL" || { echo "DATABASE_URL is required"; exit 1; }
 	mkdir -p $(DRILL_DIR) && head -c 32 /dev/urandom | base64 > $(DRILL_DIR)/passphrase && chmod 600 $(DRILL_DIR)/passphrase
-	docker run --rm --network host -v $(CURDIR)/deploy/ops:/ops:ro -v $(DRILL_DIR):/drill \
+	docker run --rm --network host --user $$(id -u):$$(id -g) -e HOME=/drill \
+		-v $(CURDIR)/deploy/ops:/ops:ro -v $(DRILL_DIR):/drill \
 		-e SOURCE_URL="$$DATABASE_URL" -e TARGET_URL="$${DATABASE_URL%/*}/almi_restore_drill" \
 		-e BACKUP_DIR=/drill/backups -e BACKUP_PASSPHRASE_FILE=/drill/passphrase \
 		$(POSTGRES_IMAGE) /ops/drill.sh
