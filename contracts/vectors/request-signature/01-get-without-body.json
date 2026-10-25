@@ -1,0 +1,26 @@
+{
+  "name": "01-get-without-body",
+  "description": "GET с query-строкой, пустое тело.",
+  "public_key": "LrsBgVznSq_bD2qq4d6FOpODP61A4eTMiu8E2yKxUaI",
+  "server_now": 1762071300,
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/trust?since_seq=3",
+    "body": ""
+  },
+  "signed": {
+    "keyid": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+    "alg": "ed25519",
+    "created": 1762071300,
+    "nonce": "f93xQNtDa76y3xsWeyyv5Q",
+    "path": "/api/v1/trust?since_seq=3"
+  },
+  "expected": {
+    "body_sha256": "47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU",
+    "signing_string": "ALMI-REQ-V1\nGET\n/api/v1/trust?since_seq=3\n1762071300\nf93xQNtDa76y3xsWeyyv5Q\n47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU",
+    "signature": "iCS859M6tTQ50HdJi7EsbUHAWnYIc-M1d24yFI9KvuJ8fYU7sbq7UHfg-V0_g-ZbrxXCIU0SyA9z1ftJuuQuDg",
+    "header": "keyid=\"act_01JABF8Q4W2N8C1R7ZB0Y5K6M3\", alg=\"ed25519\", created=1762071300, nonce=\"f93xQNtDa76y3xsWeyyv5Q\", sig=\"iCS859M6tTQ50HdJi7EsbUHAWnYIc-M1d24yFI9KvuJ8fYU7sbq7UHfg-V0_g-ZbrxXCIU0SyA9z1ftJuuQuDg\"",
+    "valid": true,
+    "error": null
+  }
+}

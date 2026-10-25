@@ -1,0 +1,8 @@
+{
+  "alg": "EdDSA",
+  "typ": "alm-lease+jws",
+  "kid": "c-2026-01",
+  "chain": [
+    "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJjLTIwMjYtMDEifQ.c2ln"
+  ]
+}

@@ -6,7 +6,7 @@
 Источник истины — каталог contracts/ и документы docs/specs/01-architecture.md, docs/specs/02-interaction-spec.md.
 
 ## Стек и версии
-- Python 3.13, Django 5.2 LTS, DRF 3.15, drf-spectacular, PostgreSQL 17, psycopg 3
+- Python 3.13, Django 5.2 LTS, DRF 3.16, drf-spectacular, PostgreSQL 17, psycopg 3
 - Vue 3.5, TypeScript 5 (strict), Vite 6, PrimeVue 4, Pinia, Vue Router 4, vue-i18n
 - C++17, CMake 3.28, libsodium, libcurl, nlohmann/json, GoogleTest
 - Тесты: pytest, hypothesis, vitest, Playwright, ctest, k6

@@ -1,0 +1,5 @@
+{
+  "alg": "EdDSA",
+  "typ": "alm-req+jws",
+  "kid": "device"
+}

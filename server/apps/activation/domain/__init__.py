@@ -1,0 +1,62 @@
+"""Domain services of the activation module."""
+
+from apps.activation.domain.autorelease import release_stale_activations
+from apps.activation.domain.check import CheckRequest, check
+from apps.activation.domain.directives import queue_directive
+from apps.activation.domain.keys import device_public_key
+from apps.activation.domain.offline import MAX_FILE_BYTES, OfflineRequest, answer, open_request
+from apps.activation.domain.release import ReleaseResult, release
+from apps.activation.domain.service import (
+    ActivationRequest,
+    ActivationResult,
+    Terms,
+    activate,
+    load_terms,
+)
+from apps.activation.domain.states import recompute_states
+from apps.activation.domain.usage import (
+    ActivationData,
+    Usage,
+    activations_of,
+    active_activation_ids,
+    customer_objects,
+    instance_activation,
+    license_usage,
+    list_activations,
+    release_by_operator,
+    released_between,
+    revoke_activations,
+    usage_by_license,
+)
+
+__all__ = [
+    "release_stale_activations",
+    "recompute_states",
+    "MAX_FILE_BYTES",
+    "OfflineRequest",
+    "ReleaseResult",
+    "answer",
+    "open_request",
+    "release",
+    "ActivationData",
+    "Usage",
+    "license_usage",
+    "list_activations",
+    "release_by_operator",
+    "released_between",
+    "revoke_activations",
+    "usage_by_license",
+    "active_activation_ids",
+    "activations_of",
+    "customer_objects",
+    "instance_activation",
+    "ActivationRequest",
+    "ActivationResult",
+    "CheckRequest",
+    "Terms",
+    "activate",
+    "load_terms",
+    "check",
+    "device_public_key",
+    "queue_directive",
+]

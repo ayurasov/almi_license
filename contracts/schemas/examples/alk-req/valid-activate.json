@@ -1,0 +1,31 @@
+{
+  "type": "activate",
+  "license_key": "AB26-TEST-0000-0001",
+  "product": {
+    "code": "alteroffice-desktop",
+    "version": "3.2.0"
+  },
+  "instance": {
+    "instance_id": "8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11",
+    "subject_type": "device",
+    "name": "WS-0451",
+    "os": {
+      "family": "linux",
+      "name": "Astra Linux",
+      "version": "1.8",
+      "arch": "x86_64"
+    }
+  },
+  "fingerprint": {
+    "scheme": "fp-v1",
+    "components": {
+      "disk": "pX0bJ4u3ZK2eYc0aXl9Hq1nL8sV7tR6wQ5mN4kJ3hG2",
+      "board": "Zr4kYv8sT2qW6nM1pL9xC3bV7hJ5gF0dS4aQ8wE2rT6",
+      "cpu": "k1Q9wE3rT7yU5iO2pA6sD8fG4hJ1kL0zX3cV7bN5mQ8",
+      "mac": "unknown"
+    }
+  },
+  "device_pubkey": "c3VwZXJzZWNyZXRwdWJsaWNrZXlmb3J0ZXN0czEyMzQ",
+  "nonce": "Jq0x8w2NfR5tY7uI9oP1aS",
+  "created": "2026-11-02T08:14:58Z"
+}

@@ -1,6 +1,3 @@
-# Технический лидер — обязательный ревьюер (раздел 6 docs/specs/06-ai-rules.md)
-/contracts/ @tech-lead
-/server/apps/signing/ @tech-lead
-/server/infra/crypto/ @tech-lead
-/server/apps/policy/ @tech-lead
-/sdk/cpp/src/crypto/ @tech-lead
+# Обязательное ревью владельцев кода не используется (решение от 23.10.2026, docs/decisions.md).
+# Все изменения контролирует руководитель проекта при слиянии; критичные модули
+# по-прежнему проходят чек-лист раздела 8 docs/specs/06-ai-rules.md (шаг P7).

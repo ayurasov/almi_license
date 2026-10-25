@@ -1,0 +1,8 @@
+{
+  "id": "dir_01JACX9K3M7Q2W4E6R8T0Y1U3I",
+  "type": "set_server_url",
+  "params": {
+    "url": "https://license.corp.local",
+    "fallback_days": 14
+  }
+}

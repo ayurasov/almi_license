@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/fingerprint.schema.json",
+  "title": "Fingerprint",
+  "description": "Отпечаток экземпляра fp-v1 (документ 2, раздел 2.4); сырые значения не передаются.",
+  "type": "object",
+  "required": [
+    "scheme",
+    "components"
+  ],
+  "properties": {
+    "scheme": {
+      "type": "string",
+      "const": "fp-v1"
+    },
+    "components": {
+      "type": "object",
+      "description": "Хэши компонентов base64url(SHA-256(\"almi-fp-v1|\" + имя + \"|\" + значение)); значение unknown — компонент недоступен",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 64
+      }
+    }
+  },
+  "additionalProperties": true
+}

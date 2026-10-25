@@ -1,0 +1,66 @@
+{
+  "name": "38-timezone-msk-midnight-before",
+  "reasoning": "valid_until = 2027-10-31T21:00:00Z (полночь МСК 01.11): T = 20:59:59Z (23:59:59 МСК) < VU → NOTICE, остался 1 день.",
+  "policy": {
+    "version": 3,
+    "enforcement": "enforce",
+    "notify_before_days": 30,
+    "grace_days": 14,
+    "expiry_action": "restrict",
+    "restricted_caps": [
+      "updates",
+      "macros",
+      "collaboration"
+    ],
+    "restricted_days": null,
+    "hard_block_mode": "read_only",
+    "read_only_caps": [
+      "view",
+      "export",
+      "print"
+    ],
+    "offline_grace_days": null,
+    "check_interval_hours": 24,
+    "release_after_days": 30
+  },
+  "license": {
+    "type": "subscription",
+    "status": "active",
+    "valid_until": "2027-10-31T21:00:00Z",
+    "support_until": "2027-10-31T21:00:00Z",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "support",
+      "macros",
+      "collaboration"
+    ]
+  },
+  "now": "2027-10-31T20:59:59Z",
+  "last_success_at": "2027-10-31T20:59:59Z",
+  "expected": {
+    "state": "NOTICE",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "support",
+      "macros",
+      "collaboration"
+    ],
+    "messages_ids": [
+      "notice.banner",
+      "notice.7days"
+    ],
+    "lease_exp": null
+  }
+}

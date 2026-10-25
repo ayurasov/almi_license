@@ -963,7 +963,7 @@ components:
         id: {type: string}
         type:
           type: string
-          enum: [license.created, license.updated, activation.created, activation.released, seats.threshold, license.expiring, license.state_changed, local_server.usage_imported]
+          enum: [license.created, license.updated, license.transferred, activation.created, activation.released, seats.threshold, license.expiring, license.state_changed, local_server.usage_imported]
         occurred_at: {type: string, format: date-time}
         data: {type: object, additionalProperties: true}
 

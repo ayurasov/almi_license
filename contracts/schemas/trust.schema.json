@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/trust.schema.json",
+  "title": "TrustClaims",
+  "description": "Полезная нагрузка пакета доверия alm-trust+jws, подписан корневым ключом (документ 2, раздел 5.5). Модуль принимает пакет только с seq больше сохранённого.",
+  "type": "object",
+  "required": [
+    "ver",
+    "seq",
+    "iat",
+    "roots",
+    "issuers",
+    "revoked_kids"
+  ],
+  "properties": {
+    "ver": {
+      "type": "integer",
+      "const": 1
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "iat": {
+      "type": "integer"
+    },
+    "roots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kid",
+          "alg",
+          "pub",
+          "status"
+        ],
+        "properties": {
+          "kid": {
+            "type": "string"
+          },
+          "alg": {
+            "type": "string"
+          },
+          "pub": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "reserve",
+              "retired"
+            ]
+          }
+        }
+      }
+    },
+    "issuers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "JWS alm-cert+jws"
+      }
+    },
+    "revoked_kids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

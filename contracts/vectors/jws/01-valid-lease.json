@@ -1,0 +1,95 @@
+{
+  "name": "01-valid-lease",
+  "description": "Аренда центрального сервера: ключ выпуска, сертификат от корня.",
+  "jws": "eyJhbGciOiJFZERTQSIsInR5cCI6ImFsbS1sZWFzZStqd3MiLCJraWQiOiJkZXYtaXNzdWVyLTEiLCJjaGFpbiI6WyJleUpoYkdjaU9pSkZaRVJUUVNJc0luUjVjQ0k2SW1Gc2JTMWpaWEowSzJwM2N5SXNJbXRwWkNJNkltUmxkaTF5YjI5MEluMC5leUoyWlhJaU9qRXNJbUZzWnlJNklrVmtSRk5CSWl3aWNIVmlJam9pU1hZemNEQmlTSGg2YlVKbmVWRjJSVVZKVVdFM2VUSnFSMEpPWldObGIwMWlURE5SVGxKTVowMHhOQ0lzSW1semN5STZJbVJsZGkxeWIyOTBJaXdpYTJsa0lqb2laR1YyTFdsemMzVmxjaTB4SWl3aWNtOXNaU0k2SW1semMzVmxjaUlzSW1saGRDSTZNVGMxT1RRM09UTXdNQ3dpYm1KbUlqb3hOelU1TkRjNU16QXdMQ0psZUhBaU9qRTRNalV4TkRNek1EQjkuLXhOUzhSNmVfNnZ5Q2R0VjNZT0JaVFFqNDZORjVSUEwySmVmOVdGR09WbEJNSlJrM2lUZzRHcklWajVVNXNZNFhPODY1MUpjN1AxaWxjVjZnZ1lTQ0EiXX0.eyJ2ZXIiOjEsImlzcyI6Imh0dHBzOi8vbGljZW5zZS5hbHRlci1vcy5ydSIsInN1YiI6ImFjdF8wMUpBQkY4UTRXMk44QzFSN1pCMFk1SzZNMyIsImF1ZCI6ImFsdGVyb2ZmaWNlLWRlc2t0b3AiLCJpYXQiOjE3NjIwNzEzMDAsIm5iZiI6MTc2MjA3MTMwMCwic2VxIjoxNywibGljIjp7ImlkIjoiNmYxYzJhNGUtOGIzZC00YzVmLTllN2EtMWIyYzNkNGU1ZjYwIiwidHlwZSI6InN1YnNjcmlwdGlvbiIsInN0YXR1cyI6ImFjdGl2ZSIsImVkaXRpb24iOiJzdGFuZGFyZCIsInZhbGlkX2Zyb20iOiIyMDI2LTExLTAxVDAwOjAwOjAwWiIsInZhbGlkX3VudGlsIjoiMjAyNy0xMC0zMVQyMDo1OTo1OVoiLCJzdXBwb3J0X3VudGlsIjoiMjAyNy0xMC0zMVQyMDo1OTo1OVoiLCJjdXN0b21lciI6eyJpZCI6ImMzYTFiMmMzLWQ0ZTUtNGY2MC04YTliLTBjMWQyZTNmNGE1YiIsIm5hbWUiOiLQntCe0J4gwqvQn9GA0LjQvNC10YDCuyJ9fSwic3ViamVjdCI6eyJ0eXBlIjoiZGV2aWNlIiwiaW5zdGFuY2VfaWQiOiI4ZDZhMWY5ZS02YzM5LTRlNTctOWEzZS0wZTVkMGY3YjJjMTEiLCJmcCI6eyJzY2hlbWUiOiJmcC12MSIsImNvbXBvbmVudHMiOnsiZGlzayI6InRlc3QtZnAtZGlzayIsImJvYXJkIjoidGVzdC1mcC1ib2FyZCIsImNwdSI6InRlc3QtZnAtY3B1IiwibWFjIjoidW5rbm93biJ9fSwiZGV2aWNlX2tleV90aHVtYnByaW50IjoiTzBLdjBTNTlYMjd0Y2RnbzJ4SlpUX3Nkd3prZ1JkOEtjZWQ4ZW4tajJpbyJ9LCJsaW1pdHMiOnt9LCJjYXBhYmlsaXRpZXMiOlsidmlldyIsImVkaXQiLCJzYXZlIiwiY3JlYXRlIiwiZXhwb3J0IiwicHJpbnQiLCJ1cGRhdGVzIiwic3VwcG9ydCJdLCJwb2xpY3kiOnsidmVyc2lvbiI6MywiZW5mb3JjZW1lbnQiOiJlbmZvcmNlIiwibm90aWZ5X2JlZm9yZV9kYXlzIjozMCwiZ3JhY2VfZGF5cyI6MTQsImV4cGlyeV9hY3Rpb24iOiJyZXN0cmljdCIsInJlc3RyaWN0ZWRfY2FwcyI6WyJ1cGRhdGVzIiwibWFjcm9zIiwiY29sbGFib3JhdGlvbiJdLCJyZXN0cmljdGVkX2RheXMiOm51bGwsImhhcmRfYmxvY2tfbW9kZSI6InJlYWRfb25seSIsInJlYWRfb25seV9jYXBzIjpbInZpZXciLCJleHBvcnQiLCJwcmludCJdLCJvZmZsaW5lX2dyYWNlX2RheXMiOm51bGwsImNoZWNrX2ludGVydmFsX2hvdXJzIjoyNCwicmVsZWFzZV9hZnRlcl9kYXlzIjozMH0sIm1lc3NhZ2VzIjpbXSwic2VydmVyX3RpbWUiOjE3NjIwNzEzMDB9.FnSWRNaaHvXoomBLzG9J001AdOA_Q0q5cO0g_hsOapBPy9VUM_pIVSN-81XtykUInNKqJ5KoYW2vjTyazAiRDQ",
+  "trust_roots": [
+    {
+      "kid": "dev-root",
+      "alg": "EdDSA",
+      "pub": "-GZMEbD2M_QzYMoL5VXjWiBR8Rt-X0YxSwLL_fdCwtQ"
+    }
+  ],
+  "now": 1762071300,
+  "context": {
+    "product_code": "alteroffice-desktop",
+    "instance_id": "8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11",
+    "device_key_thumbprint": "O0Kv0S59X27tcdgo2xJZT_sdwzkgRd8Kced8en-j2io",
+    "stored_seq": 16,
+    "revoked_kids": []
+  },
+  "expected": {
+    "valid": true,
+    "error": null,
+    "claims": {
+      "ver": 1,
+      "iss": "https://license.alter-os.ru",
+      "sub": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+      "aud": "alteroffice-desktop",
+      "iat": 1762071300,
+      "nbf": 1762071300,
+      "seq": 17,
+      "lic": {
+        "id": "6f1c2a4e-8b3d-4c5f-9e7a-1b2c3d4e5f60",
+        "type": "subscription",
+        "status": "active",
+        "edition": "standard",
+        "valid_from": "2026-11-01T00:00:00Z",
+        "valid_until": "2027-10-31T20:59:59Z",
+        "support_until": "2027-10-31T20:59:59Z",
+        "customer": {
+          "id": "c3a1b2c3-d4e5-4f60-8a9b-0c1d2e3f4a5b",
+          "name": "ООО «Пример»"
+        }
+      },
+      "subject": {
+        "type": "device",
+        "instance_id": "8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11",
+        "fp": {
+          "scheme": "fp-v1",
+          "components": {
+            "disk": "test-fp-disk",
+            "board": "test-fp-board",
+            "cpu": "test-fp-cpu",
+            "mac": "unknown"
+          }
+        },
+        "device_key_thumbprint": "O0Kv0S59X27tcdgo2xJZT_sdwzkgRd8Kced8en-j2io"
+      },
+      "limits": {},
+      "capabilities": [
+        "view",
+        "edit",
+        "save",
+        "create",
+        "export",
+        "print",
+        "updates",
+        "support"
+      ],
+      "policy": {
+        "version": 3,
+        "enforcement": "enforce",
+        "notify_before_days": 30,
+        "grace_days": 14,
+        "expiry_action": "restrict",
+        "restricted_caps": [
+          "updates",
+          "macros",
+          "collaboration"
+        ],
+        "restricted_days": null,
+        "hard_block_mode": "read_only",
+        "read_only_caps": [
+          "view",
+          "export",
+          "print"
+        ],
+        "offline_grace_days": null,
+        "check_interval_hours": 24,
+        "release_after_days": 30
+      },
+      "messages": [],
+      "server_time": 1762071300
+    }
+  }
+}

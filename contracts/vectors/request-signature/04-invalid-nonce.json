@@ -1,0 +1,26 @@
+{
+  "name": "04-invalid-nonce",
+  "description": "nonce — 8 байт вместо 16.",
+  "public_key": "LrsBgVznSq_bD2qq4d6FOpODP61A4eTMiu8E2yKxUaI",
+  "server_now": 1762071300,
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/activations/act_01JABF8Q4W2N8C1R7ZB0Y5K6M3/check",
+    "body": "{\"lease_seq\":17,\"state\":\"ACTIVE\",\"client_time\":\"2026-11-02T08:14:58Z\"}"
+  },
+  "signed": {
+    "keyid": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+    "alg": "ed25519",
+    "created": 1762071300,
+    "nonce": "4sHQ8drFdf0",
+    "path": "/api/v1/activations/act_01JABF8Q4W2N8C1R7ZB0Y5K6M3/check"
+  },
+  "expected": {
+    "body_sha256": "jA73u219NFSgldYwfnmuqmigJ1jXMGGdBwgobm3YVgI",
+    "signing_string": "ALMI-REQ-V1\nPOST\n/api/v1/activations/act_01JABF8Q4W2N8C1R7ZB0Y5K6M3/check\n1762071300\n4sHQ8drFdf0\njA73u219NFSgldYwfnmuqmigJ1jXMGGdBwgobm3YVgI",
+    "signature": "zc6dvABT0AnhrDqAsa7MQBrJ_My1N6pDKLfRfmeP8c76FTBw5Dp_WHkUSI_BUdxQ01cjfDiOYUVOGLleSVZ5CA",
+    "header": "keyid=\"act_01JABF8Q4W2N8C1R7ZB0Y5K6M3\", alg=\"ed25519\", created=1762071300, nonce=\"4sHQ8drFdf0\", sig=\"zc6dvABT0AnhrDqAsa7MQBrJ_My1N6pDKLfRfmeP8c76FTBw5Dp_WHkUSI_BUdxQ01cjfDiOYUVOGLleSVZ5CA\"",
+    "valid": false,
+    "error": "signature_invalid"
+  }
+}

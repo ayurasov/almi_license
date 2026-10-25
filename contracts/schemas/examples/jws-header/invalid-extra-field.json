@@ -1,0 +1,6 @@
+{
+  "alg": "EdDSA",
+  "typ": "alm-req+jws",
+  "kid": "device",
+  "x5u": "https://example.com/cert"
+}

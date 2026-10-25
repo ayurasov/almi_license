@@ -650,7 +650,8 @@ P = L.policy; VU = L.lic.valid_until
 - модуль хранит `nonce` неподтверждённых запросов и принимает `.alk-lic` только с известным `request_nonce`;
 - срок ответа — 30 дней с момента запроса; после — нужен новый запрос;
 - для офлайн-активаций сервер ставит `exp` аренды по `offline_grace_days` профиля; для продления используется `.alk-req` типа `renew`;
-- файлы можно передавать по почте: они не содержат секретов, кроме ключа лицензии в `activate`.
+- файлы можно передавать по почте: они не содержат секретов, кроме ключа лицензии в `activate`;
+- точный состав полезной нагрузки файлов и подписанных объектов (`alk-req`, `alk-lic`, `package`, `alk-usage`, `cert`, `trust`, `receipt`, аренда) — JSON Schema в `contracts/schemas`; время `iat`, `nbf`, `exp`, `server_time` — Unix, остальные даты — RFC 3339.
 
 Где обрабатываются файлы устройств: портал `/offline` центрального сервера (без входа, с ограничением частоты), консоль оператора, консоль локального сервера.
 
@@ -789,7 +790,7 @@ occ config:system:set support.backend --value="https://license.alter-os.ru"
 
 ### 13.4. Отчёт `.alk-usage`
 
-`POST /api/sync/v1/servers/{server_id}/usage` → `200` с квитанцией (`alm-receipt+jws`).
+`POST /api/sync/v1/servers/{server_id}/usage` → `200` с квитанцией (`alm-receipt+jws`). Отчёт подписывается ключом локального сервера, `typ: alm-usage+jws`.
 
 | Поле | Описание |
 |---|---|
@@ -884,7 +885,11 @@ occ config:system:set support.backend --value="https://license.alter-os.ru"
 #define LICENSE_MODULE_H
 #include <stdint.h>
 #ifdef _WIN32
-#  define LM_API __declspec(dllimport)
+#  ifdef LM_BUILDING_DLL              /* v1+ задаётся только при сборке самой библиотеки */
+#    define LM_API __declspec(dllexport)
+#  else
+#    define LM_API __declspec(dllimport)
+#  endif
 #else
 #  define LM_API __attribute__((visibility("default")))
 #endif
@@ -1022,6 +1027,7 @@ LM_API LM_Result LM_GenerateReleaseRequest(const char* output_file_path);
 LM_API LM_Result LM_SetServerUrl(const char* url);
 LM_API LM_Result LM_GetLastError(char* buffer, int buffer_size); /* user_message последней ошибки, UTF-8 */
 LM_API int       LM_GetAbiVersion(void);
+LM_API LM_Result LM_GetVersion(char* buffer, int buffer_size);  /* v1+ версия модуля SemVer, UTF-8; без инициализации */
 
 #ifdef __cplusplus
 }
@@ -1039,7 +1045,9 @@ LM_API int       LM_GetAbiVersion(void);
 | Функции | Перед защищаемой операцией продукт вызывает `LM_HasFeature("edit")` и т. п. Имена функций — из каталога продукта; продукт не вычисляет состояние сам |
 | Сообщения | При `LM_EVENT_MESSAGE` и при запуске продукт читает `LM_GetMessage` и показывает тексты в указанном `placement`, затем вызывает `LM_MarkMessageShown` |
 | Деинсталляция | Деинсталлятор вызывает `LM_Deactivate`; при отсутствии сети место освободится автоматически через `release_after_days` |
-| Строки | UTF-8; буферы — с завершающим нулём; при нехватке — `LM_ERR_BUFFER_TOO_SMALL` |
+| Строки | UTF-8; буферы — с завершающим нулём; при нехватке (в том числе `NULL` или размер ≤ 0) — `LM_ERR_BUFFER_TOO_SMALL`, буфер не меняется |
+| Версии | `LM_GetAbiVersion` — версия ABI (`LM_ABI_VERSION`); `LM_GetVersion` — версия модуля (SemVer, независимо от сервера, раздел 7.2 документа 7). Обе работают без инициализации |
+| Сборка | Библиотека собирается с `LM_BUILDING_DLL` (экспорт на Windows); продукт этот макрос не задаёт |
 | Хранилище | Windows: `%ProgramData%\ALMI\license\` (машинная активация) с защитой DPAPI (LocalMachine); Linux: `/var/lib/almi/license/` или `~/.local/share/almi/license/`, права 0600, шифрование ключом, производным от `machine-id` |
 
 ### 15.3. Каталог функций АльтерОфис Desktop
