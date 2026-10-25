@@ -2,7 +2,8 @@
 # Entry points of the server image (docs/specs/07-environments.md, section 7.1):
 #   api      Gunicorn with Uvicorn workers on :8000 (WEB_CONCURRENCY, default 2)
 #   worker   task queue and schedule (E12-01)
-#   migrate  database migrations, before api and worker start
+#   migrate  database migrations, before api and worker start; as the owner of the tables, then
+#            the rights of APP_DATABASE_ROLE (the role of api and worker, question 38)
 #   manage   any manage.py command
 # Secrets come from Docker secret files: DATABASE_PASSWORD_FILE completes DATABASE_URL
 # (postgres://USER@HOST:PORT/NAME without a password), DJANGO_SECRET_KEY_FILE sets the key.
@@ -31,7 +32,12 @@ case "$command" in
       --bind 0.0.0.0:8000 --workers "${WEB_CONCURRENCY:-2}" --access-logfile - --forwarded-allow-ips '*' "$@"
     ;;
   worker) exec python manage.py run_worker "$@" ;;
-  migrate) exec python manage.py migrate --noinput "$@" ;;
+  migrate)
+    python manage.py migrate --noinput "$@"
+    if [[ -n "${APP_DATABASE_ROLE:-}" ]]; then
+      exec python manage.py grant_app_role "$APP_DATABASE_ROLE" ${APP_DATABASE_PASSWORD_FILE:+--password-file "$APP_DATABASE_PASSWORD_FILE"}
+    fi
+    ;;
   manage) exec python manage.py "$@" ;;
   *) echo "unknown command $command: api, worker, migrate or manage" >&2; exit 2 ;;
 esac
