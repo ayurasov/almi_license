@@ -1,0 +1,90 @@
+{
+  "ver": 1,
+  "iss": "https://license.alter-os.ru",
+  "sub": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+  "aud": "alteroffice-desktop",
+  "iat": "2026-11-02T08:15:00Z",
+  "nbf": 1762071300,
+  "exp": 1764663300,
+  "seq": 17,
+  "lic": {
+    "id": "6f1c2a4e-8b3d-4c5f-9e7a-1b2c3d4e5f60",
+    "type": "subscription",
+    "status": "active",
+    "edition": "standard",
+    "valid_from": "2026-11-01T00:00:00Z",
+    "valid_until": "2027-10-31T20:59:59Z",
+    "support_until": "2027-10-31T20:59:59Z",
+    "customer": {
+      "id": "c3a1b2c3-d4e5-4f60-8a9b-0c1d2e3f4a5b",
+      "name": "ООО «Пример»"
+    }
+  },
+  "subject": {
+    "type": "device",
+    "instance_id": "8d6a1f9e-6c39-4e57-9a3e-0e5d0f7b2c11",
+    "fp": {
+      "scheme": "fp-v1",
+      "components": {
+        "disk": "pX0bJ4u3ZK2eYc0aXl9Hq1nL8sV7tR6wQ5mN4kJ3hG2",
+        "board": "Zr4kYv8sT2qW6nM1pL9xC3bV7hJ5gF0dS4aQ8wE2rT6",
+        "cpu": "k1Q9wE3rT7yU5iO2pA6sD8fG4hJ1kL0zX3cV7bN5mQ8",
+        "mac": "unknown"
+      }
+    },
+    "device_key_thumbprint": "test-device-key-thumbprint-000000000000"
+  },
+  "limits": {
+    "named_users": null,
+    "only_count_active": false
+  },
+  "capabilities": [
+    "view",
+    "edit",
+    "save",
+    "export",
+    "print",
+    "macros",
+    "updates"
+  ],
+  "policy": {
+    "version": 3,
+    "enforcement": "enforce",
+    "notify_before_days": 30,
+    "grace_days": 14,
+    "expiry_action": "restrict",
+    "restricted_caps": [
+      "updates"
+    ],
+    "restricted_days": null,
+    "hard_block_mode": "read_only",
+    "read_only_caps": [
+      "view",
+      "print",
+      "export"
+    ],
+    "offline_grace_days": null,
+    "check_interval_hours": 24,
+    "release_after_days": 30
+  },
+  "messages": [
+    {
+      "id": "notice",
+      "state": "NOTICE",
+      "severity": "warning",
+      "placement": "banner",
+      "text": {
+        "ru": "Срок лицензии истекает через {days_left} дн.",
+        "en": "License expires in {days_left} days."
+      },
+      "action": {
+        "label": {
+          "ru": "Подробнее"
+        },
+        "url": "https://alter-os.ru/renew"
+      },
+      "repeat": "daily"
+    }
+  ],
+  "server_time": 1762071300
+}

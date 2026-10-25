@@ -1,0 +1,23 @@
+{
+  "provisional": true,
+  "request": {
+    "path": "/apps/zammad_organisation_management/api/query/subscription/{key}",
+    "body": {
+      "instanceId": "oc8kz3m1vq2a",
+      "userCount": 120,
+      "activeUserCount": 87,
+      "apps": {"files": "2.0.0", "calendar": "4.6.5", "spreed": "18.0.7"},
+      "version": "28.0.4.1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "endDate": "2027-10-31",
+      "extendedSupport": true,
+      "amountOfUsers": 500,
+      "onlyCountActiveUsers": false,
+      "accountManagerInfo": {"name": "Иван Петров", "email": "ivan.petrov@alter-os.ru", "phone": "+7 495 000-00-00"}
+    }
+  }
+}

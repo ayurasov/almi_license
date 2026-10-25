@@ -1,0 +1,2983 @@
+openapi: 3.0.3
+info:
+  title: ALMI License Product API
+  version: 1.0.0
+paths:
+  /api/admin/accounts:
+    get:
+      operationId: accounts_list
+      tags:
+      - accounts
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+          description: ''
+    post:
+      operationId: accounts_create
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedPassword'
+          description: ''
+  /api/admin/accounts/{username}:
+    patch:
+      operationId: accounts_update
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAccountUpdate'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+  /api/admin/accounts/{username}/password:
+    post:
+      operationId: accounts_reset_password
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - accounts
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedPassword'
+          description: ''
+  /api/admin/activations:
+    get:
+      operationId: activations_list
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: license_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          default: -last_seen_at
+          minLength: 1
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: search
+        schema:
+          type: string
+          default: ''
+      - in: query
+        name: status
+        schema:
+          type: string
+          default: ''
+      tags:
+      - activations
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivationPage'
+          description: ''
+  /api/admin/activations/{activation_id}/release:
+    post:
+      operationId: activations_release
+      parameters:
+      - in: path
+        name: activation_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - activations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+          description: ''
+  /api/admin/article-mappings:
+    get:
+      operationId: mappings_list
+      tags:
+      - article-mappings
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleMapping'
+          description: ''
+  /api/admin/article-mappings/{aa}:
+    put:
+      operationId: mappings_save
+      parameters:
+      - in: path
+        name: aa
+        schema:
+          type: string
+        required: true
+      tags:
+      - article-mappings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleMappingWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ArticleMappingWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ArticleMappingWrite'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleMapping'
+          description: ''
+  /api/admin/audit:
+    get:
+      operationId: audit_list
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: actor
+        schema:
+          type: string
+          default: ''
+          maxLength: 256
+      - in: query
+        name: object_id
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: object_type
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+      - in: query
+        name: since
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      - in: query
+        name: until
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      tags:
+      - audit
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditPage'
+          description: ''
+  /api/admin/audit/export:
+    get:
+      operationId: audit_export
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: actor
+        schema:
+          type: string
+          default: ''
+          maxLength: 256
+      - in: query
+        name: object_id
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: object_type
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+      - in: query
+        name: since
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      - in: query
+        name: until
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      tags:
+      - audit
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: CSV
+  /api/admin/catalog/metrics:
+    get:
+      operationId: metrics_list
+      tags:
+      - catalog
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Metric'
+          description: ''
+    post:
+      operationId: metrics_create
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetricCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MetricCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MetricCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+          description: ''
+  /api/admin/catalog/products:
+    post:
+      operationId: products_create
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}:
+    get:
+      operationId: products_get
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+    patch:
+      operationId: products_update
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductUpdate'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}/capabilities:
+    post:
+      operationId: capabilities_create
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapabilityCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CapabilityCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CapabilityCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}/capabilities/{code}:
+    patch:
+      operationId: capabilities_update
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCapabilityUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCapabilityUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCapabilityUpdate'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/catalog/products/{product_id}/editions:
+    post:
+      operationId: editions_save
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditionSave'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EditionSave'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EditionSave'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetails'
+          description: ''
+  /api/admin/customers:
+    get:
+      operationId: customers_list
+      parameters:
+      - in: query
+        name: inn
+        schema:
+          type: string
+          default: ''
+      - in: query
+        name: name
+        schema:
+          type: string
+          default: ''
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          default: name
+          minLength: 1
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: status
+        schema:
+          type: string
+          default: ''
+      tags:
+      - customers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPage'
+          description: ''
+    post:
+      operationId: customers_create
+      tags:
+      - customers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerWrite'
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/admin/customers/{customer_id}:
+    get:
+      operationId: customers_get
+      parameters:
+      - in: path
+        name: customer_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - customers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    patch:
+      operationId: customers_update
+      parameters:
+      - in: path
+        name: customer_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - customers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerWrite'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/admin/imports:
+    post:
+      operationId: imports_create
+      description: Preview of the XLSX export; nothing is written to licenses until
+        the confirmation.
+      tags:
+      - imports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+          description: ''
+  /api/admin/imports/{session_id}/apply:
+    post:
+      operationId: imports_apply
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - imports
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportReport'
+          description: ''
+  /api/admin/instance:
+    get:
+      operationId: instance_get
+      description: 'GET /api/admin/instance: the deployment mode, readable without
+        a session (E09-01).'
+      tags:
+      - instance
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+          description: ''
+  /api/admin/licenses:
+    get:
+      operationId: licenses_list
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: expires_after
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: expires_before
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          default: valid_until
+          minLength: 1
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: status
+        schema:
+          type: string
+          default: ''
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicensePage'
+          description: ''
+    post:
+      operationId: licenses_create
+      description: Read access for operators and customer viewers (E07-08).
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}:
+    get:
+      operationId: licenses_get
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/history:
+    get:
+      operationId: licenses_history
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryEvent'
+          description: ''
+  /api/admin/licenses/{license_id}/keys:
+    post:
+      operationId: licenses_issue_key
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedKey'
+          description: ''
+  /api/admin/licenses/{license_id}/lift-block:
+    post:
+      operationId: licenses_lift_block
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiftBlock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LiftBlock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LiftBlock'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/renew:
+    post:
+      operationId: licenses_renew
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Renew'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Renew'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Renew'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/resume:
+    post:
+      operationId: licenses_resume
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/revoke:
+    post:
+      operationId: licenses_revoke
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/settings:
+    patch:
+      operationId: licenses_settings
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSettings'
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/suspend:
+    post:
+      operationId: licenses_suspend
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reason'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reason'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/transfer:
+    post:
+      operationId: licenses_transfer
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/usage:
+    get:
+      operationId: licenses_usage
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usage'
+          description: ''
+  /api/admin/local-servers:
+    get:
+      operationId: local_servers_list
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+      tags:
+      - local-servers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocalServer'
+          description: ''
+    post:
+      operationId: local_servers_create
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalServerCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocalServerCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocalServerCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationCode'
+          description: ''
+  /api/admin/local-servers/{server_uuid}/allocations:
+    put:
+      operationId: local_servers_allocations
+      parameters:
+      - in: path
+        name: server_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Allocations'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Allocations'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Allocations'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalServer'
+          description: ''
+  /api/admin/local-servers/{server_uuid}/code:
+    post:
+      operationId: local_servers_new_code
+      parameters:
+      - in: path
+        name: server_uuid
+        schema:
+          type: string
+        required: true
+      tags:
+      - local-servers
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationCode'
+          description: ''
+  /api/admin/local-servers/register-file:
+    post:
+      operationId: local_servers_register_file
+      description: A .alk-req of type server in, the first package .alk out (closed
+        networks).
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlkFile'
+          description: ''
+  /api/admin/local-servers/usage-file:
+    post:
+      operationId: local_servers_usage_file
+      description: |-
+        A .alk-usage of a local server in a closed network (E09-06); the receipt goes back to
+        the server with its next package.
+      tags:
+      - local-servers
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageReceipt'
+          description: ''
+  /api/admin/package:
+    post:
+      operationId: local_package_upload
+      description: A package .alk brought on a medium (files mode, or a replacement
+        in online mode).
+      tags:
+      - package
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUpload'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStatus'
+          description: ''
+  /api/admin/package/sync:
+    post:
+      operationId: local_package_sync
+      description: Ask the central server for a newer package now (online mode).
+      tags:
+      - package
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStatus'
+          description: ''
+  /api/admin/products:
+    get:
+      operationId: products_list
+      description: Read access for operators and customer viewers (E07-08).
+      tags:
+      - products
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /api/admin/profiles:
+    get:
+      operationId: profiles_list
+      tags:
+      - profiles
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+          description: ''
+  /api/admin/profiles/{code}:
+    get:
+      operationId: profiles_versions
+      description: Versions of the profile, newest first.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - profiles
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Profile'
+          description: ''
+    post:
+      operationId: profiles_save
+      description: A new version of the profile (or the first one); unchanged parameters
+        add nothing.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - profiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileSave'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProfileSave'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProfileSave'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+  /api/admin/session:
+    get:
+      operationId: session_get
+      description: 'Console session: GET who is signed in, POST sign in, DELETE sign
+        out (E07-02).'
+      tags:
+      - session
+      security:
+      - consoleSession: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+    post:
+      operationId: session_create
+      description: 'Console session: GET who is signed in, POST sign in, DELETE sign
+        out (E07-02).'
+      tags:
+      - session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+        required: true
+      security:
+      - consoleSession: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+    delete:
+      operationId: session_delete
+      description: 'Console session: GET who is signed in, POST sign in, DELETE sign
+        out (E07-02).'
+      tags:
+      - session
+      security:
+      - consoleSession: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/admin/setup:
+    get:
+      operationId: local_status
+      description: 'The first-run wizard: registration code and the central server
+        or files only.'
+      tags:
+      - setup
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStatus'
+          description: ''
+    post:
+      operationId: local_setup
+      description: 'The first-run wizard: registration code and the central server
+        or files only.'
+      tags:
+      - setup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupResult'
+          description: ''
+  /api/admin/stats:
+    get:
+      operationId: stats_get
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - stats
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+          description: ''
+  /api/admin/stats/export:
+    get:
+      operationId: stats_export
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - stats
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: XLSX
+  /api/admin/usage-report:
+    post:
+      operationId: local_usage_report
+      description: A new usage report .alk-usage of this server as a file (files exchange,
+        E09-05).
+      tags:
+      - usage-report
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlkFile'
+          description: ''
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        username:
+          type: string
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        active:
+          type: boolean
+        locked_until:
+          type: string
+          format: date-time
+          nullable: true
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: customer_viewer only
+      required:
+      - active
+      - created_at
+      - customer_id
+      - last_login
+      - locked_until
+      - role
+      - username
+    AccountCreate:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 64
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - role
+      - username
+    Activation:
+      type: object
+      properties:
+        activation_id:
+          type: string
+        license_id:
+          type: string
+          format: uuid
+        instance_id:
+          type: string
+          format: uuid
+        instance_name:
+          type: string
+        subject_type:
+          type: string
+        status:
+          $ref: '#/components/schemas/ActivationStatusEnum'
+        in_reserve:
+          type: boolean
+        product_version:
+          type: string
+        os:
+          type: object
+          additionalProperties: {}
+        activated_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+        released_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - activated_at
+      - activation_id
+      - in_reserve
+      - instance_id
+      - instance_name
+      - last_seen_at
+      - license_id
+      - os
+      - product_version
+      - released_at
+      - status
+      - subject_type
+    ActivationPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activation'
+      required:
+      - count
+      - results
+    ActivationStatusEnum:
+      enum:
+      - active
+      - released
+      - released_auto
+      - revoked
+      - conflict
+      type: string
+      description: |-
+        * `active` - active
+        * `released` - released
+        * `released_auto` - released_auto
+        * `revoked` - revoked
+        * `conflict` - conflict
+    AlkFile:
+      type: object
+      properties:
+        format:
+          type: string
+        version:
+          type: integer
+        payload:
+          type: string
+      required:
+      - format
+      - payload
+      - version
+    Allocations:
+      type: object
+      properties:
+        allocations:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+      - allocations
+    ArticleMapping:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+        aa:
+          type: string
+      required:
+      - aa
+      - metric_id
+      - product_id
+    ArticleMappingWrite:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+      required:
+      - metric_id
+      - product_id
+    AuditEvent:
+      type: object
+      properties:
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+        action:
+          type: string
+        object_type:
+          type: string
+        object_id:
+          type: string
+        ip:
+          type: string
+          nullable: true
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - action
+      - actor
+      - at
+      - data
+      - ip
+      - object_id
+      - object_type
+      - seq
+    AuditPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+      required:
+      - count
+      - results
+    Capability:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 48
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/CapabilityStatusEnum'
+      required:
+      - code
+      - id
+    CapabilityCreate:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 48
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+    CapabilityStatusEnum:
+      enum:
+      - active
+      - deprecated
+      type: string
+      description: |-
+        * `active` - active
+        * `deprecated` - deprecated
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 512
+        inn:
+          type: string
+          maxLength: 12
+        external_id:
+          type: string
+          maxLength: 128
+        status:
+          $ref: '#/components/schemas/CustomerStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - external_id
+      - id
+      - inn
+      - name
+      - status
+    CustomerPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+      required:
+      - count
+      - results
+    CustomerStatusEnum:
+      enum:
+      - active
+      - archived
+      type: string
+      description: |-
+        * `active` - active
+        * `archived` - archived
+    CustomerWrite:
+      type: object
+      description: Fields an operator sends; checks of values are in licensing.domain
+        (AGENTS.md, rule 2).
+      properties:
+        name:
+          type: string
+          maxLength: 512
+        inn:
+          type: string
+          maxLength: 12
+        external_id:
+          type: string
+          maxLength: 128
+        status:
+          type: string
+          maxLength: 16
+    Edition:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+      - id
+      - name
+    EditionDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        base_capabilities:
+          type: array
+          items:
+            type: string
+      required:
+      - code
+      - id
+    EditionSave:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        base_capabilities:
+          type: array
+          items:
+            type: string
+      required:
+      - code
+    ExchangeEnum:
+      enum:
+      - online
+      - files
+      type: string
+      description: |-
+        * `online` - online
+        * `files` - files
+    HistoryEvent:
+      type: object
+      properties:
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+        action:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - action
+      - actor
+      - at
+      - data
+      - seq
+    ImportError:
+      type: object
+      properties:
+        row:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - errors
+      - row
+    ImportPreview:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRow'
+        summary:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - filename
+      - rows
+      - session_id
+      - summary
+    ImportReport:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        created:
+          type: integer
+        updated:
+          type: integer
+        skipped:
+          type: integer
+        customers_created:
+          type: integer
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportError'
+      required:
+      - created
+      - customers_created
+      - errors
+      - session_id
+      - skipped
+      - updated
+    ImportRow:
+      type: object
+      properties:
+        row:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ImportRowStatusEnum'
+        errors:
+          type: array
+          items:
+            type: string
+        fields:
+          type: object
+          additionalProperties: {}
+      required:
+      - errors
+      - fields
+      - row
+      - status
+    ImportRowStatusEnum:
+      enum:
+      - new
+      - update
+      - skip
+      - error
+      type: string
+      description: |-
+        * `new` - new
+        * `update` - update
+        * `skip` - skip
+        * `error` - error
+    ImportUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+      required:
+      - file
+    Instance:
+      type: object
+      description: 'What the console needs before sign-in: the mode of this server
+        (E09-01).'
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        setup_required:
+          type: boolean
+      required:
+      - mode
+      - setup_required
+    IssuedKey:
+      type: object
+      properties:
+        license_id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          description: Shown once; the server keeps only hash and mask
+        key_mask:
+          type: string
+      required:
+      - key
+      - key_mask
+      - license_id
+    IssuedPassword:
+      type: object
+      description: The temporary password is shown once; the server keeps only its
+        Argon2id hash.
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        password:
+          type: string
+      required:
+      - account
+      - password
+    License:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        status:
+          $ref: '#/components/schemas/LicenseStatusEnum'
+        limit:
+          type: integer
+        reserve_pct:
+          type: integer
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        support_until:
+          type: string
+          format: date-time
+          nullable: true
+        enforcement:
+          type: string
+        monitor_until:
+          type: string
+          format: date-time
+          nullable: true
+        policy_profile_code:
+          type: string
+        rights_version:
+          type: integer
+        key_masks:
+          type: array
+          items:
+            type: string
+        limits:
+          $ref: '#/components/schemas/Limits'
+        state:
+          type: string
+          description: Hourly state by PolicyEngine
+        state_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - customer_id
+      - customer_name
+      - edition_id
+      - enforcement
+      - id
+      - key_masks
+      - limit
+      - limits
+      - monitor_until
+      - policy_profile_code
+      - product_id
+      - reserve_pct
+      - rights_version
+      - state
+      - state_at
+      - status
+      - support_until
+      - type
+      - valid_from
+      - valid_until
+    LicenseCreate:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        edition_id:
+          type: string
+          format: uuid
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        limit:
+          type: integer
+        reserve_pct:
+          type: integer
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        support_until:
+          type: string
+          format: date-time
+          nullable: true
+        policy_profile_code:
+          type: string
+        enforcement:
+          type: string
+      required:
+      - customer_id
+      - limit
+      - metric_id
+      - product_id
+      - type
+      - valid_from
+    LicensePage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+      required:
+      - count
+      - results
+    LicenseStats:
+      type: object
+      properties:
+        license_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        product:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        limit:
+          type: integer
+        active:
+          type: integer
+        in_reserve:
+          type: integer
+        free:
+          type: integer
+        released_auto:
+          type: integer
+        conflicts:
+          type: integer
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        by_version:
+          type: object
+          additionalProperties:
+            type: integer
+        by_os:
+          type: object
+          additionalProperties:
+            type: integer
+        users:
+          type: integer
+          nullable: true
+          description: Reported by server instances
+        user_limit:
+          type: integer
+          nullable: true
+        users_exceeded:
+          type: boolean
+        state:
+          type: string
+        local_active:
+          type: integer
+          description: Active on local servers (last reports)
+      required:
+      - active
+      - by_os
+      - by_version
+      - conflicts
+      - customer_id
+      - customer_name
+      - free
+      - in_reserve
+      - last_seen_at
+      - license_id
+      - limit
+      - local_active
+      - product
+      - released_auto
+      - state
+      - status
+      - type
+      - user_limit
+      - users
+      - users_exceeded
+      - valid_until
+    LicenseStatusEnum:
+      enum:
+      - active
+      - suspended
+      - revoked
+      type: string
+      description: |-
+        * `active` - active
+        * `suspended` - suspended
+        * `revoked` - revoked
+    LiftBlock:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+        until:
+          type: string
+          format: date-time
+      required:
+      - reason
+      - until
+    Limits:
+      type: object
+      description: User limits of a server product (lease "limits", section 6.2 of
+        document 2).
+      properties:
+        named_users:
+          type: integer
+          nullable: true
+        active_users:
+          type: integer
+          nullable: true
+        only_count_active:
+          type: boolean
+          default: false
+    LocalServer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/LocalServerStatusEnum'
+        allocations:
+          type: object
+          additionalProperties:
+            type: integer
+        registered:
+          type: boolean
+        code_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_package_seq:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        package_valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        package_expires_soon:
+          type: boolean
+          description: Less than 30 days left (E12-04)
+      required:
+      - allocations
+      - code_expires_at
+      - created_at
+      - customer_id
+      - id
+      - last_package_seq
+      - last_seen_at
+      - name
+      - package_expires_soon
+      - package_valid_until
+      - registered
+      - server_id
+      - status
+    LocalServerCreate:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 256
+        allocations:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+      - allocations
+      - customer_id
+      - name
+    LocalServerStatusEnum:
+      enum:
+      - pending
+      - active
+      - revoked
+      type: string
+      description: |-
+        * `pending` - pending
+        * `active` - active
+        * `revoked` - revoked
+    LocalStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        registered:
+          type: boolean
+        server_id:
+          type: string
+          nullable: true
+        exchange:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ExchangeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        central_url:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+        package_seq:
+          type: integer
+        package_issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        package_valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        package_expires_soon:
+          type: boolean
+        report_seq:
+          type: integer
+          description: Last usage report built (E09-05)
+        receipt_seq:
+          type: integer
+          description: Last report acknowledged by the central
+      required:
+      - central_url
+      - configured
+      - customer_id
+      - exchange
+      - package_expires_soon
+      - package_issued_at
+      - package_seq
+      - package_valid_until
+      - receipt_seq
+      - registered
+      - report_seq
+      - server_id
+    Metric:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+      - id
+      - name
+    MetricCreate:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - code
+      - name
+    ModeEnum:
+      enum:
+      - central
+      - local
+      type: string
+      description: |-
+        * `central` - central
+        * `local` - local
+    NullEnum:
+      enum:
+      - null
+    PatchedAccountUpdate:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+        active:
+          type: boolean
+    PatchedCapabilityUpdate:
+      type: object
+      properties:
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/CapabilityStatusEnum'
+    PatchedCustomerWrite:
+      type: object
+      description: Fields an operator sends; checks of values are in licensing.domain
+        (AGENTS.md, rule 2).
+      properties:
+        name:
+          type: string
+          maxLength: 512
+        inn:
+          type: string
+          maxLength: 12
+        external_id:
+          type: string
+          maxLength: 128
+        status:
+          type: string
+          maxLength: 16
+    PatchedProductUpdate:
+      type: object
+      properties:
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/ProductStatusEnum'
+        default_profile_code:
+          type: string
+    PatchedSettings:
+      type: object
+      properties:
+        limit:
+          type: integer
+        reserve_pct:
+          type: integer
+          nullable: true
+        metric_id:
+          type: string
+          format: uuid
+        enforcement:
+          type: string
+        limits:
+          $ref: '#/components/schemas/Limits'
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        default_metric_id:
+          type: string
+          format: uuid
+        default_metric:
+          type: string
+        editions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edition'
+      required:
+      - code
+      - default_metric
+      - default_metric_id
+      - editions
+      - id
+      - name
+    ProductCreate:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 64
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        subject_type:
+          $ref: '#/components/schemas/SubjectTypeEnum'
+        default_metric_id:
+          type: string
+          format: uuid
+        default_profile_code:
+          type: string
+          default: ''
+      required:
+      - code
+      - default_metric_id
+      - name
+      - subject_type
+    ProductDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          $ref: '#/components/schemas/ProductStatusEnum'
+        subject_type:
+          $ref: '#/components/schemas/SubjectTypeEnum'
+        default_metric_id:
+          type: string
+          format: uuid
+        default_profile_code:
+          type: string
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Capability'
+        editions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditionDetails'
+      required:
+      - capabilities
+      - code
+      - default_metric_id
+      - default_profile_code
+      - editions
+      - id
+      - name
+      - status
+      - subject_type
+    ProductStatusEnum:
+      enum:
+      - active
+      - reserved
+      - deprecated
+      type: string
+      description: |-
+        * `active` - active
+        * `reserved` - reserved
+        * `deprecated` - deprecated
+    Profile:
+      type: object
+      properties:
+        code:
+          type: string
+        version:
+          type: integer
+        params:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - code
+      - created_at
+      - params
+      - version
+    ProfileSave:
+      type: object
+      properties:
+        params:
+          type: object
+          additionalProperties: {}
+      required:
+      - params
+    Reason:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+      - reason
+    RegistrationCode:
+      type: object
+      description: The code is shown once; the server keeps only its hash (E09-02).
+      properties:
+        server:
+          $ref: '#/components/schemas/LocalServer'
+        code:
+          type: string
+      required:
+      - code
+      - server
+    Renew:
+      type: object
+      properties:
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+        support_until:
+          type: string
+          format: date-time
+          nullable: true
+        limit:
+          type: integer
+          nullable: true
+      required:
+      - valid_until
+    RoleEnum:
+      enum:
+      - operator
+      - admin
+      - customer_viewer
+      type: string
+      description: |-
+        * `operator` - operator
+        * `admin` - admin
+        * `customer_viewer` - customer_viewer
+    Session:
+      type: object
+      properties:
+        username:
+          type: string
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - role
+      - username
+    SessionRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          maxLength: 256
+      required:
+      - password
+      - username
+    SetupRequest:
+      type: object
+      properties:
+        registration_code:
+          type: string
+          maxLength: 64
+        central_url:
+          type: string
+          default: ''
+          maxLength: 256
+      required:
+      - registration_code
+    SetupResult:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/LocalStatus'
+        request_file:
+          allOf:
+          - $ref: '#/components/schemas/AlkFile'
+          nullable: true
+      required:
+      - request_file
+      - status
+    Stats:
+      type: object
+      properties:
+        licenses:
+          type: integer
+        limit:
+          type: integer
+        active:
+          type: integer
+        in_reserve:
+          type: integer
+        free:
+          type: integer
+        released_auto:
+          type: integer
+        conflicts:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        by_version:
+          type: object
+          additionalProperties:
+            type: integer
+        by_os:
+          type: object
+          additionalProperties:
+            type: integer
+        by_state:
+          type: object
+          additionalProperties:
+            type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenseStats'
+      required:
+      - active
+      - by_os
+      - by_state
+      - by_version
+      - conflicts
+      - free
+      - in_reserve
+      - last_seen_at
+      - licenses
+      - limit
+      - released_auto
+      - rows
+    SubjectTypeEnum:
+      enum:
+      - device
+      - server_instance
+      - os_node
+      type: string
+      description: |-
+        * `device` - device
+        * `server_instance` - server_instance
+        * `os_node` - os_node
+    Transfer:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+        customer_id:
+          type: string
+          format: uuid
+        document:
+          type: string
+          default: ''
+          maxLength: 256
+      required:
+      - customer_id
+      - reason
+    TypeEnum:
+      enum:
+      - subscription
+      - perpetual
+      - trial
+      - nfr
+      - free
+      type: string
+      description: |-
+        * `subscription` - subscription
+        * `perpetual` - perpetual
+        * `trial` - trial
+        * `nfr` - nfr
+        * `free` - free
+    Usage:
+      type: object
+      properties:
+        active:
+          type: integer
+        in_reserve:
+          type: integer
+        released_auto:
+          type: integer
+        conflicts:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        by_version:
+          type: object
+          additionalProperties:
+            type: integer
+        by_os:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - active
+      - by_os
+      - by_version
+      - conflicts
+      - in_reserve
+      - last_seen_at
+      - released_auto
+    UsageReceipt:
+      type: object
+      properties:
+        server_id:
+          type: string
+        report_seq:
+          type: integer
+        receipt:
+          type: string
+          description: JWS alm-receipt+jws
+      required:
+      - receipt
+      - report_seq
+      - server_id
+  securitySchemes:
+    consoleSession:
+      type: apiKey
+      in: cookie
+      name: sessionid

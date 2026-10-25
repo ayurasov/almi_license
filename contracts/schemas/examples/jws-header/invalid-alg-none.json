@@ -1,0 +1,5 @@
+{
+  "alg": "none",
+  "typ": "alm-req+jws",
+  "kid": "device"
+}

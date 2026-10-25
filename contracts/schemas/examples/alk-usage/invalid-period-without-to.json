@@ -1,0 +1,41 @@
+{
+  "server_id": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8",
+  "seq": 12,
+  "period": {
+    "from": "2026-11-01T00:00:00Z"
+  },
+  "package_seq": 7,
+  "licenses": [
+    {
+      "license_id": "6f1c2a4e-8b3d-4c5f-9e7a-1b2c3d4e5f60",
+      "active": 211,
+      "released": 4,
+      "reserve_used": 0,
+      "by_version": {
+        "3.2.0": 180,
+        "3.1.4": 31
+      },
+      "by_os": {
+        "windows": 150,
+        "linux": 61
+      },
+      "users_total": 0,
+      "users_max_active": 0
+    }
+  ],
+  "activations": [
+    {
+      "activation_id": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+      "instance_hash": "test-instance-hash-000000000",
+      "version": "3.2.0",
+      "os": "linux",
+      "status": "active",
+      "activated_at": "2026-11-02T08:15:00Z",
+      "last_seen_at": "2026-11-02T20:00:00Z"
+    }
+  ],
+  "denials": {
+    "seats_exhausted": 3
+  },
+  "audit_digest": "test-audit-digest-0000000000000000"
+}

@@ -1,0 +1,97 @@
+"""Offline files of devices (E08-01; section 10 of document 2, contracts/schemas/alk-*.json).
+
+A .alk-req is a JSON container {format, version, payload} with a compact JWS alm-req+jws signed
+by the device key carried in the payload itself (device_pubkey). The signature is checked before
+any field of the payload is used; activate, renew and release then go through the same domain
+services as the online API. The answer .alk-lic is signed by the issuing key.
+"""
+
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any
+
+from django.utils.dateparse import parse_datetime
+
+from apps.activation.domain.keys import device_public_key
+from apps.activation.domain.leases import rfc3339
+from apps.signing.domain import issue_jws
+from infra.errors import DomainError
+from infra.signed_files import FileRefused, SignatureMismatch, open_signed_file
+
+MAX_FILE_BYTES = 64 * 1024
+RESPONSE_DAYS = timedelta(days=30)
+REQUEST_TYP = "alm-req+jws"
+LICENSE_TYP = "alm-lic+jws"
+DEVICE_TYPES = frozenset({"activate", "renew", "release"})
+MAX_NONCE = 128
+
+
+@dataclass(frozen=True)
+class OfflineRequest:
+    """A verified payload of .alk-req: the signature matches its device_pubkey."""
+
+    type: str
+    payload: dict[str, Any]
+    nonce: str
+    created: datetime
+
+
+def _invalid(detail: str) -> DomainError:
+    return DomainError("invalid_request", detail)
+
+
+def open_request(content: bytes, *, now: datetime) -> OfflineRequest:
+    """Container, JWS header, device signature and age of the request; nothing else is trusted."""
+    try:
+        signed = open_signed_file(
+            content,
+            file_format="alk-req",
+            typ=REQUEST_TYP,
+            key_field="device_pubkey",
+            max_bytes=MAX_FILE_BYTES,
+        )
+    except FileRefused as refused:
+        raise _invalid(str(refused)) from None
+    except SignatureMismatch:
+        raise DomainError("signature_invalid") from None
+    payload = signed.payload
+    if payload.get("type") not in DEVICE_TYPES:
+        raise _invalid("request type is not activate, renew or release")
+    nonce, created_text = payload.get("nonce"), payload.get("created")
+    created = parse_datetime(created_text) if isinstance(created_text, str) else None
+    if not isinstance(nonce, str) or not 0 < len(nonce) <= MAX_NONCE or created is None:
+        raise _invalid("nonce and created are required")
+    if created.tzinfo is None:
+        raise _invalid("created must carry a time zone")
+    if now - created > RESPONSE_DAYS:
+        raise _invalid("the request is older than 30 days: create a new one")
+    if payload["type"] != "activate":
+        stored = device_public_key(str(payload.get("activation_id", "")))
+        if stored is None:
+            raise DomainError("activation_not_found")
+        if stored != payload["device_pubkey"]:
+            raise DomainError("signature_invalid")
+    return OfflineRequest(payload["type"], payload, nonce, created)
+
+
+def answer(
+    request: OfflineRequest,
+    activation_id: str,
+    *,
+    now: datetime,
+    lease: str | None = None,
+    receipt: str | None = None,
+) -> dict[str, Any]:
+    """The .alk-lic container; the response is valid 30 days from the request."""
+    start = min(request.created, now)
+    claims: dict[str, Any] = {
+        "request_nonce": request.nonce,
+        "activation_id": activation_id,
+        "issued_at": rfc3339(now),
+        "respond_before": rfc3339(start + RESPONSE_DAYS),
+    }
+    if lease is not None:
+        claims["lease"] = lease
+    if receipt is not None:
+        claims["receipt"] = receipt
+    return {"format": "alk-lic", "version": 1, "payload": issue_jws(LICENSE_TYP, claims)}

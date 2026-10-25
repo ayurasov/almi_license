@@ -1,0 +1,12 @@
+{
+  "named_users": 512,
+  "active_users": 431,
+  "active_users_window_days": 30,
+  "apps": {
+    "calendar": {
+      "enabled": "yes",
+      "version": "4.7.2"
+    }
+  },
+  "storage_gb": 118.5
+}

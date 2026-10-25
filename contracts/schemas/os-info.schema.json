@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/os-info.schema.json",
+  "title": "OsInfo",
+  "description": "Операционная система экземпляра (документ 2, раздел 5.2).",
+  "type": "object",
+  "required": [
+    "family",
+    "name",
+    "version",
+    "arch"
+  ],
+  "properties": {
+    "family": {
+      "type": "string",
+      "enum": [
+        "windows",
+        "linux",
+        "macos",
+        "other"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "arch": {
+      "type": "string",
+      "enum": [
+        "x86_64",
+        "aarch64",
+        "x86",
+        "other"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

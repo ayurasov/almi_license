@@ -1,0 +1,11 @@
+{
+  "ver": 1,
+  "kid": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8-1",
+  "alg": "EdDSA",
+  "pub": "test-local-server-public-key-00000000000000",
+  "role": "local_server",
+  "iss": "c-2026-01",
+  "iat": 1762071300,
+  "nbf": 1762071300,
+  "exp": 1856765700
+}

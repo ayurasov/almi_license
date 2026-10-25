@@ -1,30 +1,80 @@
-# Система лицензирования АЛМИ — стартовый комплект репозитория
+# almi-license — система лицензирования АЛМИ
 
-Комплект для разработки этапа 1 с ИИ-ассистентами. Структура и имена файлов совпадают с путями, на которые ссылаются промпты.
+Сервер лицензирования (Django), веб-консоль (Vue 3) и модуль лицензирования DL (C++) для продуктов АЛМИ Партнер (АльтерОфис Desktop, АльтерОфис Web, АльтерОС).
+Один образ сервера работает в двух режимах: центральный сервер (`DEPLOYMENT_MODE=central`) и локальный сервер заказчика, в том числе в изолированном контуре (`DEPLOYMENT_MODE=local`).
 
-## Состав
+Правила разработки для людей и ИИ-ассистентов — [AGENTS.md](AGENTS.md). Источник истины — каталог [contracts/](contracts/) и документы [01](docs/specs/01-architecture.md), [02](docs/specs/02-interaction-spec.md).
+
+## Документы
+
+| Документ | Файл |
+|---|---|
+| 1. Архитектура и план разработки | [docs/specs/01-architecture.md](docs/specs/01-architecture.md) |
+| 2. Спецификация взаимодействия | [docs/specs/02-interaction-spec.md](docs/specs/02-interaction-spec.md) |
+| 3. Бэклог этапа 1 | [docs/specs/03-backlog.md](docs/specs/03-backlog.md) |
+| 4. Каталог продуктов и функций | [docs/specs/04-catalog.md](docs/specs/04-catalog.md) |
+| 5. Тексты сообщений | [docs/specs/05-messages.md](docs/specs/05-messages.md) |
+| 6. Правила разработки с ИИ-ассистентами | [docs/specs/06-ai-rules.md](docs/specs/06-ai-rules.md) |
+| 7. Стенды, CI/CD и порядок выпуска | [docs/specs/07-environments.md](docs/specs/07-environments.md) |
+| 8. Техническое задание на ЛК АльтерСофт 3.0 | [docs/specs/08-lk-tz.md](docs/specs/08-lk-tz.md) |
+| 10. Промпты для разработки этапа 1 | [docs/specs/10-ai-prompts.md](docs/specs/10-ai-prompts.md) |
+| Диаграммы C4 и последовательностей | [docs/specs/diagrams/](docs/specs/diagrams/) |
+| Контракт Product API v1 | [contracts/openapi-product-api-v1.yaml](contracts/openapi-product-api-v1.yaml) |
+
+Рабочие файлы этапа: журнал [docs/progress/stage1.md](docs/progress/stage1.md), решения [docs/decisions.md](docs/decisions.md), ADR [docs/adr/](docs/adr/), изменения [CHANGELOG.md](CHANGELOG.md).
+
+## Структура
+
+Раздел 14 документа 1.
 
 ```text
-AGENTS.md                         правила для ИИ-ассистента (раздел 3 документа 6)
-CODEOWNERS                        обязательное ревью технического лидера
-CHANGELOG.md
-.github/pull_request_template.md  шаблон запроса на слияние
-contracts/openapi-product-api-v1.yaml   контракт Product API v1
-docs/specs/                       документы комплекта с короткими именами
-  01-architecture.md … 08-lk-tz.md, 10-ai-prompts.md, diagrams/
-docs/progress/stage1.md           журнал этапа — память ассистента
-docs/progress/iteration-template.md
-docs/decisions.md, docs/adr/
-prompts/README.md                 итерационная модель, правила сессий, признаки проблем
-prompts/base/                     P00–P12 — цикл истории
-prompts/iterations/I0…I6/         цель, план, готовые промпты, критерии выхода
-prompts/streams/                  QA, DevOps, модуль DL
+contracts/      OpenAPI, JSON Schema (schemas/), эталонные векторы (vectors/) — только через ревью TL
+server/         Django-проект: almi_license/ (settings, urls), apps/ (модули), infra/, tests/
+console/        веб-консоль Vue 3 + TypeScript
+sdk/cpp/        модуль лицензирования DL (license_module)
+sdk/php/        SDK веб-продуктов (этап 2)
+tools/          almi-keytool (ключи и сертификаты), conformance (тесты соответствия продукта)
+deploy/         central/, local/, dev/ (локальное окружение), airgap-bundle/
+docs/           specs/ (документы комплекта), adr/, progress/
+prompts/        промпты итераций I0–I6 и базового цикла истории P0–P12
+```
+
+## Требования
+
+Docker 24+ с Compose v2, GNU Make, [uv](https://docs.astral.sh/uv/) 0.11+ (линтеры и тесты сервера на хосте), `pre-commit`.
+Модуль DL: CMake 3.28+, GCC или MSVC с C++17, clang-tidy, [vcpkg](https://vcpkg.io) — переменная `VCPKG_ROOT` (зависимости ставятся из `sdk/cpp/vcpkg.json` при первой конфигурации); на Linux для libsodium нужны `autoconf autoconf-archive automake libtool`.
+
+## Команды
+
+Цели из раздела 5 документа 7. Пока код не написан, цель печатает `not implemented` и завершается с кодом 0.
+
+| Команда | Действие |
+|---|---|
+| `make help` | Список целей |
+| `make up` / `make down` | Поднять (ждёт готовности, до 120 с) и остановить локальное окружение: шлюз `http://localhost:8080`, консоль `:5173`, PostgreSQL `:5432` |
+| `make up-local` | То же в режиме `DEPLOYMENT_MODE=local` |
+| `make seed` | Миграции и набор `seed-minimal` |
+| `make test` | Все тесты: `test-server`, `test-console`, `test-dl` (`test-dl`: сборка `sdk/cpp/build`, `DL_CONFIG=Debug`) |
+| `make lint` | Все линтеры: ruff, mypy, import-linter, eslint, vue-tsc, clang-tidy (`make lint-server`, `make lint-dl` — по частям) |
+| `make contract-check` | Сверка OpenAPI реализации с `contracts/openapi-product-api-v1.yaml` |
+| `make test-keytool`, `make lint-keytool` | Тесты и линтеры `tools/almi-keytool` (входят в `make test` и `make lint`) |
+| `make vectors` | Эталонные векторы: совпадают с генератором и валидны (прогон на сервере и в DL — с E02-03, E04-01, E13-02) |
+| `make e2e` | Playwright и сценарии API против `dev` |
+| `make bundle-airgap` | Собрать комплект изолированного контура локально |
+
+Серверным целям на хосте нужен `DATABASE_URL` (PostgreSQL 17); при поднятом `make up` это `postgres://almi:dev-only@localhost:5432/almi_license` (пароль только для `dev`, раздел 5 документа 7); `DEPLOYMENT_MODE` по умолчанию `central`. `make lint` обращается к настройкам, но не к БД, поэтому работает и без `DATABASE_URL`.
+
+Хуки перед коммитом (ruff, ruff-format, eslint, clang-format, gitleaks):
+
+```sh
+pre-commit install
+pre-commit run --all-files
 ```
 
 ## Порядок работы
 
-1. Распаковать в корень пустого репозитория `almi-license`, закоммитить в ветку `stage1`.
-2. Технический лидер проверяет `AGENTS.md` и `CODEOWNERS` (заменить `@tech-lead` на учётную запись).
-3. Выполнить итерацию I0 по `prompts/iterations/I0-preparation/README.md`. Промпт I0-01 не перезаписывает уже размещённые `AGENTS.md`, `CODEOWNERS`, `docs/` — только дополняет структуру.
-4. Каждую историю вести по циклу `prompts/base/` (P0 → P9); в конце итерации — P10 и файл `docs/progress/iteration-N.md` по шаблону.
-5. `docs/specs/` и `contracts/` меняются только через ревью технического лидера.
+1. Работа ведётся итерациями I0–I6 по [prompts/iterations/](prompts/iterations/README.md); каждая история — по циклу [prompts/base/](prompts/base/README.md) (P0 → P9).
+2. Ветки задач создаются от `stage1`, слияние — squash через запрос по шаблону [.github/pull_request_template.md](.github/pull_request_template.md) (раздел 6 документа 6).
+3. Обязательного ревью через `CODEOWNERS` нет — изменения контролирует руководитель проекта; критичные модули проходят чек-лист раздела 8 документа 6.
+4. `docs/specs/` и `contracts/` меняются только через ревью руководителя проекта.
+5. Зависимости — только из реестра [docs/dependencies.md](docs/dependencies.md).

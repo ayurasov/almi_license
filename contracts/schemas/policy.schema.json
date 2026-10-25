@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/policy.schema.json",
+  "title": "Policy",
+  "description": "Профиль политики (документ 2, раздел 6.4).",
+  "type": "object",
+  "required": [
+    "version",
+    "enforcement",
+    "notify_before_days",
+    "grace_days",
+    "expiry_action",
+    "check_interval_hours"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer"
+    },
+    "enforcement": {
+      "type": "string",
+      "enum": [
+        "enforce",
+        "monitor"
+      ]
+    },
+    "notify_before_days": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 365
+    },
+    "grace_days": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 365
+    },
+    "expiry_action": {
+      "type": "string",
+      "enum": [
+        "none",
+        "restrict",
+        "block"
+      ]
+    },
+    "restricted_caps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "restricted_days": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "hard_block_mode": {
+      "type": "string",
+      "enum": [
+        "read_only",
+        "no_start"
+      ]
+    },
+    "read_only_caps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "offline_grace_days": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "check_interval_hours": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 168
+    },
+    "release_after_days": {
+      "type": "integer",
+      "minimum": 7,
+      "maximum": 365
+    }
+  },
+  "additionalProperties": true
+}

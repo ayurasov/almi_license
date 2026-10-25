@@ -1,0 +1,22 @@
+{
+  "ver": 1,
+  "kid": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8-1",
+  "alg": "EdDSA",
+  "pub": "test-local-server-public-key-00000000000000",
+  "role": "local_server",
+  "iss": "c-2026-01",
+  "iat": 1762071300,
+  "nbf": 1762071300,
+  "exp": 1856765700,
+  "scope": {
+    "server_id": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8",
+    "customer_id": "c3a1b2c3-d4e5-4f60-8a9b-0c1d2e3f4a5b",
+    "products": [
+      "alteroffice-desktop",
+      "alteroffice-web"
+    ],
+    "quotas": {
+      "6f1c2a4e-8b3d-4c5f-9e7a-1b2c3d4e5f60": 250
+    }
+  }
+}
