@@ -24,6 +24,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 option(LM_BUILD_TESTS "Build lm_tests" ON)
 option(LM_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer (GCC/Clang)" OFF)
+option(LM_COVERAGE "Build with gcov line coverage (GCC), make coverage-dl (E13-12)" OFF)
 set(LM_TRUST_ROOTS "dev" CACHE STRING "Embedded trust roots: dev | ci | test | staging | prod")
 set_property(CACHE LM_TRUST_ROOTS PROPERTY STRINGS dev ci test staging prod)
 set(LM_TRUST_ROOTS_FILE "" CACHE FILEPATH "Public root key(s) to embed; dev uses contracts/vectors/keys/dev-root.pub")
@@ -38,6 +39,10 @@ if(MSVC)
   set(LM_WARNINGS /W4 /WX /permissive-)
 else()
   set(LM_WARNINGS -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+endif()
+if(LM_COVERAGE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(--coverage -O0)
+  add_link_options(--coverage)
 endif()
 if(LM_SANITIZE AND NOT MSVC)
   add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all)
@@ -104,7 +109,7 @@ if(LM_BUILD_TESTS)
   find_package(GTest CONFIG REQUIRED)
   find_package(httplib CONFIG REQUIRED)
   add_executable(lm_tests tests/version_test.cpp tests/abi_test.cpp tests/base64url_test.cpp
-                          tests/lease_verifier_test.cpp tests/device_key_test.cpp tests/aead_test.cpp
+                          tests/lease_verifier_test.cpp tests/lease_verifier_cases_test.cpp tests/device_key_test.cpp tests/aead_test.cpp
                           tests/instance_identity_test.cpp tests/secure_store_test.cpp tests/transport_test.cpp
                           tests/state_evaluator_test.cpp tests/clock_state_test.cpp
                           tests/module_test.cpp)

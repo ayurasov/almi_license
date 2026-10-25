@@ -158,6 +158,9 @@ jobs:
           cmake -S sdk/cpp -B build-san -DCMAKE_BUILD_TYPE=Debug -DLM_TRUST_ROOTS=ci -DLM_SANITIZE=ON
           cmake --build build-san --parallel
           ctest --test-dir build-san --output-on-failure
+      - name: Line coverage of LeaseVerifier, StateEvaluator, TrialTracker >= 90 % (E13-12)
+        if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
+        run: make coverage-dl DL_BUILD=build DL_CMAKE_ARGS=-DLM_TRUST_ROOTS=ci
       - if: steps.detect.outputs.present == 'true'
         uses: actions/upload-artifact@v7
         with:
