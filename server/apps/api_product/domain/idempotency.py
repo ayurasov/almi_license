@@ -18,6 +18,7 @@ from apps.api_product.models import IdempotencyRecord
 WINDOW = timedelta(hours=24)
 KEY = re.compile(r"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}")
 SERVER_ERROR = 500
+TOO_MANY_REQUESTS = 429
 
 
 class InvalidKey(ValueError):
@@ -56,7 +57,8 @@ def replay(scope: str, key: str, body: bytes, *, now: datetime) -> Stored | None
 def remember(
     scope: str, key: str, path: str, body: bytes, stored: Stored, *, now: datetime
 ) -> None:
-    if stored.status >= SERVER_ERROR:
+    # 5xx and 429 are not answers to keep: a repeat after the window must be served again.
+    if stored.status >= SERVER_ERROR or stored.status == TOO_MANY_REQUESTS:
         return
     IdempotencyRecord.objects.filter(
         scope=scope, key=key.lower(), created_at__lt=now - WINDOW

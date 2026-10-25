@@ -17,6 +17,10 @@ x-server: &server
     TRUST_ROOTS: ${TRUST_ROOTS}
     BACKUP_STATUS_FILE: /var/backups/almi/last-success
     LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    # Every device of the customer may come from one address (NAT): limits per IP of section 4.7.
+    RATE_LIMIT_ACTIVATE_IP: ${RATE_LIMIT_ACTIVATE_IP:-100}
+    RATE_LIMIT_CHECK_IP: ${RATE_LIMIT_CHECK_IP:-1000}
+    RATE_LIMIT_OFFLINE_IP: ${RATE_LIMIT_OFFLINE_IP:-100}
   secrets: [db_password, django_secret]
   volumes:
     - server-key:/var/lib/almi

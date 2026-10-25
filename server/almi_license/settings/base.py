@@ -40,6 +40,15 @@ TRUST_BUNDLE_FILE = env.str("TRUST_BUNDLE_FILE", default="")
 ALLOW_PLAIN_HTTP_CENTRAL = env.bool("ALLOW_PLAIN_HTTP_CENTRAL", default=False)
 # last-success of deploy/ops/backup.sh (a shared volume): age of the last backup on /metrics.
 BACKUP_STATUS_FILE = env.str("BACKUP_STATUS_FILE", default="")
+# Limits of section 4.7 of document 2 (requests per window); 0 turns a limit off. Limits per IP
+# are raised on a local server behind the NAT of a customer.
+PRODUCT_RATE_LIMITS = {
+    "activate_ip": env.int("RATE_LIMIT_ACTIVATE_IP", default=10),  # per minute
+    "activate_key": env.int("RATE_LIMIT_ACTIVATE_KEY", default=20),  # per hour
+    "check_ip": env.int("RATE_LIMIT_CHECK_IP", default=100),  # per minute
+    "check_activation": env.int("RATE_LIMIT_CHECK_ACTIVATION", default=12),  # per hour
+    "offline_ip": env.int("RATE_LIMIT_OFFLINE_IP", default=10),  # files per hour
+}
 # General support line shown by AlterOffice Web when a customer has no account manager (E11-01).
 SUPPORT_CONTACT = {
     "name": env.str("SUPPORT_CONTACT_NAME", default="Техническая поддержка АльтерСофт"),
