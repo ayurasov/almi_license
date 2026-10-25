@@ -10,7 +10,7 @@
     "lint": "eslint . --max-warnings=0 && vue-tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
-    "gen:api": "openapi-typescript src/api/admin-api.yaml -o src/api/generated/admin.ts"
+    "gen:api": "openapi-typescript src/api/admin-api.yaml -o src/api/generated/admin.ts && openapi-typescript ../contracts/openapi-product-api-v1.yaml -o src/api/generated/product.ts"
   },
   "dependencies": {
     "@primeuix/themes": "2.0.3",

@@ -30,6 +30,7 @@ const sections: RouteRecordRaw[] = SECTIONS.filter((name) => !READY.has(name)).m
 
 export const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue'), meta: { public: true } },
+  { path: '/offline', name: 'offline', component: () => import('@/views/OfflinePortalView.vue'), meta: { public: true } },
   {
     path: '/',
     component: AppLayout,
