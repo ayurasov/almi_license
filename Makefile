@@ -23,7 +23,7 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local up-pair seed test test-server test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
+.PHONY: help up down up-local up-pair seed test test-server test-compat test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
 	contract-check vectors cross-verify offline-e2e admin-schema e2e bundle-airgap
 
 help: ## Show available targets
@@ -53,6 +53,9 @@ test: test-server test-console test-dl test-keytool ## Run all tests
 test-server: ## Server tests (pytest); policy coverage >= 95 % (prompt I2-02)
 	cd server && uv run pytest --cov --cov-report= && \
 		uv run coverage report --include='apps/policy/*' --fail-under=95
+
+test-compat: ## Compatibility tests of the compat adapters against tests/compat fixtures (E11-04; also part of test-server)
+	cd server && uv run pytest tests/compat
 
 test-console: ## Console tests (vitest)
 	cd console && npm run test

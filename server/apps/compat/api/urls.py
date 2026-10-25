@@ -8,4 +8,5 @@ urlpatterns = [
         views.nextcloud_subscription,
         name="compat-nextcloud-subscription",
     ),
+    path("api/activate/", views.legacy_activate_view, name="compat-legacy-activate"),
 ]
