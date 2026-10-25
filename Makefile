@@ -12,6 +12,8 @@ COMPOSE := docker compose -f deploy/dev/docker-compose.yml
 
 # DL module: dependencies come from vcpkg (set VCPKG_ROOT); extra configure options via DL_CMAKE_ARGS.
 DL_BUILD ?= sdk/cpp/build
+DRILL_DIR ?= $(CURDIR)/.drill
+POSTGRES_IMAGE ?= postgres:17
 DL_CONFIG ?= Debug
 DL_CMAKE_ARGS ?=
 CLANG_FORMAT := uvx clang-format==23.1.3
@@ -23,7 +25,8 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
+PHONY_OPS = backup-drill
+.PHONY: $(PHONY_OPS) help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
 	contract-check vectors cross-verify offline-e2e admin-schema e2e bundle-airgap
 
 help: ## Show available targets
@@ -136,6 +139,16 @@ cross-verify: ## Server-issued JWS pass almi-keytool and the DL LeaseVerifier (E
 
 e2e: ## Playwright scenarios of the console against a local server (needs DATABASE_URL); API scenarios — E16-04
 	cd console && npm run e2e
+
+backup-drill: ## Backup, restore into almi_restore_drill, compare rows, verify the audit chain (E15-03); needs DATABASE_URL and Docker
+	@test -n "$$DATABASE_URL" || { echo "DATABASE_URL is required"; exit 1; }
+	mkdir -p $(DRILL_DIR) && head -c 32 /dev/urandom | base64 > $(DRILL_DIR)/passphrase && chmod 600 $(DRILL_DIR)/passphrase
+	docker run --rm --network host -v $(CURDIR)/deploy/ops:/ops:ro -v $(DRILL_DIR):/drill \
+		-e SOURCE_URL="$$DATABASE_URL" -e TARGET_URL="$${DATABASE_URL%/*}/almi_restore_drill" \
+		-e BACKUP_DIR=/drill/backups -e BACKUP_PASSPHRASE_FILE=/drill/passphrase \
+		$(POSTGRES_IMAGE) /ops/drill.sh
+	cd server && DATABASE_URL="$${DATABASE_URL%/*}/almi_restore_drill" uv run python manage.py verify_audit
+	rm -rf $(DRILL_DIR)
 
 bundle-airgap: ## Build the air-gapped bundle locally — E15-04
 	$(not_implemented)

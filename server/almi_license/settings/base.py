@@ -38,6 +38,8 @@ TRUST_ROOTS: list[str] = env.list("TRUST_ROOTS", default=[])
 TRUST_BUNDLE_FILE = env.str("TRUST_BUNDLE_FILE", default="")
 # Only for tests and the dev compose: lets a local server talk to http:// central servers.
 ALLOW_PLAIN_HTTP_CENTRAL = env.bool("ALLOW_PLAIN_HTTP_CENTRAL", default=False)
+# last-success of deploy/ops/backup.sh (a shared volume): age of the last backup on /metrics.
+BACKUP_STATUS_FILE = env.str("BACKUP_STATUS_FILE", default="")
 # General support line shown by AlterOffice Web when a customer has no account manager (E11-01).
 SUPPORT_CONTACT = {
     "name": env.str("SUPPORT_CONTACT_NAME", default="Техническая поддержка АльтерСофт"),

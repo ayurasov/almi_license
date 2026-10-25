@@ -68,3 +68,4 @@ Thumbs.db
 .env.*
 !.env.example
 deploy/**/secrets/
+.drill/

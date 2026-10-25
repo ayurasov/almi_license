@@ -209,6 +209,38 @@ jobs:
       # The real module offline: lm-demo with the dev root writes .alk-req and applies .alk-lic.
       - run: make offline-e2e DL_BUILD=build
 
+  # E15-03: backup with deploy/ops/backup.sh, restore into another database, rows and audit chain.
+  backup-drill:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DEPLOYMENT_MODE: central
+      DJANGO_SETTINGS_MODULE: almi_license.settings.ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - name: Database with the catalogue and audit events
+        working-directory: server
+        run: |
+          uv run python manage.py migrate --noinput
+          uv run python manage.py loadcatalog
+          # An account gives the audit chain an event; the password is random and not kept.
+          CONSOLE_PASSWORD="$(openssl rand -base64 18)" \
+            uv run python manage.py create_account --username drill --role operator
+      - run: make backup-drill
+
   lint-dl:
     runs-on: ubuntu-24.04
     steps:

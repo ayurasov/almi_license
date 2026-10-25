@@ -66,3 +66,12 @@ def test_json_log_line() -> None:
     assert line["exception"] == "ValueError"
     assert "secret-looking" not in json.dumps(line)
     assert line["time"].endswith("Z")
+
+
+def test_backup_age(db: None, clock: FrozenClock, settings: Any, tmp_path: Any) -> None:
+    status = tmp_path / "last-success"
+    settings.BACKUP_STATUS_FILE = str(status)
+    with use_clock(clock):
+        assert "almi_backup_age_seconds -1" in Client().get("/metrics").content.decode()
+        status.write_text(str(int(clock.now().timestamp()) - 3600), encoding="ascii")
+        assert "almi_backup_age_seconds 3600" in Client().get("/metrics").content.decode()
