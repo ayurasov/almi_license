@@ -13,7 +13,7 @@ from infra import metrics
 from infra.clock import current_clock
 
 logger = logging.getLogger(__name__)
-CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
+CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"  # prometheus_client.CONTENT_TYPE_LATEST
 
 
 @require_safe

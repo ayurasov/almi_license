@@ -22,7 +22,12 @@ command="${1:-api}"
 shift || true
 case "$command" in
   api)
+    # Metrics of all worker processes are added up from this directory (question 42); values of
+    # the previous start are dropped.
+    export PROMETHEUS_MULTIPROC_DIR="${PROMETHEUS_MULTIPROC_DIR:-/tmp/almi-metrics}"
+    rm -rf "$PROMETHEUS_MULTIPROC_DIR" && mkdir -p "$PROMETHEUS_MULTIPROC_DIR"
     exec gunicorn almi_license.asgi:application --worker-class uvicorn_worker.UvicornWorker \
+      --config python:almi_license.gunicorn_conf \
       --bind 0.0.0.0:8000 --workers "${WEB_CONCURRENCY:-2}" --access-logfile - --forwarded-allow-ips '*' "$@"
     ;;
   worker) exec python manage.py run_worker "$@" ;;

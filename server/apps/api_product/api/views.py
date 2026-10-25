@@ -1,5 +1,6 @@
 """Product API v1 views: parse, call the domain, shape the response (AGENTS.md, rule 2)."""
 
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -45,8 +46,11 @@ from apps.api_product.domain.limits import limit_activation, limit_check, limit_
 from apps.api_product.domain.ratelimit import Limited
 from apps.packages.domain import local_server_id
 from apps.signing.domain import TrustUnavailable, trust_document
+from infra import metrics
 from infra.clock import current_clock
 from infra.problems import Problem
+
+logger = logging.getLogger(__name__)
 
 # Multipart boundaries and part headers around a file of at most MAX_FILE_BYTES.
 MULTIPART_OVERHEAD = 8 * 1024
@@ -97,6 +101,15 @@ class IdempotentView(APIView):
 
     def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
         super().initial(request, *args, **kwargs)
+        if not request.META.get("HTTP_IDEMPOTENCY_KEY"):
+            # Accepted (old clients), but counted and logged to find them (question 37).
+            operation = type(self).__name__.removesuffix("View")
+            metrics.WITHOUT_IDEMPOTENCY_KEY.labels(operation=operation).inc()
+            logger.info(
+                "request without Idempotency-Key: %s, client %s",
+                operation,
+                request.META.get("HTTP_ALMI_CLIENT", "-")[:64],
+            )
         scope = self._idempotency(request)
         if scope is None:
             return
