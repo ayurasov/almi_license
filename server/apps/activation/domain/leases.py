@@ -62,7 +62,7 @@ def lease_claims(
         "seq": seq,
         "lic": lic,
         "subject": subject,
-        "limits": {},
+        "limits": dict(license_.limits),
         "capabilities": sorted(capabilities),
         "policy": lease_policy(policy),
         "messages": messages,

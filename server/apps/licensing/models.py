@@ -99,6 +99,11 @@ class License(UUIDModel):
         help_text="Пусто — из профиля",
     )
     extra_capabilities = models.JSONField(default=list, blank=True)
+    limits = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Лимиты пользователей: named_users, active_users, only_count_active",
+    )
     status = models.CharField(
         max_length=16, choices=LicenseStatus.choices, default=LicenseStatus.ACTIVE
     )

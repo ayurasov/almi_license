@@ -288,6 +288,7 @@ def import_package(
                     capabilities=list(item.get("capabilities", [])),
                     profile_code=profile,
                     reserve_pct=int(reserve) if isinstance(reserve, int) else None,
+                    limits=dict(item.get("limits") or {}),
                 )
             )
         customer = claims.get("customer") or {"id": claims["customer_id"], "name": ""}

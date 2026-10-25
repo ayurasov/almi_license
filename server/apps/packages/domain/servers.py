@@ -271,7 +271,7 @@ def _snapshot(row: LocalServer, now: datetime) -> dict[str, Any]:
             "type": license_.type,
             "metric": metric_code(license_.metric_id) if license_.metric_id else "device",
             "allocation": seats[license_.id],
-            "limits": {},
+            "limits": dict(license_.limits),
             "valid_from": _rfc3339(license_.valid_from),
             "valid_until": _rfc3339(license_.valid_until),
             "support_until": _rfc3339(license_.support_until),

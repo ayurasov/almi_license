@@ -103,6 +103,8 @@ def test_online_registration_and_local_leases(
 ) -> None:
     from apps.packages.domain import local_status, setup, sync_package
 
+    licensed.limits = {"named_users": 50, "only_count_active": False}
+    licensed.save()
     code = central_code(licensed, clock)
     result = setup(registration_code=code, central_url=CENTRAL, actor="user:admin", now=clock.now())
     assert central_transport == ["POST /api/sync/v1/servers/register"]
@@ -121,6 +123,7 @@ def test_online_registration_and_local_leases(
     assert verified.leaf["kid"] == status.server_id
     lease = verified.claims
     assert lease["lic"]["customer"]["id"] == str(licensed.customer_id)
+    assert lease["limits"] == {"named_users": 50, "only_count_active": False}  # via the package
     assert status.package_valid_until is not None
     assert lease["exp"] <= int(status.package_valid_until.timestamp())
 

@@ -57,6 +57,13 @@ const actions = computed<LicenseAction[]>(() => {
   ]
 })
 
+const userLimit = computed(() => {
+  const limits = license.value?.limits
+  const value = limits?.named_users ?? limits?.active_users
+  if (value === null || value === undefined) return '—'
+  return limits?.only_count_active ? `${String(value)} (${t('licenses.onlyActive')})` : String(value)
+})
+
 // "3.2.0: 5, 3.3.0: 2"
 function counts(values: Record<string, number>): string {
   return Object.entries(values)
@@ -147,6 +154,10 @@ function closeKey(): void {
             <dd>{{ t(`licenses.type.${license.type}`) }}</dd>
             <dt>{{ t('licenses.fields.limit') }}</dt>
             <dd>{{ license.limit }}</dd>
+            <dt>{{ t('licenses.fields.userLimit') }}</dt>
+            <dd data-testid="user-limit">
+              {{ userLimit }}
+            </dd>
             <dt>{{ t('licenses.fields.reservePct') }}</dt>
             <dd>{{ license.reserve_pct ?? t('licenses.fromProfile') }}</dd>
             <dt>{{ t('licenses.fields.validFrom') }}</dt>

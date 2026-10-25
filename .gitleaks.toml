@@ -13,3 +13,10 @@ paths = [
   # Certificate of the dev issuer key (public), copied from vector 01; checked by server tests.
   '''^deploy/dev/dev-issuer-1\.cert\.jws$''',
 ]
+
+[[allowlists]]
+# Django migration dependencies of the api_product app: the app label contains "api", so the
+# migration name next to it looks like an API key to generic-api-key (decision of 25.10.2026).
+description = "Migration dependencies of api_product"
+regexTarget = "match"
+regexes = ['''api_product", "[0-9]{4}_[a-z0-9_]+"''']

@@ -1944,6 +1944,8 @@ components:
           type: array
           items:
             type: string
+        limits:
+          $ref: '#/components/schemas/Limits'
       required:
       - customer_id
       - customer_name
@@ -1952,6 +1954,7 @@ components:
       - id
       - key_masks
       - limit
+      - limits
       - monitor_until
       - policy_profile_code
       - product_id
@@ -2064,6 +2067,15 @@ components:
           type: object
           additionalProperties:
             type: integer
+        users:
+          type: integer
+          nullable: true
+          description: Reported by server instances
+        user_limit:
+          type: integer
+          nullable: true
+        users_exceeded:
+          type: boolean
       required:
       - active
       - by_os
@@ -2080,6 +2092,9 @@ components:
       - released_auto
       - status
       - type
+      - user_limit
+      - users
+      - users_exceeded
       - valid_until
     LicenseStatusEnum:
       enum:
@@ -2103,6 +2118,20 @@ components:
       required:
       - reason
       - until
+    Limits:
+      type: object
+      description: User limits of a server product (lease "limits", section 6.2 of
+        document 2).
+      properties:
+        named_users:
+          type: integer
+          nullable: true
+        active_users:
+          type: integer
+          nullable: true
+        only_count_active:
+          type: boolean
+          default: false
     LocalServer:
       type: object
       properties:
@@ -2325,6 +2354,8 @@ components:
           format: uuid
         enforcement:
           type: string
+        limits:
+          $ref: '#/components/schemas/Limits'
     Product:
       type: object
       properties:

@@ -957,6 +957,7 @@ export interface components {
             policy_profile_code: string;
             rights_version: number;
             key_masks: string[];
+            limits: components["schemas"]["Limits"];
         };
         LicenseCreate: {
             /** Format: uuid */
@@ -1008,6 +1009,10 @@ export interface components {
             by_os: {
                 [key: string]: number;
             };
+            /** @description Reported by server instances */
+            users: number | null;
+            user_limit: number | null;
+            users_exceeded: boolean;
         };
         /**
          * @description * `active` - active
@@ -1020,6 +1025,13 @@ export interface components {
             reason: string;
             /** Format: date-time */
             until: string;
+        };
+        /** @description User limits of a server product (lease "limits", section 6.2 of document 2). */
+        Limits: {
+            named_users?: number | null;
+            active_users?: number | null;
+            /** @default false */
+            only_count_active: boolean;
         };
         LocalServer: {
             /** Format: uuid */
@@ -1128,6 +1140,7 @@ export interface components {
             /** Format: uuid */
             metric_id?: string;
             enforcement?: string;
+            limits?: components["schemas"]["Limits"];
         };
         Product: {
             /** Format: uuid */

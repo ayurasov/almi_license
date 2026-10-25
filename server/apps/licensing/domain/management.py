@@ -52,6 +52,7 @@ class LicenseData:
     policy_profile_code: str
     rights_version: int
     key_masks: list[str] = field(default_factory=list)
+    limits: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -94,7 +95,31 @@ def _data(row: License) -> LicenseData:
         policy_profile_code=row.policy_profile_code,
         rights_version=row.rights_version,
         key_masks=sorted(key.key_mask for key in row.keys.all()),
+        limits=dict(row.limits),
     )
+
+
+USER_LIMITS = ("named_users", "active_users")
+
+
+def _check_limits(value: Any) -> tuple[dict[str, Any], dict[str, list[str]]]:
+    """{named_users | active_users: positive int or null, only_count_active: bool}."""
+    if not isinstance(value, dict) or set(value) - {*USER_LIMITS, "only_count_active"}:
+        return {}, {"limits": ["Допустимы named_users, active_users, only_count_active."]}
+    clean: dict[str, Any] = {}
+    for key in USER_LIMITS:
+        number = value.get(key)
+        if number is None:
+            continue
+        if isinstance(number, bool) or not isinstance(number, int) or number < 1:
+            return {}, {"limits": ["Лимит пользователей — целое число не меньше 1."]}
+        clean[key] = number
+    only_active = value.get("only_count_active", False)
+    if not isinstance(only_active, bool):
+        return {}, {"limits": ["only_count_active — да или нет."]}
+    if clean or only_active:
+        clean["only_count_active"] = only_active
+    return clean, {}
 
 
 def _locked(license_id: UUID) -> License:
@@ -349,8 +374,9 @@ def lift_block(
 def update_settings(
     license_id: UUID, values: dict[str, Any], *, actor: str, now: datetime, ip: str | None = None
 ) -> LicenseData:
-    """E01-07: limit, reserve_pct, metric_id, enforcement (monitor / enforce / "" = profile)."""
-    allowed = {"limit", "reserve_pct", "metric_id", "enforcement"}
+    """E01-07: limit, reserve_pct, metric_id, enforcement (monitor / enforce / "" = profile);
+    limits of users of a server product (E11-01)."""
+    allowed = {"limit", "reserve_pct", "metric_id", "enforcement", "limits"}
     changes = {key: value for key, value in values.items() if key in allowed}
     with transaction.atomic():
         row = _locked(license_id)
@@ -361,6 +387,9 @@ def update_settings(
             "enforcement": changes.get("enforcement", row.enforcement),
         }
         errors = _check_terms(candidate)
+        if "limits" in changes:
+            changes["limits"], limit_errors = _check_limits(changes["limits"])
+            errors |= limit_errors
         if errors:
             raise _invalid(errors)
         for key, value in changes.items():

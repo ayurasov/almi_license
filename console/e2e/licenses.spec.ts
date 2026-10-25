@@ -37,6 +37,13 @@ test('an operator issues a key and suspends a license with a reason', async ({ p
   await expect(page.getByText(`${key?.slice(0, 4) ?? ''}-****-****-${key?.slice(-4) ?? ''}`)).toBeVisible()
   await expect(page.getByText(key ?? 'none')).toHaveCount(0)
 
+  await page.getByTestId('action-settings').click()
+  await page.getByTestId('action-user-limit').locator('input').fill('500')
+  await page.getByLabel('Считать только активных пользователей').check()
+  await page.getByTestId('action-confirm').click()
+  await page.getByRole('tab', { name: 'Параметры' }).click()
+  await expect(page.getByTestId('user-limit')).toHaveText('500 (только активные)')
+
   await page.getByTestId('action-suspend').click()
   await page.getByTestId('action-confirm').click()
   await expect(page.getByText('Укажите причину.')).toBeVisible()

@@ -214,3 +214,24 @@ def revoke_activations(activation_ids: list[str], *, now: datetime) -> int:
         record("package", "activation.revoked", "activation", row.external_id, at=now)
         count += 1
     return count
+
+
+def instance_activation(license_id: UUID, instance_id: UUID) -> tuple[str, int] | None:
+    """(activation_id, lease_seq) of the active activation of an instance (compat adapters)."""
+    row = (
+        Activation.objects.filter(
+            license_id=license_id, instance_id=instance_id, status=ActivationStatus.ACTIVE
+        )
+        .values_list("external_id", "lease_seq")
+        .first()
+    )
+    return None if row is None else (row[0], row[1])
+
+
+def active_activation_ids(license_ids: list[UUID]) -> dict[UUID, list[str]]:
+    """external_id of the active activations of each licence (statistics of users, E11-02)."""
+    result: dict[UUID, list[str]] = {license_id: [] for license_id in license_ids}
+    rows = Activation.objects.filter(license_id__in=license_ids, status=ActivationStatus.ACTIVE)
+    for license_id, external_id in rows.values_list("license_id", "external_id"):
+        result[license_id].append(external_id)
+    return result
