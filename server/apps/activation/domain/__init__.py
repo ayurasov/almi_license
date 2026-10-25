@@ -24,6 +24,7 @@ from apps.activation.domain.usage import (
     license_usage,
     list_activations,
     release_by_operator,
+    released_between,
     revoke_activations,
     usage_by_license,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "license_usage",
     "list_activations",
     "release_by_operator",
+    "released_between",
     "revoke_activations",
     "usage_by_license",
     "active_activation_ids",

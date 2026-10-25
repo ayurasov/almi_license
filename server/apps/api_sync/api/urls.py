@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.api_sync.api.views import PackageView, RegisterView
+from apps.api_sync.api.views import PackageView, RegisterView, UsageView
 from infra.modes import central_only
 
 urlpatterns = [
@@ -10,4 +10,5 @@ urlpatterns = [
         central_only(PackageView.as_view()),
         name="sync-package",
     ),
+    path("servers/<str:server_id>/usage", central_only(UsageView.as_view()), name="sync-usage"),
 ]

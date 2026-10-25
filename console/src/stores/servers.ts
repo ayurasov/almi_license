@@ -10,6 +10,7 @@ type Schemas = components['schemas']
 export type LocalServer = Schemas['LocalServer']
 export type RegistrationCode = Schemas['RegistrationCode']
 export type AlkFile = Schemas['AlkFile']
+export type UsageReceipt = Schemas['UsageReceipt']
 
 function required<T>(data: T | undefined): T {
   if (data === undefined) throw new NetworkError('empty response')
@@ -90,5 +91,17 @@ export const useServersStore = defineStore('servers', () => {
     return required(data)
   }
 
-  return { items, loading, failed, list, create, newCode, setAllocations, registerFile }
+  /** A .alk-usage of a local server in a closed network: the receipt goes with its next package. */
+  async function uploadUsage(file: File): Promise<UsageReceipt> {
+    const form = new FormData()
+    form.append('file', file)
+    const { data } = await api.POST('/api/admin/local-servers/usage-file', {
+      body: { file: file.name },
+      bodySerializer: () => form,
+    })
+    await list()
+    return required(data)
+  }
+
+  return { items, loading, failed, list, create, newCode, setAllocations, registerFile, uploadUsage }
 })

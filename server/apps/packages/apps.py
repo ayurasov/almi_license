@@ -12,3 +12,10 @@ class PackagesConfig(AppConfig):
         from apps.signing.domain import install_provider_factory
 
         install_provider_factory(local_provider)
+
+        # A local server in the online exchange sends its usage report daily (E09-05).
+        from apps.outbox.domain import register_handler, register_schedule
+        from apps.packages.domain.local_usage import TASK_KIND, run_report_task
+
+        register_handler(TASK_KIND, run_report_task)
+        register_schedule("packages.usage_report.daily", "20 3 * * *", TASK_KIND)

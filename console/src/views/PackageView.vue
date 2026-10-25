@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { ApiError } from '@/api/problem'
 import { useInstanceStore } from '@/stores/instance'
 import { useLocalStore } from '@/stores/local'
+import { download } from '@/stores/servers'
 
 const { t, d } = useI18n()
 const toast = useToast()
@@ -35,6 +36,20 @@ async function run(action: () => Promise<unknown>, done: string): Promise<void> 
     if (failure instanceof ApiError) {
       errors.value = failure.hasFieldErrors ? Object.values(failure.fieldErrors).flat() : [failure.message]
     } else errors.value = [t('errors.network')]
+  } finally {
+    busy.value = false
+  }
+}
+
+// The report of the files exchange: saved here, uploaded on the central server (E09-05).
+async function saveReport(): Promise<void> {
+  busy.value = true
+  errors.value = []
+  try {
+    const report = await store.usageReport()
+    download(`usage-${String(store.status?.report_seq ?? '')}.alk-usage`, report)
+  } catch (failure) {
+    errors.value = failure instanceof ApiError ? [failure.message] : [t('errors.network')]
   } finally {
     busy.value = false
   }
@@ -81,6 +96,10 @@ async function onFile(event: Event): Promise<void> {
       </dd>
       <dt>{{ t('packagePage.issued') }}</dt>
       <dd>{{ store.status.package_issued_at ? d(new Date(store.status.package_issued_at)) : '' }}</dd>
+      <dt>{{ t('packagePage.reports') }}</dt>
+      <dd data-testid="usage-state">
+        {{ t('packagePage.reportState', { sent: store.status.report_seq, acked: store.status.receipt_seq }) }}
+      </dd>
       <dt>{{ t('packagePage.validUntil') }}</dt>
       <dd>{{ store.status.package_valid_until ? d(new Date(store.status.package_valid_until)) : '' }}</dd>
     </dl>
@@ -101,6 +120,15 @@ async function onFile(event: Event): Promise<void> {
         data-testid="package-file"
         @change="onFile"
       >
+      <Button
+        v-if="store.status && store.status.package_seq > 0"
+        :label="t('packagePage.report')"
+        severity="secondary"
+        icon="pi pi-file-export"
+        :loading="busy"
+        data-testid="usage-report"
+        @click="saveReport"
+      />
       <Button
         v-if="store.status?.exchange === 'online'"
         :label="t('packagePage.sync')"

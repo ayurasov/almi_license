@@ -48,6 +48,8 @@ class LocalStatus:
     package_issued_at: datetime | None
     package_valid_until: datetime | None
     package_expires_soon: bool = False
+    report_seq: int = 0
+    receipt_seq: int = 0
 
 
 @dataclass(frozen=True)
@@ -80,6 +82,8 @@ def local_status(now: datetime | None = None) -> LocalStatus:
         package_issued_at=row.package_issued_at,
         package_valid_until=row.package_valid_until,
         package_expires_soon=now is not None and package_expires_soon(row.package_valid_until, now),
+        report_seq=row.report_seq,
+        receipt_seq=row.receipt_seq,
     )
 
 
@@ -308,6 +312,13 @@ def import_package(
         row.package_issued_at = _moment(claims.get("issued_at"))
         row.package_valid_until = _moment(claims.get("valid_until"))
         row.expired_policy = dict(claims.get("expired_policy") or {})
+        # The receipt of a report sent as a file comes with the package (section 13.4).
+        receipt = claims.get("usage_receipt")
+        receipt_seq = receipt.get("report_seq") if isinstance(receipt, dict) else None
+        newer = isinstance(receipt_seq, int) and row.receipt_seq < receipt_seq <= row.report_seq
+        if isinstance(receipt, dict) and isinstance(receipt_seq, int) and newer:
+            row.receipt_seq = receipt_seq
+            row.receipt = str(receipt.get("receipt", ""))
         row.updated_at = now
         row.save()
         record(

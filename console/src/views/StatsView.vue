@@ -184,6 +184,10 @@ async function exportXlsx(): Promise<void> {
         field="released_auto"
         :header="t('stats.columns.auto')"
       />
+      <Column
+        field="local_active"
+        :header="t('stats.columns.local')"
+      />
       <Column :header="t('stats.columns.users')">
         <template #body="{ data }">
           <template v-if="(data as LicenseStats).users !== null">

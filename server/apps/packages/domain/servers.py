@@ -313,7 +313,15 @@ def _snapshot(row: LocalServer, now: datetime) -> dict[str, Any]:
         "revocations": revocations,
         "expired_policy": EXPIRED_POLICY,
         "messages": [],
-    }
+    } | _receipt_part(row)
+
+
+def _receipt_part(row: LocalServer) -> dict[str, Any]:
+    """The receipt of the last usage report travels with the next package (E09-06)."""
+    from apps.packages.domain.usage import latest_receipt
+
+    receipt = latest_receipt(row)
+    return {} if receipt is None else {"usage_receipt": receipt}
 
 
 def _rfc3339(moment: datetime | None) -> str | None:

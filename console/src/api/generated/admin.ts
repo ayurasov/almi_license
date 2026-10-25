@@ -591,6 +591,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/local-servers/usage-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description A .alk-usage of a local server in a closed network (E09-06); the receipt goes back to
+         *     the server with its next package.
+         */
+        post: operations["local_servers_usage_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/package": {
         parameters: {
             query?: never;
@@ -741,6 +761,23 @@ export interface paths {
         get: operations["stats_export"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/usage-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A new usage report .alk-usage of this server as a file (files exchange, E09-05). */
+        post: operations["local_usage_report"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1085,6 +1122,8 @@ export interface components {
             user_limit: number | null;
             users_exceeded: boolean;
             state: string;
+            /** @description Active on local servers (last reports) */
+            local_active: number;
         };
         /**
          * @description * `active` - active
@@ -1158,6 +1197,10 @@ export interface components {
             /** Format: date-time */
             package_valid_until: string | null;
             package_expires_soon: boolean;
+            /** @description Last usage report built (E09-05) */
+            report_seq: number;
+            /** @description Last report acknowledged by the central */
+            receipt_seq: number;
         };
         Metric: {
             /** Format: uuid */
@@ -1372,6 +1415,12 @@ export interface components {
             by_os: {
                 [key: string]: number;
             };
+        };
+        UsageReceipt: {
+            server_id: string;
+            report_seq: number;
+            /** @description JWS alm-receipt+jws */
+            receipt: string;
         };
     };
     responses: never;
@@ -2434,6 +2483,29 @@ export interface operations {
             };
         };
     };
+    local_servers_usage_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ImportUpload"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReceipt"];
+                };
+            };
+        };
+    };
     local_package_upload: {
         parameters: {
             query?: never;
@@ -2709,6 +2781,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    local_usage_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlkFile"];
                 };
             };
         };

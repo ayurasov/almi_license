@@ -51,6 +51,7 @@ urlpatterns = [
     path("article-mappings/<str:aa>", central_only(imp.ArticleMappingView.as_view())),
     path("local-servers", central_only(srv.LocalServersView.as_view())),
     path("local-servers/register-file", central_only(srv.LocalServerRegisterFileView.as_view())),
+    path("local-servers/usage-file", central_only(srv.LocalServerUsageFileView.as_view())),
     path("local-servers/<uuid:server_uuid>/code", central_only(srv.LocalServerCodeView.as_view())),
     path(
         "local-servers/<uuid:server_uuid>/allocations",
@@ -59,6 +60,7 @@ urlpatterns = [
     path("setup", local_only(loc.SetupView.as_view())),
     path("package", local_only(loc.PackageUploadView.as_view())),
     path("package/sync", local_only(loc.PackageSyncView.as_view())),
+    path("usage-report", local_only(loc.UsageReportView.as_view())),
     path("audit", aud.AuditView.as_view()),
     path("audit/export", aud.AuditExportView.as_view()),
     path("stats", sta.StatsView.as_view()),

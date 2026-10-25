@@ -137,6 +137,12 @@ class LocalIdentity(UUIDModel):
     package_valid_until = models.DateTimeField(null=True, blank=True)
     expired_policy = models.JSONField(default=dict, blank=True)
     revoked_kids = models.JSONField(default=list, blank=True)
+    # Usage reports .alk-usage (E09-05): the last report sent, its period end and the receipt
+    # of the central server (online answer or the next package).
+    report_seq = models.PositiveIntegerField(default=0)
+    report_until = models.DateTimeField(null=True, blank=True)
+    receipt_seq = models.PositiveIntegerField(default=0)
+    receipt = models.TextField(blank=True, default="", help_text="alm-receipt+jws отчёта")
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
 

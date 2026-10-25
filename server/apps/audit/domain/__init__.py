@@ -207,7 +207,14 @@ def events_csv(query: EventFilter) -> str:
     return out.getvalue()
 
 
+def last_digest() -> str:
+    """Hash of the last event of the chain ("" for an empty journal), for usage reports."""
+    value = AuditEvent.objects.order_by("-seq").values_list("hash", flat=True).first()
+    return value or ""
+
+
 __all__ = [
+    "last_digest",
     "EventData",
     "EventFilter",
     "events_csv",
