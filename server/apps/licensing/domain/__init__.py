@@ -19,9 +19,11 @@ from apps.licensing.domain.import_lk import (
 from apps.licensing.domain.inn import inn_is_valid
 from apps.licensing.domain.keys import InvalidKeyFormat, key_hash, key_mask, normalize_key
 from apps.licensing.domain.licenses import (
+    KeyFacts,
     KeyRecord,
     LicenseRecord,
     counts_active_only,
+    key_facts,
     keys_of,
     license_id_by_key_hash,
     license_ids,
@@ -91,6 +93,8 @@ __all__ = [
     "key_hash",
     "key_mask",
     "license_id_by_key_hash",
+    "KeyFacts",
+    "key_facts",
     "lock_license",
     "normalize_key",
 ]

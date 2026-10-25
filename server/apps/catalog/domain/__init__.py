@@ -37,6 +37,11 @@ def product_info(product_id: UUID) -> ProductInfo:
     return ProductInfo(id=row.id, code=row.code, default_profile_code=row.default_profile_code)
 
 
+def product_id_by_code(code: str) -> UUID | None:
+    product_id: UUID | None = Product.objects.filter(code=code).values_list("id", flat=True).first()
+    return product_id
+
+
 def edition_code(edition_id: UUID | None) -> str | None:
     if edition_id is None:
         return None
@@ -103,6 +108,7 @@ from apps.catalog.domain.package import (  # noqa: E402
 )
 
 __all__ = [
+    "product_id_by_code",
     "package_product",
     "save_package_profile",
     "add_capability",
