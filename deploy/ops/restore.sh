@@ -12,7 +12,8 @@ set -euo pipefail
 umask 077
 
 dump="${1:?usage: restore.sh <backup.dump.gpg>}"
-: "${DATABASE_URL:?DATABASE_URL is required}"
+if [[ -n "${DATABASE_URL_FILE:-}" ]]; then DATABASE_URL="$(< "$DATABASE_URL_FILE")"; fi
+: "${DATABASE_URL:?DATABASE_URL or DATABASE_URL_FILE is required}"
 : "${BACKUP_PASSPHRASE_FILE:?BACKUP_PASSPHRASE_FILE is required}"
 
 if [ -f "$dump.sha256" ]; then

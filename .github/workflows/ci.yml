@@ -241,6 +241,30 @@ jobs:
             uv run python manage.py create_account --username drill --role operator
       - run: make backup-drill
 
+  # E15-04: the bundle of a closed network is built and installed with install.sh; the compose
+  # file never pulls (pull_policy: never), so the install uses only the images of the bundle.
+  airgap-bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Shell scripts of the bundle
+        run: shellcheck deploy/local/*.sh deploy/ops/*.sh tools/build_airgap_bundle.sh deploy/entrypoint.sh
+      - name: Build the bundle (dev trust root for the smoke install)
+        run: |
+          VERSION="0.0.0-ci.${GITHUB_RUN_NUMBER}" TRUST_ROOTS="dev-root:$(tr -d '\n' < contracts/vectors/keys/dev-root.pub)" \
+            tools/build_airgap_bundle.sh "$RUNNER_TEMP/bundle"
+      - name: Install from the unpacked bundle and check
+        run: |
+          mkdir "$RUNNER_TEMP/host" && tar -C "$RUNNER_TEMP/host" -xzf "$RUNNER_TEMP"/bundle/*.tar.gz
+          cd "$RUNNER_TEMP"/host/almi-license-local-*
+          cp .env.example .env
+          sed -i 's/^SERVER_NAME=.*/SERVER_NAME=localhost/; s/^HTTPS_PORT=.*/HTTPS_PORT=8443/' .env
+          ./install.sh
+          curl -fsSk https://localhost:8443/.well-known/almi-license
+          ./backup.sh && ./check.sh
+      - if: failure()
+        run: cd "$RUNNER_TEMP"/host/almi-license-local-* && docker compose logs --no-color | tail -200
+
   lint-dl:
     runs-on: ubuntu-24.04
     steps:

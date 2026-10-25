@@ -14,6 +14,7 @@ COMPOSE := docker compose -f deploy/dev/docker-compose.yml
 DL_BUILD ?= sdk/cpp/build
 DRILL_DIR ?= $(CURDIR)/.drill
 POSTGRES_IMAGE ?= postgres:17
+BUNDLE_DIR ?= $(CURDIR)/dist
 DL_CONFIG ?= Debug
 DL_CMAKE_ARGS ?=
 CLANG_FORMAT := uvx clang-format==23.1.3
@@ -150,5 +151,6 @@ backup-drill: ## Backup, restore into almi_restore_drill, compare rows, verify t
 	cd server && DATABASE_URL="$${DATABASE_URL%/*}/almi_restore_drill" uv run python manage.py verify_audit
 	rm -rf $(DRILL_DIR)
 
-bundle-airgap: ## Build the air-gapped bundle locally — E15-04
-	$(not_implemented)
+bundle-airgap: ## Bundle of a local server for a closed network (E15-04): VERSION=… TRUST_ROOTS=kid:pub
+	tools/build_airgap_bundle.sh $(BUNDLE_DIR)
+
