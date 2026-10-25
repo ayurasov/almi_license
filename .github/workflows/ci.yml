@@ -325,6 +325,18 @@ jobs:
           curl -fsSk https://localhost:8443/.well-known/almi-license
           # The runner disk holds the images twice (the bundle and Docker): fail only when full.
           ./backup.sh && CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99 ./check.sh
+      - name: Upgrade to a bundle and roll back (E15-06)
+        run: |
+          cd "$RUNNER_TEMP"/host/almi-license-local-*
+          # The same bundle as the "new" one; images are hard links, the runner disk is small.
+          mkdir "$RUNNER_TEMP/next"
+          find . -mindepth 1 -maxdepth 1 ! -name images ! -name backups ! -name secrets ! -name previous \
+            -exec cp -a {} "$RUNNER_TEMP/next/" \;
+          cp -al images "$RUNNER_TEMP/next/images"
+          export CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99
+          ./upgrade.sh "$RUNNER_TEMP/next"
+          ./rollback.sh
+          curl -fsSk https://localhost:8443/.well-known/almi-license
       - if: failure()
         run: cd "$RUNNER_TEMP"/host/almi-license-local-* && docker compose logs --no-color | tail -200
 
