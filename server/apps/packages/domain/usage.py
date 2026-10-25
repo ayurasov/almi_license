@@ -7,6 +7,7 @@ the issuer; it is also carried by the next package for the files exchange.
 """
 
 import hashlib
+import zlib
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -96,6 +97,18 @@ def _receipt(server_id: str, seq: int, now: datetime) -> str:
         "report_seq": seq,
     }
     return issue_jws(RECEIPT_TYP, claims)
+
+
+def gunzip_report(content: bytes) -> bytes:
+    """A report sent with Content-Encoding: gzip; at most MAX_REPORT_BYTES when unpacked."""
+    unpacker = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
+    try:
+        unpacked = unpacker.decompress(content, MAX_REPORT_BYTES + 1)
+    except zlib.error:
+        raise _invalid("the gzip body is damaged") from None
+    if len(unpacked) > MAX_REPORT_BYTES or unpacker.unconsumed_tail:
+        raise DomainError("payload_too_large", "report is larger than 16 MiB")
+    return unpacked
 
 
 def accept_usage(

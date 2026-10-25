@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.api_sync.api.auth import ServerSignatureAuthentication, SignedServer
-from apps.packages.domain import accept_usage, package_since, register
+from apps.packages.domain import accept_usage, gunzip_report, package_since, register
 from infra.clock import current_clock
 from infra.problems import Problem
 
@@ -62,8 +62,11 @@ class UsageView(APIView):
         signed = cast(SignedServer, request.auth)
         if signed.server_id != server_id:
             raise Problem("signature_invalid")
+        body = request.body
+        if request.META.get("HTTP_CONTENT_ENCODING", "").lower() == "gzip":
+            body = gunzip_report(body)
         receipt = accept_usage(
-            request.body,
+            body,
             server_id=server_id,
             now=current_clock().now(),
             ip=request.META.get("REMOTE_ADDR"),

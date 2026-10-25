@@ -50,8 +50,10 @@ from apps.api_product.domain.limits import limit_activation, limit_check, limit_
 from apps.api_product.domain.ratelimit import Limited
 from apps.packages.domain import local_server_id
 from apps.signing.domain import TrustUnavailable, trust_document
+from apps.stats.domain import record_denial
 from infra import metrics
 from infra.clock import current_clock
+from infra.errors import DomainError
 from infra.problems import Problem
 
 logger = logging.getLogger(__name__)
@@ -89,7 +91,17 @@ class _Replayed(Exception):
         self.stored = stored
 
 
-class IdempotentView(APIView):
+class DeniedCounted(APIView):
+    """Refusals of a licence or a seat are counted by code for the usage report (question 43)."""
+
+    def handle_exception(self, exc: Exception) -> Response:
+        code = exc.problem_code if isinstance(exc, Problem) else getattr(exc, "code", None)
+        if isinstance(exc, Problem | DomainError) and isinstance(code, str):
+            record_denial(code, now=current_clock().now())
+        return super().handle_exception(exc)
+
+
+class IdempotentView(DeniedCounted):
     """Idempotency-Key (E05-02): the first response is kept 24 hours and returned to a repeat.
 
     The header is optional on the server (a tolerant reader); the DL module always sends it.
@@ -200,7 +212,7 @@ def _activation_request(data: dict[str, Any], ip: str | None) -> ActivationReque
     )
 
 
-class CheckView(APIView):
+class CheckView(DeniedCounted):
     """POST /api/v1/activations/{activation_id}/check (section 5.3 of document 2)."""
 
     authentication_classes = [DeviceSignatureAuthentication]
@@ -237,7 +249,7 @@ class CheckView(APIView):
         return _lease_response(result, now, 200)
 
 
-class EventsView(APIView):
+class EventsView(DeniedCounted):
     """POST /api/v1/events (postEvents): events of the product, signed by its device key."""
 
     authentication_classes = [DeviceSignatureAuthentication]
@@ -281,7 +293,7 @@ class ReleaseView(IdempotentView):
         )
 
 
-class OfflineRequestView(APIView):
+class OfflineRequestView(DeniedCounted):
     """POST /api/v1/offline/requests (processOfflineRequest, section 10 of document 2, E08-01).
 
     No session and no request signature: the file itself is signed by the device key.

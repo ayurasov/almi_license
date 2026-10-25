@@ -17,3 +17,19 @@ class UsageRecord(UUIDModel):
 
     def __str__(self) -> str:
         return f"{self.activation_id}@{self.at.isoformat()}"
+
+
+class DenialCount(UUIDModel):
+    """Refused product requests by error code and hour (question 43; .alk-usage denials)."""
+
+    hour = models.DateTimeField()
+    code = models.CharField(max_length=64)
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["hour", "code"], name="stats_denial_hour_code")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.code}@{self.hour.isoformat()}: {self.count}"
