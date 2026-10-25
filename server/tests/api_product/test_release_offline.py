@@ -159,6 +159,11 @@ def test_offline_activation_and_repeat(
     assert again["activation_id"] == claims["activation_id"]
     assert license_usage(licensed.id).active == 1  # the repeat takes no second seat
 
+    from apps.activation.models import Activation
+
+    # Marked as an activation by files: its own term of automatic release (question 39).
+    assert Activation.objects.get(external_id=claims["activation_id"]).offline is True
+
 
 def test_offline_renew_and_release(
     licensed: Any, issuer: Any, device: Ed25519PrivateKey, clock: FrozenClock

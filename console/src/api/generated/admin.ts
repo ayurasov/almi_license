@@ -830,6 +830,8 @@ export interface components {
             last_seen_at: string;
             /** Format: date-time */
             released_at: string | null;
+            /** @description Последняя связь — файлом .alk-req */
+            offline: boolean;
         };
         ActivationPage: {
             count: number;

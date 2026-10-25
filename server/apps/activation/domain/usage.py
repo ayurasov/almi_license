@@ -43,6 +43,7 @@ class ActivationData:
     activated_at: datetime
     last_seen_at: datetime
     released_at: datetime | None
+    offline: bool = False
 
 
 def license_usage(license_id: UUID) -> Usage:
@@ -129,6 +130,7 @@ def _data(row: Activation) -> ActivationData:
         activated_at=row.activated_at,
         last_seen_at=row.last_seen_at,
         released_at=row.released_at,
+        offline=row.offline,
     )
 
 

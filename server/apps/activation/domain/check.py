@@ -34,6 +34,7 @@ class CheckRequest:
     acked_directives: list[str]
     unsupported_directives: list[str]
     ip: str | None = None
+    offline: bool = False  # renew by an .alk-req file
 
 
 def check(request: CheckRequest, *, now: datetime, issuer: str) -> ActivationResult:
@@ -85,6 +86,7 @@ def _check_locked(request: CheckRequest, now: datetime, issuer: str) -> Activati
     if request.fingerprint is not None:
         activation.fp_components = request.fingerprint
     activation.last_seen_at = now
+    activation.offline = request.offline
     directives.settle(
         activation,
         terms.params,

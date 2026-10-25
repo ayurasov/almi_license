@@ -40,6 +40,9 @@ class Activation(UUIDModel):
     product_version = models.CharField(max_length=64)
     os = models.JSONField()
     lease_seq = models.PositiveIntegerField(default=0)
+    offline = models.BooleanField(
+        default=False, help_text="Последняя связь — файлом .alk-req (портал офлайн-активации)"
+    )
     done_profile_directives = models.JSONField(
         default=list,
         blank=True,

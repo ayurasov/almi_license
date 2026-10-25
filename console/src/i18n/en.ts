@@ -144,6 +144,7 @@ const en: typeof ru = {
       conflict: 'Conflict',
     },
     reserve: 'reserve',
+    offline: 'by files',
     conflict: 'conflict',
     release: 'Release',
     releaseTitle: 'Release the seat',

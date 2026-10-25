@@ -147,6 +147,7 @@ export default {
       conflict: 'Конфликт',
     },
     reserve: 'резерв',
+    offline: 'файлами',
     conflict: 'конфликт',
     release: 'Освободить',
     releaseTitle: 'Освободить место',

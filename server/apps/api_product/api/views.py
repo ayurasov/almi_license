@@ -3,6 +3,7 @@
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime
 from typing import Any, cast
 
@@ -291,7 +292,8 @@ def _answer(offline: OfflineRequest, now: datetime, ip: str | None) -> tuple[dic
     """The same domain services as online: activate, check (renew) and release."""
     if offline.type == "activate":
         data = _valid_data(OfflineActivateSerializer, offline.payload)
-        result = activate(_activation_request(data, ip), now=now, issuer=settings.LEASE_ISSUER)
+        request = replace(_activation_request(data, ip), offline=True)
+        result = activate(request, now=now, issuer=settings.LEASE_ISSUER)
         document = answer(offline, result.activation_id, now=now, lease=result.lease)
         return document, str(data["instance"]["instance_id"])
     data = _valid_data(OfflineDeviceSerializer, offline.payload)
@@ -318,6 +320,7 @@ def _answer(offline: OfflineRequest, now: datetime, ip: str | None) -> tuple[dic
             acked_directives=[],
             unsupported_directives=[],
             ip=ip,
+            offline=True,
         ),
         now=now,
         issuer=settings.LEASE_ISSUER,

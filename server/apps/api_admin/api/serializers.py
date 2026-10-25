@@ -178,6 +178,7 @@ class ActivationSerializer(serializers.Serializer[dict[str, Any]]):
     activated_at = serializers.DateTimeField()
     last_seen_at = serializers.DateTimeField()
     released_at = serializers.DateTimeField(allow_null=True)
+    offline = serializers.BooleanField(help_text="Последняя связь — файлом .alk-req")
 
 
 class ActivationPageSerializer(serializers.Serializer[dict[str, Any]]):

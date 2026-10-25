@@ -1661,6 +1661,9 @@ components:
           type: string
           format: date-time
           nullable: true
+        offline:
+          type: boolean
+          description: Последняя связь — файлом .alk-req
       required:
       - activated_at
       - activation_id
@@ -1669,6 +1672,7 @@ components:
       - instance_name
       - last_seen_at
       - license_id
+      - offline
       - os
       - product_version
       - released_at

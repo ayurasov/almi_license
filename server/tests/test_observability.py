@@ -1,8 +1,8 @@
 """E15-05: /metrics (requests, errors, duration, task queue) and JSON log lines."""
 
 import json
-import os
 import logging
+import os
 from datetime import timedelta
 from typing import Any
 
@@ -59,7 +59,9 @@ def test_workers_are_added_up(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) ->
         "metrics.REQUESTS.labels(method='GET', route='health', status='200').inc()"
     )
     for _ in range(3):
-        subprocess.run([sys.executable, "-c", script], check=True, cwd=".", env=dict(os.environ))
+        subprocess.run(  # noqa: S603 - a fixed script of this test
+            [sys.executable, "-c", script], check=True, cwd=".", env=dict(os.environ)
+        )
     assert 'almi_http_requests_total{method="GET",route="health",status="200"} 3.0' in (
         metrics.render()
     )
