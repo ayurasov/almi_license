@@ -23,7 +23,8 @@ test('an operator issues a key and suspends a license with a reason', async ({ p
     valid_until: '2027-10-31T20:59:59Z',
   })
 
-  await page.reload()
+  // Filtered by the new customer: the list of a long-lived dev database has many pages.
+  await page.goto(`/licenses?customer_id=${String(customer.id)}`)
   const row = page.getByTestId('licenses-table').locator('tbody tr', { hasText: name })
   await expect(row).toHaveCount(1)
   await row.getByTestId('license-open').click()

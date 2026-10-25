@@ -12,6 +12,8 @@ import { useI18n } from 'vue-i18n'
 
 import { api } from '@/api/client'
 import type { components } from '@/api/generated/admin'
+import { canChange } from '@/lib/roles'
+import { useSessionStore } from '@/stores/session'
 import { type LicenseStats, useStatsStore } from '@/stores/stats'
 
 type Option = { value: string; label: string }
@@ -24,6 +26,7 @@ function users(row: LicenseStats): string {
 
 const { t, d } = useI18n()
 const store = useStatsStore()
+const session = useSessionStore()
 const filter = reactive({ customerId: '', productId: '' })
 const customers = ref<Option[]>([])
 const products = ref<Option[]>([])
@@ -31,8 +34,11 @@ const exporting = ref(false)
 
 onMounted(async () => {
   void store.load(filter)
+  // A customer viewer has no customer list (E07-08).
   const [customerList, productList] = await Promise.all([
-    api.GET('/api/admin/customers', { params: { query: { page_size: 100 } } }),
+    canChange(session.user?.role)
+      ? api.GET('/api/admin/customers', { params: { query: { page_size: 100 } } })
+      : Promise.resolve({ data: undefined }),
     api.GET('/api/admin/products'),
   ])
   customers.value = (customerList.data?.results ?? []).map((c: components['schemas']['Customer']) => ({
@@ -89,6 +95,7 @@ async function exportXlsx(): Promise<void> {
     </div>
     <div class="filters">
       <Select
+        v-if="canChange(session.user?.role)"
         v-model="filter.customerId"
         :options="withAll(customers)"
         option-label="label"

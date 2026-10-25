@@ -222,6 +222,137 @@ paths:
               schema:
                 $ref: '#/components/schemas/ArticleMapping'
           description: ''
+  /api/admin/audit:
+    get:
+      operationId: audit_list
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: actor
+        schema:
+          type: string
+          default: ''
+          maxLength: 256
+      - in: query
+        name: object_id
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: object_type
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+      - in: query
+        name: since
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      - in: query
+        name: until
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      tags:
+      - audit
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditPage'
+          description: ''
+  /api/admin/audit/export:
+    get:
+      operationId: audit_export
+      description: Read access for operators and customer viewers (E07-08).
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: actor
+        schema:
+          type: string
+          default: ''
+          maxLength: 256
+      - in: query
+        name: object_id
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: object_type
+        schema:
+          type: string
+          default: ''
+          maxLength: 64
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+      - in: query
+        name: since
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      - in: query
+        name: until
+        schema:
+          type: string
+          format: date-time
+          nullable: true
+      tags:
+      - audit
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: CSV
   /api/admin/catalog/metrics:
     get:
       operationId: metrics_list
@@ -1588,6 +1719,49 @@ components:
       required:
       - metric_id
       - product_id
+    AuditEvent:
+      type: object
+      properties:
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+        action:
+          type: string
+        object_type:
+          type: string
+        object_id:
+          type: string
+        ip:
+          type: string
+          nullable: true
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - action
+      - actor
+      - at
+      - data
+      - ip
+      - object_id
+      - object_type
+      - seq
+    AuditPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+      required:
+      - count
+      - results
     Capability:
       type: object
       properties:
