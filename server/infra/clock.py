@@ -4,6 +4,7 @@ Code receives a Clock and calls clock.now(); datetime.now() and time.time()
 are forbidden everywhere else. Tests use FrozenClock.
 """
 
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -61,3 +62,8 @@ def use_clock(clock: Clock) -> Iterator[Clock]:
         yield clock
     finally:
         _current = previous
+
+
+def monotonic() -> float:
+    """Seconds of a monotonic clock, for durations only (metrics); never a moment in time."""
+    return time.perf_counter()

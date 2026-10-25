@@ -118,3 +118,8 @@ def run_due(*, now: datetime) -> int:
 def queue_size(*, now: datetime) -> int:
     """Due tasks not yet taken (metric of E15-05)."""
     return Task.objects.filter(status=TaskStatus.PENDING, run_at__lte=now).count()
+
+
+def failed_count() -> int:
+    """Tasks that ran out of attempts (metric of E15-05)."""
+    return Task.objects.filter(status=TaskStatus.FAILED).count()
