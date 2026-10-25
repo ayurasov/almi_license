@@ -1,0 +1,15 @@
+{
+  "provisional": true,
+  "request": {
+    "method": "GET",
+    "query": {
+      "data": "0f343b0931126a20f133d67c2b018a3b",
+      "host": "ws-01",
+      "lic": "{key}"
+    }
+  },
+  "response": {
+    "status": 200,
+    "text": "Активация лицензии Лицензия успешно активирована Использовано: 1 из 2"
+  }
+}

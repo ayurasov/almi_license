@@ -1,0 +1,11 @@
+{
+  "ver": 1,
+  "kid": "c-2026-01",
+  "alg": "EdDSA",
+  "pub": "test-issuer-public-key-base64url-000000000",
+  "role": "issuer",
+  "iss": "root-2026",
+  "iat": 1761955200,
+  "nbf": 1761955200,
+  "exp": "2027-11-01T00:00:00Z"
+}

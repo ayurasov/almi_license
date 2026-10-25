@@ -1,0 +1,15 @@
+{
+  "provisional": true,
+  "request": {
+    "method": "GET",
+    "query": {
+      "data": "not-md5",
+      "host": "ws-01",
+      "lic": "{key}"
+    }
+  },
+  "response": {
+    "status": 400,
+    "text": "Активация лицензии Неверные параметры запроса"
+  }
+}

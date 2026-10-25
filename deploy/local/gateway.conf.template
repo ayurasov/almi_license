@@ -1,0 +1,26 @@
+# TLS gateway of the local server: products, console and the Sync/Product APIs on one name.
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${SERVER_NAME};
+    ssl_certificate     /etc/nginx/tls/server.crt;
+    ssl_certificate_key /etc/nginx/tls/server.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $api http://api:8000;
+    set $console http://console:80;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Request-ID $request_id;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    location = /api/v1/offline/requests { client_max_body_size 72k; proxy_pass $api; }
+    location /api/ { client_max_body_size 16m; proxy_pass $api; }
+    location /apps/ { proxy_pass $api; }
+    location /.well-known/ { proxy_pass $api; }
+    location = /health { proxy_pass $api; }
+    location = /ready { proxy_pass $api; }
+    location / { proxy_pass $console; }
+}

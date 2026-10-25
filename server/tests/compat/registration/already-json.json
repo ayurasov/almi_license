@@ -1,0 +1,24 @@
+{
+  "provisional": true,
+  "before": [
+    "activated-json"
+  ],
+  "request": {
+    "method": "POST",
+    "form": {
+      "data": "0F343B0931126A20F133D67C2B018A3B",
+      "host": "ws-01",
+      "lic": "{key}"
+    },
+    "accept": "application/json"
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "success": true,
+      "message": "Лицензия уже активирована на этом компьютере",
+      "used": 1,
+      "total": 2
+    }
+  }
+}

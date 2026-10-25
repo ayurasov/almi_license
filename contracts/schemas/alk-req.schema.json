@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/alk-req.schema.json",
+  "title": "AlkRequestClaims",
+  "description": "Полезная нагрузка запроса .alk-req, alm-req+jws (документ 2, разделы 10 и 13.1, приложение А). Подпись: ключ устройства (activate, renew, release) или ключ локального сервера (server).",
+  "type": "object",
+  "required": [
+    "type",
+    "nonce",
+    "created"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "activate",
+        "renew",
+        "release",
+        "server"
+      ]
+    },
+    "license_key": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "product": {
+      "$ref": "product.schema.json"
+    },
+    "instance": {
+      "$ref": "instance.schema.json"
+    },
+    "fingerprint": {
+      "$ref": "fingerprint.schema.json"
+    },
+    "device_pubkey": {
+      "type": "string",
+      "description": "Открытый ключ Ed25519, base64url"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Сервер возвращает его в request_nonce ответа .alk-lic"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "activation_id": {
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "usage.schema.json"
+    },
+    "registration_code": {
+      "type": "string"
+    },
+    "server_id": {
+      "type": "string"
+    },
+    "server_pubkey": {
+      "type": "string"
+    },
+    "host_fingerprint": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "activate"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "license_key",
+          "product",
+          "instance",
+          "fingerprint",
+          "device_pubkey"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "renew",
+              "release"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "activation_id",
+          "product",
+          "instance",
+          "fingerprint",
+          "device_pubkey"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "server"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "registration_code",
+          "server_id",
+          "server_pubkey",
+          "host_fingerprint",
+          "version"
+        ]
+      }
+    }
+  ]
+}

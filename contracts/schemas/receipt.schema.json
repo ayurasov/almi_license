@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/receipt.schema.json",
+  "title": "ReceiptClaims",
+  "description": "Квитанция alm-receipt+jws: об освобождении активации (документ 2, раздел 5.4) или о приёме отчёта локального сервера (раздел 13.4). Время iat — Unix.",
+  "type": "object",
+  "required": [
+    "ver",
+    "type",
+    "iat"
+  ],
+  "properties": {
+    "ver": {
+      "type": "integer",
+      "const": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "release",
+        "usage"
+      ]
+    },
+    "iat": {
+      "type": "integer"
+    },
+    "activation_id": {
+      "type": "string"
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "server_id": {
+      "type": "string"
+    },
+    "report_seq": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "release"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "activation_id",
+          "released_at"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "usage"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "server_id",
+          "report_seq"
+        ]
+      }
+    }
+  ]
+}

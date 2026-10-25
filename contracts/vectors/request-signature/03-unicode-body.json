@@ -1,0 +1,26 @@
+{
+  "name": "03-unicode-body",
+  "description": "Тело с кириллицей и символами вне ASCII; хэш считается по байтам UTF-8.",
+  "public_key": "LrsBgVznSq_bD2qq4d6FOpODP61A4eTMiu8E2yKxUaI",
+  "server_now": 1762071300,
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/events",
+    "body": "{\"activation_id\":\"act_01JABF8Q4W2N8C1R7ZB0Y5K6M3\",\"events\":[{\"id\":\"evt_01\",\"type\":\"feature_denied\",\"at\":\"2026-11-02T08:14:58Z\",\"data\":{\"feature\":\"macros\",\"comment\":\"Макросы — «недоступны» ✓\"}}]}"
+  },
+  "signed": {
+    "keyid": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3",
+    "alg": "ed25519",
+    "created": 1762071300,
+    "nonce": "f93xQNtDa76y3xsWeyyv5Q",
+    "path": "/api/v1/events"
+  },
+  "expected": {
+    "body_sha256": "TIVlJs5xCF735tKCx86DsMyaDXBVAC5i9o11LAMczms",
+    "signing_string": "ALMI-REQ-V1\nPOST\n/api/v1/events\n1762071300\nf93xQNtDa76y3xsWeyyv5Q\nTIVlJs5xCF735tKCx86DsMyaDXBVAC5i9o11LAMczms",
+    "signature": "ce6_mPZ8kX8BO1f3F_gnYDi2rLVwbjaI3r11srhSqf52yit6eAdeIjMPJZb0Cy81RkgiTa2O2oeRi6RxPyMBBQ",
+    "header": "keyid=\"act_01JABF8Q4W2N8C1R7ZB0Y5K6M3\", alg=\"ed25519\", created=1762071300, nonce=\"f93xQNtDa76y3xsWeyyv5Q\", sig=\"ce6_mPZ8kX8BO1f3F_gnYDi2rLVwbjaI3r11srhSqf52yit6eAdeIjMPJZb0Cy81RkgiTa2O2oeRi6RxPyMBBQ\"",
+    "valid": true,
+    "error": null
+  }
+}

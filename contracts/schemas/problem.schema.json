@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/problem.schema.json",
+  "title": "Problem",
+  "description": "Ошибка RFC 9457, application/problem+json (документ 2, разделы 4.5 и 16).",
+  "type": "object",
+  "required": [
+    "type",
+    "title",
+    "status",
+    "code"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "format": "uri"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "type": "integer"
+    },
+    "code": {
+      "type": "string",
+      "description": "Клиент обязан обрабатывать неизвестные коды по классу HTTP-статуса",
+      "examples": [
+        "invalid_request",
+        "invalid_key_format",
+        "signature_invalid",
+        "clock_skew",
+        "license_revoked",
+        "license_expired",
+        "product_mismatch",
+        "key_not_found",
+        "activation_not_found",
+        "seats_exhausted",
+        "instance_conflict",
+        "idempotency_conflict",
+        "activation_released",
+        "rebind_required",
+        "payload_too_large",
+        "unsupported_product_version",
+        "upgrade_required",
+        "rate_limited",
+        "internal_error",
+        "maintenance"
+      ]
+    },
+    "detail": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "server_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "user_message": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

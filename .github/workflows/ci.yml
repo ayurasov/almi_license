@@ -1,0 +1,377 @@
+# CI pipeline skeleton (docs/specs/07-environments.md, section 6; E00-06).
+# Jobs that have no code yet (console, DL) detect it and skip their steps.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [stage1, main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.11.32"
+  GITLEAKS_VERSION: "8.30.1"
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+
+jobs:
+  lint-server:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - run: make lint-server
+
+  contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+      # OpenAPI validity, JSON Schemas and their examples, docs/specs/02 examples;
+      # comparison with drf-spectacular comes with Product API endpoints.
+      - run: make contract-check
+
+  keytool:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: tools/almi-keytool/uv.lock
+      - run: make lint-keytool
+      - run: make test-keytool
+
+  vectors:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+      # Reference vectors are reproducible and valid; server and DL runs join with E02-03, E04-01, E13-02.
+      - run: make vectors
+
+  arch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - name: import-linter
+        working-directory: server
+        run: uv run lint-imports
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "${archive}" gitleaks
+      # Whole history; exceptions are in .gitleaks.toml and .gitleaksignore.
+      - run: ./gitleaks git --redact --no-banner --exit-code 1 .
+
+  test-server:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DJANGO_SETTINGS_MODULE: almi_license.settings.ci
+      DEPLOYMENT_MODE: central
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - name: Migrations are in sync with models
+        working-directory: server
+        run: uv run python manage.py makemigrations --check --dry-run
+      # Per-module thresholds (activation, policy, signing >= 85 %) come with tools/coverage_gate.py.
+      - name: pytest with coverage
+        working-directory: server
+        run: uv run pytest --cov --cov-report=term --cov-fail-under=70
+      - name: policy coverage >= 95 % (prompt I2-02)
+        working-directory: server
+        run: uv run coverage report --include='apps/policy/*' --fail-under=95
+
+  test-dl:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - id: detect
+        run: |
+          if [ -f sdk/cpp/CMakeLists.txt ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::sdk/cpp has no CMakeLists.txt yet (I0-04); skipped"; fi
+      - if: steps.detect.outputs.present == 'true'
+        uses: ./.github/actions/setup-vcpkg
+      # Toolchain: CMakeLists.txt picks vcpkg from VCPKG_ROOT; Windows uses the x64-windows-static triplet.
+      - if: steps.detect.outputs.present == 'true'
+        run: cmake -S sdk/cpp -B build -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=ci
+      - if: steps.detect.outputs.present == 'true'
+        run: cmake --build build --config Release --parallel
+      - if: steps.detect.outputs.present == 'true'
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: ASan and UBSan (docs/specs/06-ai-rules.md, 4.3)
+        if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
+        run: |
+          cmake -S sdk/cpp -B build-san -DCMAKE_BUILD_TYPE=Debug -DLM_TRUST_ROOTS=ci -DLM_SANITIZE=ON
+          cmake --build build-san --parallel
+          ctest --test-dir build-san --output-on-failure
+      - name: Line coverage of LeaseVerifier, StateEvaluator, TrialTracker >= 90 % (E13-12)
+        if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
+        run: make coverage-dl DL_BUILD=build DL_CMAKE_ARGS=-DLM_TRUST_ROOTS=ci
+      - if: steps.detect.outputs.present == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: license_module-${{ runner.os }}
+          if-no-files-found: error
+          path: |
+            build/bin/**/license_module.dll
+            build/bin/**/liblicense_module.so*
+            build/bin/**/lm-demo
+            build/bin/**/lm-demo.exe
+            build/bin/**/license_module_stub.dll
+            build/bin/**/liblicense_module_stub.so*
+            build/bin/**/lm-demo-stub
+            build/bin/**/lm-demo-stub.exe
+            build/lib/**/license_module.lib
+            build/lib/**/license_module_stub.lib
+            sdk/cpp/include/license_module.h
+
+  # Leases signed by the server (issue_jws, a real activation) pass the two independent
+  # verifiers: almi-keytool (PyNaCl) and the DL LeaseVerifier (E02-03, E03-01).
+  cross-verify:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DEPLOYMENT_MODE: central
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - run: cmake -S sdk/cpp -B build -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=ci
+      - run: cmake --build build --parallel --target lm_tests
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: |
+            server/uv.lock
+            tools/almi-keytool/uv.lock
+      - run: make cross-verify DL_BUILD=build
+      # The real module offline: lm-demo with the dev root writes .alk-req and applies .alk-lic.
+      - run: make offline-e2e DL_BUILD=build
+
+  # E15-03: backup with deploy/ops/backup.sh, restore into another database, rows and audit chain.
+  backup-drill:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DEPLOYMENT_MODE: central
+      DJANGO_SETTINGS_MODULE: almi_license.settings.ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - name: Database with the catalogue and audit events
+        working-directory: server
+        run: |
+          uv run python manage.py migrate --noinput
+          uv run python manage.py loadcatalog
+          # An account gives the audit chain an event; the password is random and not kept.
+          CONSOLE_PASSWORD="$(openssl rand -base64 18)" \
+            uv run python manage.py create_account --username drill --role operator
+      - run: make backup-drill
+
+  # E15-04: the bundle of a closed network is built and installed with install.sh; the compose
+  # file never pulls (pull_policy: never), so the install uses only the images of the bundle.
+  airgap-bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Shell scripts of the bundle
+        run: shellcheck deploy/local/*.sh deploy/ops/*.sh tools/build_airgap_bundle.sh deploy/entrypoint.sh
+      - name: Build the bundle (dev trust root for the smoke install)
+        run: |
+          VERSION="0.0.0-ci.${GITHUB_RUN_NUMBER}" TRUST_ROOTS="dev-root:$(tr -d '\n' < contracts/vectors/keys/dev-root.pub)" \
+            tools/build_airgap_bundle.sh "$RUNNER_TEMP/bundle"
+      - name: Install from the unpacked bundle and check
+        run: |
+          mkdir "$RUNNER_TEMP/host" && tar -C "$RUNNER_TEMP/host" -xzf "$RUNNER_TEMP"/bundle/*.tar.gz
+          rm -rf "$RUNNER_TEMP/bundle"  # the archive and the build copy: the runner disk is small
+          cd "$RUNNER_TEMP"/host/almi-license-local-*
+          cp .env.example .env
+          sed -i 's/^SERVER_NAME=.*/SERVER_NAME=localhost/; s/^HTTPS_PORT=.*/HTTPS_PORT=8443/' .env
+          ./install.sh
+          curl -fsSk https://localhost:8443/.well-known/almi-license
+          # The runner disk holds the images twice (the bundle and Docker): fail only when full.
+          ./backup.sh && CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99 ./check.sh
+      - if: failure()
+        run: cd "$RUNNER_TEMP"/host/almi-license-local-* && docker compose logs --no-color | tail -200
+
+  lint-dl:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - id: detect
+        run: |
+          if [ -f sdk/cpp/CMakeLists.txt ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::sdk/cpp has no CMakeLists.txt yet (I0-04); skipped"; fi
+      - if: steps.detect.outputs.present == 'true'
+        uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+      - if: steps.detect.outputs.present == 'true'
+        uses: ./.github/actions/setup-vcpkg
+      # clang-format is pinned in the Makefile (same version as pre-commit); clang-tidy comes with the runner.
+      - if: steps.detect.outputs.present == 'true'
+        run: make lint-dl DL_CMAKE_ARGS=-DLM_TRUST_ROOTS=ci
+
+  lint-console:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - id: detect
+        run: |
+          if [ -f console/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::console/ is empty (I2-07); skipped"; fi
+      - if: steps.detect.outputs.present == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: console
+        run: |
+          npm ci
+          npx eslint . --max-warnings=0
+          npx vue-tsc --noEmit
+
+  test-console:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - id: detect
+        run: |
+          if [ -f console/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::console/ is empty (I2-07); skipped"; fi
+      - if: steps.detect.outputs.present == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - if: steps.detect.outputs.present == 'true'
+        working-directory: console
+        run: |
+          npm ci
+          npx vitest run
+      # The generated client must match the Admin API of the server (prompt I2-07).
+      - if: steps.detect.outputs.present == 'true'
+        uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - name: Admin API schema and console types are up to date
+        if: steps.detect.outputs.present == 'true'
+        env:
+          DEPLOYMENT_MODE: central
+        run: |
+          make admin-schema
+          git diff --exit-code -- console/src/api
+
+  # Playwright scenarios of the console against the real server (E07-03).
+  e2e-console:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - working-directory: console
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: console/playwright-report

@@ -1,0 +1,106 @@
+# Local server in a closed network (E15-04; docs/specs/07-environments.md, section 9).
+# Started by install.sh; the images come from the bundle (docker load), nothing is pulled.
+name: almi-license-local
+x-server: &server
+  image: almi-license:${ALMI_VERSION}
+  pull_policy: never
+  restart: unless-stopped
+  environment: &server-env
+    DEPLOYMENT_MODE: local
+    DJANGO_SETTINGS_MODULE: almi_license.settings.prod
+    DATABASE_URL: postgres://almi@db:5432/almi_local
+    DATABASE_PASSWORD_FILE: /run/secrets/db_password
+    DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret
+    DJANGO_ALLOWED_HOSTS: ${SERVER_NAME}
+    DJANGO_CSRF_TRUSTED_ORIGINS: https://${SERVER_NAME}:${HTTPS_PORT}
+    LOCAL_SERVER_KEY_FILE: /var/lib/almi/server.key
+    TRUST_ROOTS: ${TRUST_ROOTS}
+    BACKUP_STATUS_FILE: /var/backups/almi/last-success
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    # Every device of the customer may come from one address (NAT): limits per IP of section 4.7.
+    RATE_LIMIT_ACTIVATE_IP: ${RATE_LIMIT_ACTIVATE_IP:-100}
+    RATE_LIMIT_CHECK_IP: ${RATE_LIMIT_CHECK_IP:-1000}
+    RATE_LIMIT_OFFLINE_IP: ${RATE_LIMIT_OFFLINE_IP:-100}
+  secrets: [db_password, django_secret]
+  volumes:
+    - server-key:/var/lib/almi
+    - ./backups:/var/backups/almi:ro
+  depends_on:
+    migrate: { condition: service_completed_successfully }
+services:
+  db:
+    image: postgres:17
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: almi_local
+      POSTGRES_USER: almi
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U almi -d almi_local"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  migrate:
+    <<: *server
+    command: ["migrate"]
+    restart: "no"
+    depends_on:
+      db: { condition: service_healthy }
+  api:
+    <<: *server
+    command: ["api"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+  worker:
+    <<: *server
+    command: ["worker"]
+  console:
+    image: almi-license-console:${ALMI_VERSION}
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: http://api:8000
+  gateway:
+    image: nginx:1.27
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+      NGINX_ENVSUBST_FILTER: ^SERVER_NAME$
+    ports: ["${HTTPS_PORT}:443"]
+    volumes:
+      - ./gateway.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./tls:/etc/nginx/tls:ro
+    depends_on:
+      api: { condition: service_healthy }
+      console: { condition: service_started }
+  # Run by backup.sh: docker compose run --rm backup
+  backup:
+    image: postgres:17
+    pull_policy: never
+    profiles: [ops]
+    entrypoint: ["/ops/backup.sh"]
+    environment:
+      DATABASE_URL_FILE: /run/secrets/db_url
+      BACKUP_DIR: /var/backups/almi
+      BACKUP_PASSPHRASE_FILE: /run/secrets/backup_passphrase
+      SERVER_KEY_FILE: /var/lib/almi/server.key
+    secrets: [db_url, backup_passphrase]
+    volumes:
+      - ./ops:/ops:ro
+      - ./backups:/var/backups/almi
+      - server-key:/var/lib/almi:ro
+secrets:
+  db_password: { file: ./secrets/db_password }
+  db_url: { file: ./secrets/db_url }
+  django_secret: { file: ./secrets/django_secret }
+  backup_passphrase: { file: ./secrets/backup_passphrase }
+volumes:
+  db: {}
+  server-key: {}

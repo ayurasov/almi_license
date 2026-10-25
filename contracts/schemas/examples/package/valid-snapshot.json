@@ -1,0 +1,77 @@
+{
+  "server_id": "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8",
+  "customer_id": "c3a1b2c3-d4e5-4f60-8a9b-0c1d2e3f4a5b",
+  "seq": 7,
+  "issued_at": "2026-11-02T08:00:00Z",
+  "valid_until": "2027-11-02T08:00:00Z",
+  "licenses": [
+    {
+      "license_id": "6f1c2a4e-8b3d-4c5f-9e7a-1b2c3d4e5f60",
+      "product": "alteroffice-desktop",
+      "edition": "standard",
+      "type": "subscription",
+      "metric": "device",
+      "allocation": 250,
+      "limits": {},
+      "valid_from": "2026-11-01T00:00:00Z",
+      "valid_until": "2027-10-31T20:59:59Z",
+      "support_until": "2027-10-31T20:59:59Z",
+      "capabilities": [
+        "view",
+        "edit",
+        "save",
+        "export",
+        "print"
+      ],
+      "policy": {
+        "version": 3,
+        "enforcement": "enforce",
+        "notify_before_days": 30,
+        "grace_days": 14,
+        "expiry_action": "restrict",
+        "restricted_caps": [
+          "updates"
+        ],
+        "restricted_days": null,
+        "hard_block_mode": "read_only",
+        "read_only_caps": [
+          "view",
+          "print",
+          "export"
+        ],
+        "offline_grace_days": null,
+        "check_interval_hours": 24,
+        "release_after_days": 30
+      },
+      "status": "active"
+    }
+  ],
+  "keys": [
+    {
+      "key_hash": "test-key-hash-000000000000000000000000000",
+      "key_mask": "AB26-****-****-0001",
+      "license_id": "6f1c2a4e-8b3d-4c5f-9e7a-1b2c3d4e5f60"
+    }
+  ],
+  "revocations": [
+    {
+      "kind": "activation",
+      "id": "act_01JABF8Q4W2N8C1R7ZB0Y5K6M4",
+      "revoked_at": "2026-11-01T12:00:00Z",
+      "reason": "operator"
+    }
+  ],
+  "trust": {
+    "issuers": [
+      "eyJhbGciOiJFZERTQSJ9.e30.c2ln"
+    ],
+    "revoked_kids": [],
+    "server_certificate": "eyJhbGciOiJFZERTQSJ9.e30.c2ln"
+  },
+  "expired_policy": {
+    "enforcement": "enforce",
+    "expiry_action": "restrict",
+    "grace_days": 30
+  },
+  "messages": []
+}

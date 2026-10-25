@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/alk-usage.schema.json",
+  "title": "UsageReportClaims",
+  "description": "Отчёт локального сервера .alk-usage, alm-usage+jws (документ 2, раздел 13.4). Идемпотентен по seq.",
+  "type": "object",
+  "required": [
+    "server_id",
+    "seq",
+    "period",
+    "package_seq",
+    "licenses",
+    "activations",
+    "denials",
+    "audit_digest"
+  ],
+  "properties": {
+    "server_id": {
+      "type": "string"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "period": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "package_seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "licenses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "license_id",
+          "active",
+          "released",
+          "reserve_used"
+        ],
+        "properties": {
+          "license_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "active": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "released": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reserve_used": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "by_version": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "by_os": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "users_total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "users_max_active": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "activations": {
+      "type": "array",
+      "description": "Состав — по профилю телеметрии",
+      "items": {
+        "type": "object",
+        "required": [
+          "activation_id",
+          "status"
+        ],
+        "properties": {
+          "activation_id": {
+            "type": "string"
+          },
+          "instance_hash": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "os": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "activated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "denials": {
+      "type": "object",
+      "description": "Отказы по кодам ошибок раздела 16",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "audit_digest": {
+      "type": "string",
+      "description": "Хэш последней записи аудита локального сервера"
+    }
+  },
+  "additionalProperties": true
+}

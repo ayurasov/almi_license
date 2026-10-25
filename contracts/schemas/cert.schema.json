@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://license.alter-os.ru/schemas/v1/cert.schema.json",
+  "title": "CertificateClaims",
+  "description": "Сертификат ключа alm-cert+jws (документ 1, раздел 9.1). Ключ выпуска подписывает корень; ключ локального сервера — корень или ключ выпуска. Время iat, nbf, exp — Unix.",
+  "type": "object",
+  "required": [
+    "ver",
+    "kid",
+    "alg",
+    "pub",
+    "role",
+    "iss",
+    "iat",
+    "nbf",
+    "exp"
+  ],
+  "properties": {
+    "ver": {
+      "type": "integer",
+      "const": 1
+    },
+    "kid": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Идентификатор сертифицируемого ключа"
+    },
+    "alg": {
+      "type": "string",
+      "enum": [
+        "EdDSA",
+        "GOST3410-2012-256"
+      ]
+    },
+    "pub": {
+      "type": "string",
+      "description": "Открытый ключ, base64url"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "issuer",
+        "local_server"
+      ]
+    },
+    "iss": {
+      "type": "string",
+      "minLength": 1,
+      "description": "kid ключа, подписавшего сертификат"
+    },
+    "iat": {
+      "type": "integer"
+    },
+    "nbf": {
+      "type": "integer"
+    },
+    "exp": {
+      "type": "integer"
+    },
+    "scope": {
+      "type": "object",
+      "description": "Область действия сертификата локального сервера",
+      "required": [
+        "server_id",
+        "customer_id",
+        "products",
+        "quotas"
+      ],
+      "properties": {
+        "server_id": {
+          "type": "string"
+        },
+        "customer_id": {
+          "type": "string"
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quotas": {
+          "type": "object",
+          "description": "Места по license_id",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "local_server"
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "then": {
+        "required": [
+          "scope"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Build context is the repository root; only server/ is copied into the image.
+.git
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.hypothesis
+**/.coverage
+**/htmlcov
+**/node_modules
+console/dist
+sdk/cpp/build
+**/cmake-build-*
+.env
+.env.*

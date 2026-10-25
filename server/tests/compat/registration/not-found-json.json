@@ -1,0 +1,19 @@
+{
+  "provisional": true,
+  "request": {
+    "method": "GET",
+    "query": {
+      "data": "0f343b0931126a20f133d67c2b018a3b",
+      "host": "ws-01",
+      "lic": "9999-AAAA-BBBB-CCCC",
+      "format": "json"
+    }
+  },
+  "response": {
+    "status": 404,
+    "json": {
+      "success": false,
+      "message": "Лицензия не найдена или недействительна"
+    }
+  }
+}

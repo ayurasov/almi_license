@@ -1,0 +1,62 @@
+{
+  "name": "37-trial-not-started",
+  "reasoning": "Аренды нет и триал не начат (first_launch = null) → TRIAL, осталось 30 дней.",
+  "policy": {
+    "version": 3,
+    "enforcement": "enforce",
+    "notify_before_days": 30,
+    "grace_days": 14,
+    "expiry_action": "restrict",
+    "restricted_caps": [
+      "updates",
+      "macros",
+      "collaboration"
+    ],
+    "restricted_days": null,
+    "hard_block_mode": "read_only",
+    "read_only_caps": [
+      "view",
+      "export",
+      "print"
+    ],
+    "offline_grace_days": null,
+    "check_interval_hours": 24,
+    "release_after_days": 30
+  },
+  "license": null,
+  "trial": {
+    "first_launch": null,
+    "product_capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "support",
+      "macros",
+      "collaboration"
+    ]
+  },
+  "now": "2026-11-02T08:15:00Z",
+  "last_success_at": null,
+  "expected": {
+    "state": "TRIAL",
+    "capabilities": [
+      "view",
+      "edit",
+      "save",
+      "create",
+      "export",
+      "print",
+      "updates",
+      "macros",
+      "collaboration"
+    ],
+    "messages_ids": [
+      "trial.banner"
+    ],
+    "lease_exp": null
+  }
+}

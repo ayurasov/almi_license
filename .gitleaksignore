@@ -1,0 +1,25 @@
+# Reviewed false positives (docs/decisions.md, I0-03): example license key, example JWS
+# and the word password_scheme in the specs of the initial commit. Fingerprint = commit:file:rule:line.
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:1177
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:1186
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:142
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/02-interaction-spec.md:generic-api-key:281
+b8275eeea3cebc27aaae1b9469435f3f3f4a44b2:docs/specs/08-lk-tz.md:generic-api-key:286
+# I2-04: the spec example license key (section 5.2 of document 2) as a test fixture, type annotations
+# "key: Ed25519PrivateKey" in tests (docs/decisions.md, E03-01).
+305085550e24997f27df22889b9a10af02be6aec:server/conftest.py:generic-api-key:84
+305085550e24997f27df22889b9a10af02be6aec:server/tests/api_product/test_activate.py:generic-api-key:35
+305085550e24997f27df22889b9a10af02be6aec:server/tests/api_product/test_activate.py:generic-api-key:62
+server/conftest.py:generic-api-key:84
+server/tests/api_product/test_activate.py:generic-api-key:35
+server/tests/api_product/test_activate.py:generic-api-key:62
+# The same example key quoted in docs/decisions.md and in a comment of this file (commit 7ec68db).
+7ec68dbb3fac4fd6b7b8830a0099d2de46d20ce0:docs/decisions.md:generic-api-key:104
+7ec68dbb3fac4fd6b7b8830a0099d2de46d20ce0:.gitleaksignore:generic-api-key:9
+# The key alphabet constant of server/apps/licensing/domain/management.py in commit 069a4c7 (E01-06);
+# the code now builds it from string.digits and string.ascii_uppercase.
+069a4c791a615c32301915ccfc91c9a981227757:server/apps/licensing/domain/management.py:generic-api-key:32
+# Same reviewed false positives without a commit: history was rewritten (authorship), SHAs changed.
+server/apps/licensing/domain/management.py:generic-api-key:32
+docs/decisions.md:generic-api-key:104
+.gitleaksignore:generic-api-key:9
