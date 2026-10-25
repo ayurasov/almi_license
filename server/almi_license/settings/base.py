@@ -50,6 +50,8 @@ PRODUCT_RATE_LIMITS = {
     "offline_ip": env.int("RATE_LIMIT_OFFLINE_IP", default=10),  # files per hour
     "offline_captcha_ip": env.int("RATE_LIMIT_OFFLINE_CAPTCHA_IP", default=30),  # per hour
 }
+# Load stands only: manage.py seed_load writes private device keys of test data (E16-05).
+SEED_LOAD_ALLOWED = env.bool("SEED_LOAD_ALLOWED", default=False)
 # Test stands only: the server time moves by the seconds in this file (E16-04, StandClock).
 CLOCK_OFFSET_FILE = env.str("CLOCK_OFFSET_FILE", default="")
 if CLOCK_OFFSET_FILE:
@@ -124,6 +126,16 @@ TEMPLATES = [
 ]
 
 DATABASES = {"default": env.db_url("DATABASE_URL")}
+# Under ASGI every concurrent request has its own thread and connection: a pool bounds them
+# per process, requests wait for a free connection (E16-05). 0 turns the pool off (tests).
+DATABASE_POOL_MAX_SIZE = env.int("DATABASE_POOL_MAX_SIZE", default=0)
+if DATABASE_POOL_MAX_SIZE > 0:
+    DATABASES["default"]["CONN_MAX_AGE"] = 0
+    DATABASES["default"].setdefault("OPTIONS", {})["pool"] = {
+        "min_size": 2,
+        "max_size": DATABASE_POOL_MAX_SIZE,
+        "timeout": env.int("DATABASE_POOL_TIMEOUT", default=20),
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LANGUAGE_CODE = "ru"

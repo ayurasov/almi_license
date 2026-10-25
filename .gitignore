@@ -72,3 +72,4 @@ deploy/**/secrets/
 .e2e-tls/
 e2e-report.html
 tests/e2e/report.html
+.load/

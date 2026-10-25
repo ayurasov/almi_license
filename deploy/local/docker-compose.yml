@@ -18,6 +18,8 @@ x-server: &server
     TRUST_ROOTS: ${TRUST_ROOTS}
     BACKUP_STATUS_FILE: /var/backups/almi/last-success
     LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    # Connections per process of the API (E16-05): 2 workers x 10 + the worker, below max_connections.
+    DATABASE_POOL_MAX_SIZE: ${DATABASE_POOL_MAX_SIZE:-10}
     # Every device of the customer may come from one address (NAT): limits per IP of section 4.7.
     RATE_LIMIT_ACTIVATE_IP: ${RATE_LIMIT_ACTIVATE_IP:-100}
     RATE_LIMIT_CHECK_IP: ${RATE_LIMIT_CHECK_IP:-1000}

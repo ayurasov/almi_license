@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from stand import Device, Stand, start_server
 
 LM_DEMO = os.environ.get("LM_DEMO", "")

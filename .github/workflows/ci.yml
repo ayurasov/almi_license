@@ -239,6 +239,37 @@ jobs:
           path: e2e-report.html
           if-no-files-found: ignore
 
+  # E16-05: the load scenarios at a small scale (k6 in docker): seed-load, check, activate, race.
+  load-smoke:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - run: uv sync --project server --frozen
+      - run: make load-smoke
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: load-smoke-report
+          path: |
+            .load/report.md
+            .load/*-summary.json
+            .load/server.log
+          if-no-files-found: ignore
+
   # E15-03: backup with deploy/ops/backup.sh, restore into another database, rows and audit chain.
   backup-drill:
     runs-on: ubuntu-24.04
