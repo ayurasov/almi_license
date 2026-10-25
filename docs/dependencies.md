@@ -18,6 +18,8 @@
 | openpyxl | 3.1.5 | Разбор XLSX-выгрузки ЛК в режиме `read_only` (E06-01); тянет `et-xmlfile` 2.0.0 | I2-06 | Промпт I2-06 |
 | argon2-cffi | 25.1.0 | Argon2id для паролей консоли (`PASSWORD_HASHERS`, E07-02); тянет `argon2-cffi-bindings` 26.1.0 | I2-07 | Критерий E07-02 документа 3 |
 | django-environ | 0.14.0 | Настройки только из переменных окружения | I0-02 | Промпт I0-02 |
+| gunicorn | 26.2.0 | Процесс-менеджер `api` образа (`deploy/entrypoint.sh`) | I4 (E15-04) | Документ 7, раздел 7.1: «Gunicorn + Uvicorn workers» |
+| uvicorn, uvicorn-worker | 0.54.0, 0.4.0 | ASGI-сервер и рабочий класс Gunicorn; тянут `click` 8.5.0, `h11` 0.16.0 | I4 (E15-04) | Документ 7, раздел 7.1 |
 | croniter | 6.2.4 | Cron-выражения расписания задач (E12-01); тянет `python-dateutil` 2.9.0.post0 (ограничение `constraint-dependencies`: 3.0.0 моложе двух недель) и `six` 1.17.0 | I4-03 | Промпт I4-03 |
 
 ### Разработка и CI (группа `dev`)

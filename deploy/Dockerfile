@@ -42,7 +42,13 @@ RUN groupadd --gid 10001 app \
 COPY --from=base /opt/venv /opt/venv
 WORKDIR /app/server
 COPY server/ ./
+COPY --chmod=0755 deploy/entrypoint.sh /usr/local/bin/almi-entrypoint
+ARG APP_VERSION=0.1.0
+ENV APP_VERSION=${APP_VERSION}
+LABEL org.opencontainers.image.title="almi-license" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.description="ALMI licensing server (central and local modes)"
 USER app
-# Entry points api/worker/migrate (Gunicorn + Uvicorn) and OCI labels come with E15-01.
-ENTRYPOINT ["python", "manage.py"]
-CMD ["check", "--deploy"]
+EXPOSE 8000
+ENTRYPOINT ["almi-entrypoint"]
+CMD ["api"]

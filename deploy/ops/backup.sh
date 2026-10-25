@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Encrypted backup of the PostgreSQL database of a central or local server (E15-03).
 #
-#   DATABASE_URL            postgres://user:password@host:5432/db (from the environment or a secret)
+#   DATABASE_URL            postgres://user:password@host:5432/db, or DATABASE_URL_FILE (a secret)
 #   BACKUP_DIR              where the copies are kept (default /var/backups/almi)
 #   BACKUP_PASSPHRASE_FILE  Docker secret with the passphrase; never an argument or a variable
 #   BACKUP_KEEP_DAYS        retention (default 30)
@@ -12,7 +12,8 @@
 set -euo pipefail
 umask 077
 
-: "${DATABASE_URL:?DATABASE_URL is required}"
+if [[ -n "${DATABASE_URL_FILE:-}" ]]; then DATABASE_URL="$(< "$DATABASE_URL_FILE")"; fi
+: "${DATABASE_URL:?DATABASE_URL or DATABASE_URL_FILE is required}"
 : "${BACKUP_PASSPHRASE_FILE:?BACKUP_PASSPHRASE_FILE is required}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/almi}"
 KEEP_DAYS="${BACKUP_KEEP_DAYS:-30}"
@@ -33,10 +34,13 @@ pg_dump --format=custom --no-owner --dbname="$DATABASE_URL" | encrypt "$partial"
 mv "$partial" "$dump"
 (cd "$BACKUP_DIR" && sha256sum "$(basename "$dump")" > "$(basename "$dump").sha256")
 
-if [ -n "${SERVER_KEY_FILE:-}" ]; then
+if [[ -n "${SERVER_KEY_FILE:-}" && -f "$SERVER_KEY_FILE" ]]; then
   key="$BACKUP_DIR/almi-$stamp.server-key.gpg"
   encrypt "$key.partial" < "$SERVER_KEY_FILE"
   mv "$key.partial" "$key"
+elif [[ -n "${SERVER_KEY_FILE:-}" ]]; then
+  # Before the first-run wizard a local server has no key yet.
+  echo "backup: no server key at $SERVER_KEY_FILE yet, only the database is copied"
 fi
 
 find "$BACKUP_DIR" -maxdepth 1 -name 'almi-*' -type f -mtime "+$KEEP_DAYS" -delete
