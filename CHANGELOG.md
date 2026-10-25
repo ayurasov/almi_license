@@ -1,6 +1,7 @@
 # Изменения
 
 ## Unreleased
+- Узлы АльтерОС регистрируются старым `registration.sh`: адаптер `GET/POST /api/activate/` с ответами HTML/JSON и лимитами ЛК 2.0 (E11-03); тесты совместимости по фикстурам `server/tests/compat`, `make test-compat` (E11-04).
 - АльтерОфис Web получает подписку с нового сервера: адаптер `POST /apps/zammad_organisation_management/api/query/subscription/{key}` (E11-01); экземпляры — активации `server_instance`, превышение пользователей — в статистике (E11-02); лимит пользователей лицензии (`limits`) в консоли, аренде и пакете; общий ограничитель частоты запросов в PostgreSQL.
 - Очередь задач в PostgreSQL и расписание (`manage.py run_worker`, сервис `worker`): повторы с задержкой, один планировщик (E12-01); автоосвобождение активаций без связи дольше `release_after_days` → `released_auto` раз в час (E12-02); очистка записей `Idempotency-Key` старше 24 ч.
 - Скелет репозитория по разделу 14 документа 1: каталоги, `Makefile` с целями-заглушками, `pre-commit`, `.editorconfig`, `.gitignore` (E00-05).

@@ -9,11 +9,18 @@ from typing import Any
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.api_product.domain.ratelimit import Limited
-from apps.compat.domain import SubscriptionNotFound, SubscriptionRequest, subscription
+from apps.compat.domain import (
+    LegacyResult,
+    SubscriptionNotFound,
+    SubscriptionRequest,
+    legacy_activate,
+    subscription,
+)
 from infra.clock import current_clock
 
 MAX_BODY = 64 * 1024
@@ -74,3 +81,66 @@ def nextcloud_subscription(request: HttpRequest, key: str) -> HttpResponse:
         response["Retry-After"] = str(limited.retry_after)
         return response
     return JsonResponse(answer)
+
+
+# Status codes of /api/activate/ by outcome; fixed by the fixtures of E00-09 (tests/compat).
+LEGACY_STATUS = {
+    "activated": 200,
+    "already_activated": 200,
+    "bad_request": 400,
+    "not_found": 404,
+    "expired": 403,
+    "no_seats": 409,
+    "too_many": 429,
+}
+LEGACY_PAGE = """<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>Активация лицензии</title></head>
+<body>
+<h1>Активация лицензии</h1>
+<p class="result">{text}</p>{usage}
+</body>
+</html>
+"""
+
+
+def _wants_json(request: HttpRequest, params: dict[str, str]) -> bool:
+    return params.get("format") == "json" or "application/json" in request.headers.get("Accept", "")
+
+
+def _legacy_response(
+    request: HttpRequest, params: dict[str, str], result: LegacyResult
+) -> HttpResponse:
+    status = LEGACY_STATUS[result.outcome]
+    response: HttpResponse
+    if _wants_json(request, params):
+        body: dict[str, Any] = {"success": result.ok, "message": result.text}
+        if result.total is not None:
+            body |= {"used": result.used, "total": result.total}
+        response = JsonResponse(body, status=status, json_dumps_params={"ensure_ascii": False})
+    else:
+        usage = ""
+        if result.total is not None:
+            usage = f'\n<p class="usage">Использовано: {result.used} из {result.total}</p>'
+        page = LEGACY_PAGE.format(text=escape(result.text), usage=usage)
+        response = HttpResponse(page, status=status, content_type="text/html; charset=utf-8")
+    if result.retry_after is not None:
+        response["Retry-After"] = str(result.retry_after)
+    return response
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def legacy_activate_view(request: HttpRequest) -> HttpResponse:
+    """GET or POST /api/activate/?data=&host=&lic=[&format=json] of registration.sh."""
+    source = request.POST if request.method == "POST" and request.POST else request.GET
+    params = {key: str(source.get(key, "")).strip() for key in ("data", "host", "lic", "format")}
+    result = legacy_activate(
+        params["data"],
+        params["host"],
+        params["lic"],
+        ip=request.META.get("REMOTE_ADDR", ""),
+        now=current_clock().now(),
+        issuer=settings.LEASE_ISSUER,
+    )
+    return _legacy_response(request, params, result)

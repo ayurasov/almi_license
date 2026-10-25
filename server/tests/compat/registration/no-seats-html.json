@@ -1,0 +1,19 @@
+{
+  "provisional": true,
+  "before": [
+    "activated-json",
+    "second-json"
+  ],
+  "request": {
+    "method": "GET",
+    "query": {
+      "data": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "host": "ws-03",
+      "lic": "{key}"
+    }
+  },
+  "response": {
+    "status": 409,
+    "text": "Активация лицензии Превышено количество активаций для данной лицензии Использовано: 2 из 2"
+  }
+}
