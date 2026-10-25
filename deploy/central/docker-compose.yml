@@ -26,6 +26,7 @@ x-server: &server
   secrets: [app_db_password, django_secret, issuer_key, issuer_cert]
   volumes:
     - ./backups:/var/backups/almi:ro
+    - ./trust:/etc/almi/trust:ro
   depends_on:
     migrate: { condition: service_completed_successfully }
 services:

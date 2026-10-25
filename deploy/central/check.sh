@@ -22,6 +22,11 @@ if curl -fsSk --max-time 5 "https://localhost:${HTTPS_PORT:-443}/.well-known/alm
 else
   bad "the gateway does not answer (docker compose logs gateway)"
 fi
+if curl -fsSk --max-time 5 "https://localhost:${HTTPS_PORT:-443}/api/v1/trust" > /dev/null; then
+  ok "trust bundle served"
+else
+  warn "no trust bundle: put trust.json of almi-keytool export-trust into ./trust (docs/deployment.md)"
+fi
 used="$(df --output=pcent . | tail -1 | tr -dc '0-9')"
 if [[ "$used" -ge "${CHECK_DISK_FAIL:-90}" ]]; then bad "disk is ${used} % full"; elif [[ "$used" -ge "${CHECK_DISK_WARN:-80}" ]]; then warn "disk is ${used} % full"; else ok "disk ${used} % used"; fi
 if [[ -f backups/last-success ]]; then
