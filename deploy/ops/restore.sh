@@ -4,6 +4,8 @@
 #   restore.sh <almi-YYYYMMDDTHHMMSSZ.dump.gpg>
 #   DATABASE_URL            target database (it is replaced: --clean)
 #   BACKUP_PASSPHRASE_FILE  the same Docker secret as for the backup
+#   RESTORE_RESET_SCHEMA=1  drop the schema public first: a rollback after an upgrade, whose
+#                           migrations created tables that --clean of the older copy keeps
 #
 # The SHA-256 sum is checked first; after pg_restore the script prints the number of rows of the
 # main tables for the check against the source. The server then checks the audit chain with
@@ -23,6 +25,9 @@ else
   exit 1
 fi
 
+if [[ "${RESTORE_RESET_SCHEMA:-0}" == "1" ]]; then
+  psql --no-psqlrc --quiet --dbname="$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public"
+fi
 gpg --batch --quiet --pinentry-mode loopback --passphrase-file "$BACKUP_PASSPHRASE_FILE" \
   --decrypt "$dump" | pg_restore --clean --if-exists --no-owner --exit-on-error --dbname="$DATABASE_URL"
 

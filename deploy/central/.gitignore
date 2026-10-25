@@ -1,0 +1,6 @@
+secrets/
+keys/
+tls/
+backups/
+previous/
+.env

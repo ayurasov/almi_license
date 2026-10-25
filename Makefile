@@ -111,14 +111,18 @@ lint-keytool: ## almi-keytool linters: ruff, mypy --strict
 	cd tools/almi-keytool && uv run --locked ruff check . && uv run --locked ruff format --check . && \
 		uv run --locked mypy src tests
 
-contract-check: ## Contract: OpenAPI validity, JSON Schemas, their examples, docs/specs/02 examples
+contract-check: ## Contract: OpenAPI validity, JSON Schemas, examples, routes of the server against the OpenAPI; needs DATABASE_URL
 	uvx --from openapi-spec-validator==0.9.0 openapi-spec-validator contracts/openapi-product-api-v1.yaml
 	uv run --locked --script tools/contract_check.py
-	@echo "comparison with drf-spectacular: not implemented (comes with Product API endpoints)"
+	cd server && uv run pytest -q -p no:cacheprovider tests/test_contract_routes.py
 
-vectors: ## Reference vectors: up to date and valid; server and DL runners come with E02-03, E04-01, E13-02
+vectors: dl-configure ## Reference vectors: up to date, then run by the server and by DL; needs DATABASE_URL
 	uv run --locked --script tools/vectors/generate.py --check
-	@echo "vectors on the server and in DL: not implemented (E02-03, E04-01, E13-02)"
+	cd server && uv run pytest -q -p no:cacheprovider apps/policy/tests/test_vectors.py \
+		apps/signing/tests/test_verify.py apps/signing/tests/test_issue_jws.py \
+		apps/api_product/tests/test_request_signature.py tests/infra/test_ed25519.py
+	cmake --build $(DL_BUILD) --parallel --target lm_tests
+	ctest --test-dir $(DL_BUILD) --output-on-failure -R 'Vector'
 
 # Leases signed by the server (issue_jws) are written in the contracts/vectors/jws format and
 # checked by the two independent verifiers: almi-keytool (PyNaCl) and LeaseVerifier (libsodium).

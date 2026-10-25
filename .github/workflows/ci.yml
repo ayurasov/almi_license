@@ -36,13 +36,24 @@ jobs:
 
   contract:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DJANGO_SETTINGS_MODULE: almi_license.settings.ci
+      DEPLOYMENT_MODE: central
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
         with:
           version: ${{ env.UV_VERSION }}
-      # OpenAPI validity, JSON Schemas and their examples, docs/specs/02 examples;
-      # comparison with drf-spectacular comes with Product API endpoints.
+      # OpenAPI validity, JSON Schemas and their examples, docs/specs/02 examples, routes of the
+      # server against the OpenAPI.
       - run: make contract-check
 
   keytool:
@@ -59,13 +70,25 @@ jobs:
 
   vectors:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: ci, POSTGRES_DB: almi_license }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/almi_license
+      DJANGO_SETTINGS_MODULE: almi_license.settings.ci
+      DEPLOYMENT_MODE: central
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags after v7
         with:
           version: ${{ env.UV_VERSION }}
-      # Reference vectors are reproducible and valid; server and DL runs join with E02-03, E04-01, E13-02.
-      - run: make vectors
+      - uses: ./.github/actions/setup-vcpkg
+      # Reference vectors are reproducible and valid, then run by the server and by DL.
+      - run: make vectors DL_BUILD=build "DL_CMAKE_ARGS=-DLM_TRUST_ROOTS=ci"
 
   arch:
     runs-on: ubuntu-24.04
@@ -339,6 +362,34 @@ jobs:
           curl -fsSk https://localhost:8443/.well-known/almi-license
       - if: failure()
         run: cd "$RUNNER_TEMP"/host/almi-license-local-* && docker compose logs --no-color | tail -200
+
+  # The central server installed from the checkout (deploy/central, docs/deployment.md) with the
+  # public dev issuer, the first administrator, a backup, an upgrade and a rollback.
+  central-install:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: shellcheck deploy/central/*.sh
+      - name: Install
+        run: |
+          cd deploy/central
+          cp .env.example .env
+          sed -i 's/^SERVER_NAME=.*/SERVER_NAME=localhost/; s/^HTTPS_PORT=.*/HTTPS_PORT=8443/' .env
+          # The password is random and not kept.
+          CONSOLE_PASSWORD="$(openssl rand -base64 18)" DEV_ISSUER=1 ADMIN_USER=admin ./install.sh
+          curl -fsSk https://localhost:8443/.well-known/almi-license
+          ./backup.sh && CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99 ./check.sh
+      - name: Upgrade and roll back
+        run: |
+          cd deploy/central
+          export CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99
+          NEW_VERSION=0.6.0-ci.next ./upgrade.sh
+          grep -q '^ALMI_VERSION=0.6.0-ci.next$' .env
+          ./rollback.sh
+          grep -q '^ALMI_VERSION=0.6.0$' .env
+          docker compose run --rm api manage verify_audit
+      - if: failure()
+        run: cd deploy/central && docker compose logs --no-color | tail -200
 
   lint-dl:
     runs-on: ubuntu-24.04
