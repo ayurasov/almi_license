@@ -20,7 +20,13 @@ export default defineConfig({
       command: 'uv run python manage.py runserver 127.0.0.1:8001 --noreload',
       cwd: '../server',
       url: `${api}/health`,
-      env: { DJANGO_SETTINGS_MODULE: 'almi_license.settings.dev', DEPLOYMENT_MODE: 'central' },
+      // Public dev issuer of the reference vectors, as in deploy/dev (offline portal issues leases).
+      env: {
+        DJANGO_SETTINGS_MODULE: 'almi_license.settings.dev',
+        DEPLOYMENT_MODE: 'central',
+        SIGNING_KEY_FILE: '../contracts/vectors/keys/dev-issuer.key',
+        SIGNING_CERT_FILE: '../deploy/dev/dev-issuer-1.cert.jws',
+      },
       reuseExistingServer: false,
     },
     {

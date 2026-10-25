@@ -17,6 +17,15 @@ const en: typeof ru = {
   },
   placeholder: 'This section comes in later iterations.',
   login: { title: 'Console sign-in', username: 'User name', password: 'Password', submit: 'Sign in' },
+  offline: {
+    title: 'Offline activation',
+    intro: 'For a computer without internet access. Create a request file (.alk-req) in the application, upload it here and move the answer file (.alk-lic) back to the computer.',
+    choose: 'Choose a request file',
+    tooLarge: 'The request file is larger than 64 KB. Make sure an .alk-req file is chosen.',
+    ready: 'The answer file {name} is ready. If the download did not start, click “Download again”.',
+    again: 'Download again',
+    signIn: 'Console sign-in',
+  },
   errors: {
     network: 'The server is unreachable. Check the connection and try again.',
     unknown: 'The operation failed. Try again later.',
