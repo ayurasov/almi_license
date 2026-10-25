@@ -1,5 +1,7 @@
 """Product API v1 views: parse, call the domain, shape the response (AGENTS.md, rule 2)."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, cast
 
@@ -39,6 +41,8 @@ from apps.api_product.domain.idempotency import (
     remember,
     replay,
 )
+from apps.api_product.domain.limits import limit_activation, limit_check, limit_offline
+from apps.api_product.domain.ratelimit import Limited
 from apps.packages.domain import local_server_id
 from apps.signing.domain import TrustUnavailable, trust_document
 from infra.clock import current_clock
@@ -60,6 +64,15 @@ def _valid_data(serializer_class: type[Serializer[dict[str, Any]]], body: Any) -
         raise Problem("invalid_request", "request body does not match the schema")
     data: dict[str, Any] = serializer.validated_data
     return data
+
+
+@contextmanager
+def _limited() -> Iterator[None]:
+    """A limit of section 4.7 becomes 429 rate_limited with Retry-After."""
+    try:
+        yield
+    except Limited as limited:
+        raise Problem("rate_limited", retry_after=limited.retry_after) from None
 
 
 class _Replayed(Exception):
@@ -137,6 +150,10 @@ class ActivateView(IdempotentView):
         if data["device_pubkey"] != signed.public_key:
             raise Problem("signature_invalid")
         now = current_clock().now()
+        with _limited():
+            limit_activation(
+                ip=request.META.get("REMOTE_ADDR"), license_key=data["license_key"], now=now
+            )
         result = activate(
             _activation_request(data, request.META.get("REMOTE_ADDR")),
             now=now,
@@ -178,6 +195,8 @@ class CheckView(APIView):
         data = _valid(CheckRequestSerializer, request)
         fingerprint = data.get("fingerprint")
         now = current_clock().now()
+        with _limited():
+            limit_check(ip=request.META.get("REMOTE_ADDR"), activation_id=activation_id, now=now)
         result = check(
             CheckRequest(
                 activation_id=activation_id,
@@ -245,8 +264,10 @@ class OfflineRequestView(APIView):
         if upload is None or upload.size is None or upload.size > MAX_FILE_BYTES:
             raise Problem("invalid_request", "a .alk-req file up to 64 KiB is required")
         now = current_clock().now()
-        offline = open_request(upload.read(), now=now)
         ip = request.META.get("REMOTE_ADDR")
+        with _limited():
+            limit_offline(ip=ip, now=now)
+        offline = open_request(upload.read(), now=now)
         document, instance_id = _answer(offline, now, ip)
         response = Response(document)
         response["Content-Disposition"] = f'attachment; filename="{instance_id}.alk-lic"'
