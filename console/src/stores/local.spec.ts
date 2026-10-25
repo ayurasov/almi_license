@@ -15,6 +15,7 @@ const status: LocalStatus = {
   package_seq: 0,
   package_issued_at: null,
   package_valid_until: null,
+  package_expires_soon: false,
 }
 
 beforeEach(() => {

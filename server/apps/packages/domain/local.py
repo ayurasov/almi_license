@@ -21,6 +21,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from apps.audit.domain import record
+from apps.packages.domain.servers import package_expires_soon
 from apps.packages.models import Exchange, LocalIdentity
 from apps.signing.domain import ChainInvalid, install_provider, trust_roots, verify_signed
 from infra.crypto.ed25519 import Ed25519Provider, create_key_file, load_key, public_key_text
@@ -46,6 +47,7 @@ class LocalStatus:
     package_seq: int
     package_issued_at: datetime | None
     package_valid_until: datetime | None
+    package_expires_soon: bool = False
 
 
 @dataclass(frozen=True)
@@ -63,7 +65,7 @@ def _identity() -> LocalIdentity | None:
     return LocalIdentity.objects.order_by("created_at").first()
 
 
-def local_status() -> LocalStatus:
+def local_status(now: datetime | None = None) -> LocalStatus:
     row = _identity()
     if row is None:
         return LocalStatus(False, False, None, None, "", None, 0, None, None)
@@ -77,6 +79,7 @@ def local_status() -> LocalStatus:
         package_seq=row.package_seq,
         package_issued_at=row.package_issued_at,
         package_valid_until=row.package_valid_until,
+        package_expires_soon=now is not None and package_expires_soon(row.package_valid_until, now),
     )
 
 

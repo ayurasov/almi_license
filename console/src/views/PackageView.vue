@@ -58,6 +58,14 @@ async function onFile(event: Event): Promise<void> {
     >
       {{ text }}
     </Message>
+    <Message
+      v-if="store.status?.package_expires_soon"
+      severity="warn"
+      :closable="false"
+      data-testid="package-expires"
+    >
+      {{ t('packagePage.expiresSoon', { date: d(new Date(store.status.package_valid_until ?? '')) }) }}
+    </Message>
     <dl
       v-if="store.status && store.status.package_seq > 0"
       class="state"

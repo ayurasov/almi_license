@@ -35,6 +35,17 @@ const en: typeof ru = {
       limit: 'Seats',
       validUntil: 'Valid until',
       enforcement: 'Mode',
+      state: 'State',
+    },
+    state: {
+      TRIAL: 'Trial',
+      ACTIVE: 'Active',
+      NOTICE: 'Expires soon',
+      GRACE: 'Grace period',
+      RESTRICTED: 'Restricted',
+      BLOCKED: 'Blocked',
+      REVOKED: 'Revoked',
+      UNLICENSED: 'Unlicensed',
     },
     status: { active: 'Active', suspended: 'Suspended', revoked: 'Revoked' },
     type: { subscription: 'Subscription', perpetual: 'Perpetual', trial: 'Trial', nfr: 'NFR', free: 'Free' },
@@ -301,6 +312,7 @@ const en: typeof ru = {
     back: 'Back',
   },
   servers: {
+    packageExpires: 'Package expires {date}',
     title: 'Local servers',
     create: 'New server',
     empty: 'No local servers.',
@@ -334,6 +346,7 @@ const en: typeof ru = {
     toPackage: 'Go to the package',
   },
   packagePage: {
+    expiresSoon: 'The package is valid until {date}. Get a new package from the central server: after that date the licences of products follow the policy of the package.',
     title: 'Rights package',
     server: 'Server',
     exchange: 'Exchange',

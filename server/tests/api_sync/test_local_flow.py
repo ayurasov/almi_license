@@ -126,6 +126,9 @@ def test_online_registration_and_local_leases(
     assert lease["limits"] == {"named_users": 50, "only_count_active": False}  # via the package
     assert status.package_valid_until is not None
     assert lease["exp"] <= int(status.package_valid_until.timestamp())
+    # The console of the local server warns 30 days before the package ends (E12-04).
+    assert not local_status(clock.now()).package_expires_soon
+    assert local_status(status.package_valid_until - timedelta(days=30)).package_expires_soon
 
     # 4 seats of the package + ceil(4 * 3 %) = 1 reserve seat.
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey

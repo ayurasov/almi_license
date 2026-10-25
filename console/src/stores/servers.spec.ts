@@ -18,6 +18,8 @@ const server: LocalServer = {
   last_package_seq: 0,
   last_seen_at: null,
   created_at: '2026-11-02T00:00:00Z',
+  package_valid_until: null,
+  package_expires_soon: false,
 }
 
 beforeEach(() => {

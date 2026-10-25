@@ -184,6 +184,12 @@ function seats(server: LocalServer): number {
       <Column :header="t('servers.columns.package')">
         <template #body="{ data }">
           {{ (data as LocalServer).last_package_seq || '—' }}
+          <Tag
+            v-if="(data as LocalServer).package_expires_soon"
+            :value="t('servers.packageExpires', { date: d(new Date((data as LocalServer).package_valid_until ?? '')) })"
+            severity="warn"
+            data-testid="package-expires"
+          />
         </template>
       </Column>
       <Column :header="t('servers.columns.lastSeen')">

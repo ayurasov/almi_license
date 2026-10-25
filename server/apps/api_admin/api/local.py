@@ -36,7 +36,7 @@ class SetupView(APIView):
 
     @extend_schema(responses={200: s.LocalStatusSerializer}, operation_id="local_status")
     def get(self, request: Request) -> Response:
-        return Response(s.LocalStatusSerializer(asdict(local_status())).data)
+        return Response(s.LocalStatusSerializer(asdict(local_status(current_clock().now()))).data)
 
     @extend_schema(
         request=s.SetupRequestSerializer,
@@ -92,4 +92,4 @@ class PackageSyncView(APIView):
     )
     def post(self, request: Request) -> Response:
         sync_package(now=current_clock().now())
-        return Response(s.LocalStatusSerializer(asdict(local_status())).data)
+        return Response(s.LocalStatusSerializer(asdict(local_status(current_clock().now()))).data)

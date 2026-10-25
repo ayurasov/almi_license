@@ -74,6 +74,8 @@ class LicenseSerializer(serializers.Serializer[dict[str, Any]]):
     rights_version = serializers.IntegerField()
     key_masks = serializers.ListField(child=serializers.CharField())
     limits = LimitsSerializer()
+    state = serializers.CharField(allow_blank=True, help_text="Hourly state by PolicyEngine")
+    state_at = serializers.DateTimeField(allow_null=True)
 
 
 class LicensePageSerializer(serializers.Serializer[dict[str, Any]]):
@@ -382,6 +384,8 @@ class LocalServerSerializer(serializers.Serializer[dict[str, Any]]):
     last_package_seq = serializers.IntegerField()
     last_seen_at = serializers.DateTimeField(allow_null=True)
     created_at = serializers.DateTimeField()
+    package_valid_until = serializers.DateTimeField(allow_null=True)
+    package_expires_soon = serializers.BooleanField(help_text="Less than 30 days left (E12-04)")
 
 
 class LocalServerCreateSerializer(serializers.Serializer[dict[str, Any]]):
@@ -417,6 +421,7 @@ class LocalStatusSerializer(serializers.Serializer[dict[str, Any]]):
     package_seq = serializers.IntegerField()
     package_issued_at = serializers.DateTimeField(allow_null=True)
     package_valid_until = serializers.DateTimeField(allow_null=True)
+    package_expires_soon = serializers.BooleanField()
 
 
 class SetupRequestSerializer(serializers.Serializer[dict[str, Any]]):
@@ -456,6 +461,7 @@ class LicenseStatsSerializer(serializers.Serializer[dict[str, Any]]):
     users = serializers.IntegerField(allow_null=True, help_text="Reported by server instances")
     user_limit = serializers.IntegerField(allow_null=True)
     users_exceeded = serializers.BooleanField()
+    state = serializers.CharField(allow_blank=True)
 
 
 class StatsSerializer(serializers.Serializer[dict[str, Any]]):
@@ -469,4 +475,5 @@ class StatsSerializer(serializers.Serializer[dict[str, Any]]):
     last_seen_at = serializers.DateTimeField(allow_null=True)
     by_version = serializers.DictField(child=serializers.IntegerField())
     by_os = serializers.DictField(child=serializers.IntegerField())
+    by_state = serializers.DictField(child=serializers.IntegerField())
     rows = LicenseStatsSerializer(many=True)

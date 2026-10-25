@@ -7,7 +7,7 @@ activations sheet (at most 100 000 rows), written in streaming mode.
 
 import io
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -42,6 +42,7 @@ class LicenseStats:
     users: int | None = None
     user_limit: int | None = None
     users_exceeded: bool = False
+    state: str = ""
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,7 @@ class Summary:
     by_version: dict[str, int]
     by_os: dict[str, int]
     rows: list[LicenseStats]
+    by_state: dict[str, int] = field(default_factory=dict)
 
 
 def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = None) -> Summary:
@@ -99,6 +101,7 @@ def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = 
                 users=users,
                 user_limit=user_limit,
                 users_exceeded=users is not None and user_limit is not None and users > user_limit,
+                state=lic.state,
             )
         )
         versions.update(used.by_version)
@@ -116,6 +119,7 @@ def license_stats(*, customer_id: UUID | None = None, product_id: UUID | None = 
         by_version=dict(versions),
         by_os=dict(systems),
         rows=rows,
+        by_state=dict(Counter(r.state for r in rows if r.state)),
     )
 
 

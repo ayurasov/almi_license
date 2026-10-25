@@ -53,6 +53,8 @@ class LicenseData:
     rights_version: int
     key_masks: list[str] = field(default_factory=list)
     limits: dict[str, Any] = field(default_factory=dict)
+    state: str = ""
+    state_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -96,6 +98,8 @@ def _data(row: License) -> LicenseData:
         rights_version=row.rights_version,
         key_masks=sorted(key.key_mask for key in row.keys.all()),
         limits=dict(row.limits),
+        state=row.state,
+        state_at=row.state_at,
     )
 
 
