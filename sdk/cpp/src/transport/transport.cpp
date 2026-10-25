@@ -29,8 +29,14 @@ struct ListDeleter {
   void operator()(curl_slist* list) const noexcept { curl_slist_free_all(list); }
 };
 
+// Answers of the server are small (a lease, a trust bundle): a larger body is cut off, so a
+// hostile server or proxy cannot exhaust the memory of the product (E16-07).
+constexpr std::size_t kMaxResponseBytes = std::size_t{2} * 1024 * 1024;
+
 std::size_t WriteBody(char* data, std::size_t size, std::size_t count, void* user) {
-  static_cast<std::string*>(user)->append(data, size * count);
+  auto* body = static_cast<std::string*>(user);
+  if (body->size() + size * count > kMaxResponseBytes) return 0;  // CURLE_WRITE_ERROR
+  body->append(data, size * count);
   return size * count;
 }
 
@@ -77,6 +83,8 @@ Failure FailureOf(CURLcode code) {
     case CURLE_SSL_INVALIDCERTSTATUS:
     case CURLE_UNSUPPORTED_PROTOCOL:
       return Failure::kTls;
+    case CURLE_WRITE_ERROR:
+      return Failure::kRefused;  // the answer is larger than kMaxResponseBytes
     default:
       return Failure::kNetwork;
   }

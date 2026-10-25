@@ -50,6 +50,9 @@ class TestServer {
       response.status = 409;
       response.set_content(R"({"code":"seats_exhausted"})", "application/problem+json");
     });
+    server_.Post("/huge", [](const httplib::Request&, httplib::Response& response) {
+      response.set_content(std::string(std::size_t{3} * 1024 * 1024, ' '), "application/json");
+    });
     server_.Post("/slow", [](const httplib::Request&, httplib::Response& response) {
       std::this_thread::sleep_for(1500ms);
       response.set_content("{}", "application/json");
@@ -138,6 +141,16 @@ TEST(Transport, ContentTypeIsSentOnceEvenWhenTheCallerSetsIt) {
   EXPECT_EQ(server.content_types_, 1U);
   ASSERT_EQ(transport.Send(Post("/ok"), std::nullopt).status, 200);
   EXPECT_EQ(server.content_types_, 1U);
+}
+
+TEST(Transport, HugeAnswerIsRefusedAndNotRetried) {
+  TestServer server;
+  Recorder recorder;
+  const Transport transport(TestOptions(server.Url(), recorder));
+  const auto response = transport.Send(Post("/huge"), std::nullopt);
+  EXPECT_EQ(response.failure, Failure::kRefused);
+  EXPECT_EQ(response.attempts, 1);
+  EXPECT_LE(response.body.size(), std::size_t{2} * 1024 * 1024);
 }
 
 TEST(Transport, TooManyRequestsHonoursRetryAfter) {
