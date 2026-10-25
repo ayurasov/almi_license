@@ -116,6 +116,7 @@ class Module {
   bool SaveLocked();
   void QueueEventLocked(const std::string& type);
   Evaluated EvaluateLocked();
+  static int DaysOfMessages(const Evaluated& evaluated, std::int64_t now);
   std::int64_t TrustedNowLocked();
   [[nodiscard]] std::string ServerUrlLocked() const;
   [[nodiscard]] state::TrialTracker Tracker() const;

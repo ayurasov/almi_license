@@ -140,7 +140,7 @@ TEST(Abi, InitializeExGivesATrialWithoutAServer) {
   message.struct_size = sizeof(message);
   ASSERT_EQ(LM_GetMessage(0, &message), LM_OK);
   EXPECT_STREQ(message.id, "trial.banner");
-  EXPECT_STREQ(message.text, "Trial: 30 left.");
+  EXPECT_STREQ(message.text, "Trial: 30 days left.");
   EXPECT_EQ(LM_GetMessage(5, &message), LM_ERR_BUFFER_TOO_SMALL);
 
   char hwid[64] = {};

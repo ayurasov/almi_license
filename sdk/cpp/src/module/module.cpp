@@ -13,6 +13,7 @@
 #include "state/trial_tracker.h"
 #include "transport/transport.h"
 #include "trust_roots.h"
+#include "util/plural.h"
 #include "util/rfc3339.h"
 
 namespace lm::module {
@@ -189,6 +190,7 @@ struct Module::Evaluated {
   Status status;
   policy::PolicyResult result;
   std::optional<json> lease;
+  std::optional<std::int64_t> grace_until;  // end of the grace after valid_until (GRACE)
 };
 
 LM_LicenseMode ModeOf(policy::State state) noexcept {
@@ -371,6 +373,7 @@ Module::Evaluated Module::EvaluateLocked() {
       const auto last = Integer(entries_, kLastSuccess);
       evaluated.result = policy::Evaluate(*params, facts, now, last);
       status.monitor = params->enforcement == "monitor";
+      if (facts.valid_until) evaluated.grace_until = *facts.valid_until + params->grace_days * kDay;
     }
     status.license_type = facts.type;
     status.valid_until = facts.valid_until.value_or(0);
@@ -419,6 +422,17 @@ bool Module::HasFeature(const std::string& feature) {
   return EvaluateLocked().status.capabilities.count(feature) > 0;
 }
 
+// {days_left} of the messages (document 5): the trial days, the days of the grace in GRACE ("works
+// without limitations for {days_left} more"), otherwise the days to valid_until.
+int Module::DaysOfMessages(const Evaluated& evaluated, std::int64_t now) {
+  const auto& status = evaluated.status;
+  if (status.license_type == "trial") return status.trial_days_left;
+  if (evaluated.result.state == policy::State::kGrace && evaluated.grace_until) {
+    return std::max(0, DaysLeft(*evaluated.grace_until, now));
+  }
+  return status.days_left;
+}
+
 std::vector<Message> Module::Messages() {
   const std::scoped_lock lock(state_mutex_);
   const Evaluated evaluated = EvaluateLocked();
@@ -426,8 +440,7 @@ std::vector<Message> Module::Messages() {
   const json messages = evaluated.lease ? evaluated.lease->value("messages", json::array()) : json::array();
   const auto& status = evaluated.status;
   std::map<std::string, std::string> values{
-      {"days_left",
-       std::to_string(status.license_type == "trial" ? status.trial_days_left : status.days_left)},
+      {"days_left", util::DaysText(DaysOfMessages(evaluated, now), settings_.locale)},
       {"valid_until", status.valid_until != 0 ? DateText(status.valid_until) : std::string()},
       {"customer", status.customer_name},
       {"product", settings_.product_code},

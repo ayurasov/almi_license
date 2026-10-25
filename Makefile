@@ -18,7 +18,7 @@ BUNDLE_DIR ?= $(CURDIR)/dist
 DL_CONFIG ?= Debug
 DL_CMAKE_ARGS ?=
 CLANG_FORMAT := uvx clang-format==23.1.3
-DL_FORMAT_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/*.cpp' 'sdk/cpp/*.h')
+DL_FORMAT_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/*.cpp' 'sdk/cpp/*.h' 'prototypes/*.cpp')
 # The Windows platform file needs Windows headers: clang-tidy checks it only in a Windows build.
 DL_TIDY_SOURCES = $(shell git ls-files -co --exclude-standard 'sdk/cpp/src/*.cpp' ':!sdk/cpp/src/platform/win/*')
 
@@ -28,7 +28,7 @@ endef
 
 PHONY_OPS = backup-drill
 .PHONY: $(PHONY_OPS) help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
-	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand load-smoke load bundle-airgap
+	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand prototypes load-smoke load bundle-airgap
 
 help: ## Show available targets
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -138,10 +138,21 @@ E2E_DATABASE_URL ?= $(patsubst %/almi_license,%/almi_e2e,$(DATABASE_URL))
 e2e-stand: ## End-to-end scenarios (E16-04): HTTPS stand, lm-demo (dev root), faketime; needs DATABASE_URL, sudo for the CA
 	cmake -S sdk/cpp -B $(DL_BUILD)-dev -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=dev -DLM_BUILD_TESTS=OFF $(DL_CMAKE_ARGS)
 	cmake --build $(DL_BUILD)-dev --parallel --target lm-demo
+	$(MAKE) prototypes DL_BUILD=$(DL_BUILD)
 	tests/e2e/prepare-tls.sh $(E2E_TLS_DIR)
 	E2E_DATABASE_URL="$(E2E_DATABASE_URL)" E2E_TLS_DIR=$(E2E_TLS_DIR) \
 		LM_DEMO=$(abspath $(DL_BUILD)-dev)/bin/lm-demo E2E_REPORT=$(CURDIR)/e2e-report.html \
+		MINI_OFFICE=$(abspath $(DL_BUILD)-proto)/bin/mini-office \
 		server/.venv/bin/pytest -c tests/e2e/pytest.ini tests/e2e -v
+
+prototypes: ## Prototypes of the products (prototypes/README.md): mini-office over the module with the dev root, checks of mini-web and mini-os
+	cmake -S prototypes/mini-office -B $(DL_BUILD)-proto -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=dev $(DL_CMAKE_ARGS)
+	cmake --build $(DL_BUILD)-proto --parallel --target mini-office mini-office-stub
+	printf 'type a\nsave /dev/null\nmacro\nabout\nquit\n' | LM_STUB_MODE=LIMITED LM_STUB_FEATURES=view \
+		$(DL_BUILD)-proto/bin/mini-office-stub | grep -q 'Функция «редактирование» недоступна'
+	server/.venv/bin/ruff check --config prototypes/ruff.toml prototypes/mini-web
+	server/.venv/bin/ruff format --config prototypes/ruff.toml --check prototypes/mini-web
+	shellcheck prototypes/mini-os/*.sh
 
 load-smoke: ## Load scenarios (E16-05) at a small scale on this host: seed-load, k6 in docker, race; needs DATABASE_URL, psql
 	SMOKE=1 tests/load/stand.sh $(CURDIR)/.load
