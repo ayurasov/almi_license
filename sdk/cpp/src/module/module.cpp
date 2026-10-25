@@ -41,6 +41,14 @@ constexpr const char* kEvents = "events";
 constexpr const char* kRollbackReported = "rollback_reported";
 constexpr const char* kPendingPrefix = "pending:";
 constexpr const char* kShownPrefix = "shown:";
+// Directives (section 8 of document 2).
+constexpr const char* kDoneDirectives = "done_directives";
+constexpr const char* kDirectiveMessages = "directive_messages";
+constexpr const char* kCheckInterval = "check_interval_hours";
+constexpr const char* kPreviousServerUrl = "server_url_previous";
+constexpr const char* kFallbackUntil = "server_url_fallback_until";
+constexpr const char* kRevokedKids = "revoked_kids";
+constexpr const char* kTrustSeq = "trust_seq";
 
 constexpr std::int64_t kHour = 3600;
 constexpr std::int64_t kDay = 24 * kHour;
@@ -51,14 +59,20 @@ constexpr long kHttpOk = 200;
 constexpr long kHttpCreated = 201;
 constexpr long kHttpAccepted = 202;
 constexpr std::size_t kMaxEvents = 100;  // maxItems of EventsRequest
+constexpr std::size_t kMaxDoneDirectives = 100;
+constexpr std::size_t kMaxDirectiveMessages = 20;
+constexpr std::int64_t kDefaultFallbackDays = 14;
+constexpr std::int64_t kMaxCheckIntervalHours = std::int64_t{24} * 30;
+constexpr const char* kProtocolVersion = "1";  // ALMI-Protocol (section 4 of document 2)
 constexpr long kHttpUnauthorized = 401;
 constexpr long kHttpServerError = 500;
 constexpr long kHttpClientError = 400;
 constexpr std::string_view kReleaseSuffix = "/release";
 
-// Directive types the module handles (section 6.6 of document 2); others are reported unsupported.
+// Directive types the module handles (section 8 of document 2); others are reported unsupported.
 bool KnownDirective(const std::string& type) {
-  return type == "refresh_now" || type == "set_check_interval" || type == "release" || type == "rebind";
+  return type == "refresh_now" || type == "update_trust" || type == "set_check_interval" ||
+         type == "show_message" || type == "rebind" || type == "release" || type == "set_server_url";
 }
 
 // Built-in texts for states that may have no lease (document 5, section 3.1).
@@ -343,6 +357,14 @@ std::string Module::ServerUrlLocked() const {
 
 void Module::SetErrorLocked(const std::string& text) { last_error_ = text; }
 
+std::vector<std::string> Module::RevokedKidsLocked() const {
+  std::vector<std::string> kids;
+  for (const auto& kid : JsonEntry(entries_, kRevokedKids, json::array())) {
+    if (kid.is_string()) kids.push_back(kid.get<std::string>());
+  }
+  return kids;
+}
+
 Module::Evaluated Module::EvaluateLocked() {
   const std::int64_t now = TrustedNowLocked();
   Evaluated evaluated;
@@ -354,11 +376,8 @@ Module::Evaluated Module::EvaluateLocked() {
 
   const std::string lease = Get(entries_, kLease);
   if (!lease.empty()) {
-    crypto::LeaseContext context{settings_.product_code,
-                                 Get(entries_, kInstanceId),
-                                 Key().Thumbprint(),
-                                 Integer(entries_, kLeaseSeq).value_or(1) - 1,
-                                 {}};
+    crypto::LeaseContext context{settings_.product_code, Get(entries_, kInstanceId), Key().Thumbprint(),
+                                 Integer(entries_, kLeaseSeq).value_or(1) - 1, RevokedKidsLocked()};
     const auto verified = verifier_->Verify(lease, context, now);
     if (verified.Valid()) evaluated.lease = verified.claims;
   }
@@ -481,6 +500,29 @@ std::vector<Message> Module::Messages() {
     message.text = Substitute(message.text, values);
     result.push_back(std::move(message));
   }
+  // Messages of show_message directives: shown like those of the lease, by their own repeat.
+  for (const auto& item : JsonEntry(entries_, kDirectiveMessages, json::array())) {
+    if (!item.is_object()) continue;
+    Message message{
+        StringOf(item, "id"), StringOf(item, "severity"), StringOf(item, "placement"), "", "", ""};
+    if (message.id.empty()) continue;
+    if (message.severity.empty()) message.severity = "info";
+    if (message.placement.empty()) message.placement = "dialog";
+    const json text = item.value("text", json::object());
+    message.text = StringOf(text, settings_.locale.c_str());
+    if (message.text.empty()) message.text = StringOf(text, "ru");
+    if (message.text.empty()) continue;
+    const json action = item.value("action", json::object());
+    message.action_label = StringOf(action.value("label", json::object()), settings_.locale.c_str());
+    message.action_url = StringOf(action, "url");
+    const std::string repeat = item.contains("repeat") ? StringOf(item, "repeat") : "once";
+    const auto shown = Integer(entries_, (kShownPrefix + message.id).c_str());
+    if (repeat == "once" && shown) continue;
+    if (repeat == "daily" && shown && now - *shown < kDay) continue;
+    if (repeat == "each_start" && shown_this_start_.count(message.id) > 0) continue;
+    message.text = Substitute(message.text, values);
+    result.push_back(std::move(message));
+  }
   return result;
 }
 
@@ -523,6 +565,7 @@ Module::Reply Module::Post(const std::string& path, const json& body, const std:
   const transport::Transport transport(options);
   transport::Request request;
   request.path = path;
+  request.headers["ALMI-Protocol"] = kProtocolVersion;
   // Activation and release are repeated safely under one key: the server returns its first answer
   // (E05-02). A new logical operation gets a new key (section 5.2 of document 2).
   if (path.size() >= kReleaseSuffix.size() &&
@@ -604,8 +647,8 @@ LM_Result Module::AcceptLease(const std::string& lease, const json& response,
     const bool same = Get(entries_, kActivationId) == activation_id;
     const std::int64_t stored_seq = same ? Integer(entries_, kLeaseSeq).value_or(0) : 0;
     const std::int64_t now = TrustedNowLocked();
-    crypto::LeaseContext context{
-        settings_.product_code, Get(entries_, kInstanceId), Key().Thumbprint(), stored_seq, {}};
+    crypto::LeaseContext context{settings_.product_code, Get(entries_, kInstanceId), Key().Thumbprint(),
+                                 stored_seq, RevokedKidsLocked()};
     const auto verified = verifier_->Verify(lease, context, now);
     if (!verified.Valid()) {
       SetErrorLocked(std::string("lease rejected: ") + std::string(crypto::ErrorCode(verified.error)));
@@ -619,6 +662,9 @@ LM_Result Module::AcceptLease(const std::string& lease, const json& response,
     const std::int64_t success = server_time.value_or(now);
     entries_[kLastSuccess] = std::to_string(success);
     if (const auto next = TimeOf(response, "next_check_at")) entries_[kNextCheck] = std::to_string(*next);
+    // set_check_interval replaces the period of the profile until a newer directive changes it.
+    if (const auto hours = Integer(entries_, kCheckInterval); hours && response.contains("next_check_at"))
+      entries_[kNextCheck] = std::to_string(success + *hours * kHour);
     (void)state::RollbackGuard(*clock_).Observe(entries_, success);
     (void)SaveLocked();
     const policy::State after = EvaluateLocked().status.state;
@@ -626,7 +672,7 @@ LM_Result Module::AcceptLease(const std::string& lease, const json& response,
     if (claims.contains("messages") && !claims["messages"].empty()) events.push_back(LM_EVENT_MESSAGE);
   }
   Notify(events);
-  wake_.notify_all();
+  WakeBackground();
   return LM_OK;
 }
 
@@ -701,35 +747,47 @@ LM_Result Module::CheckOnce(bool allow_reactivate) {
     if (lease.empty()) return Failed(reply, LM_ERR_INTERNAL);
     json acked = json::array();
     json unsupported = json::array();
-    bool release = false;
-    bool rebind = false;
-    for (const auto& directive : reply.body.value("directives", json::array())) {
-      const std::string type = StringOf(directive, "type");
-      (KnownDirective(type) ? acked : unsupported).push_back(StringOf(directive, "id"));
-      release = release || type == "release";
-      rebind = rebind || type == "rebind";
-    }
+    std::vector<json> to_run;
     {
       const std::scoped_lock lock(state_mutex_);
+      const json done = JsonEntry(entries_, kDoneDirectives, json::array());
+      for (const auto& directive : reply.body.value("directives", json::array())) {
+        const std::string id = StringOf(directive, "id");
+        const std::string type = StringOf(directive, "type");
+        if (!KnownDirective(type)) {
+          unsupported.push_back(id);
+          continue;
+        }
+        acked.push_back(id);
+        // A directive received again with the same id is not run again (section 8).
+        if (std::find(done.begin(), done.end(), json(id)) == done.end()) to_run.push_back(directive);
+      }
       entries_[kAcked] = acked.dump();
       entries_[kUnsupported] = unsupported.dump();
       entries_.erase(kUsage);
+      // The address set by set_server_url answered: the previous one is not needed any more.
+      entries_.erase(kPreviousServerUrl);
+      entries_.erase(kFallbackUntil);
     }
     const LM_Result accepted = AcceptLease(lease, ok ? reply.body : json::object(), activation_id);
     if (accepted != LM_OK) return accepted;
     if (ok) SendEvents(activation_id);
-    if (release) {
+    const Directives run = RunDirectives(to_run);
+    if (run.update_trust) (void)UpdateTrust();
+    if (run.release) {
       (void)Post("/api/v1/activations/" + activation_id + "/release", {{"reason", "directive"}},
                  activation_id);
       const std::scoped_lock lock(state_mutex_);
       for (const char* entry : {kLease, kLeaseSeq, kActivationId, kLicenseKey}) entries_.erase(entry);
       (void)SaveLocked();
-    } else if (rebind && allow_reactivate && !key.empty()) {
+      Notify({LM_EVENT_STATE_CHANGED});
+    } else if (run.rebind && allow_reactivate && !key.empty()) {
       return ActivateWith(key);
     }
     return ok ? LM_OK : LM_ERR_REVOKED;
   }
   const LM_Result failed = Failed(reply, LM_ERR_INTERNAL);
+  if (failed == LM_ERR_NETWORK) FallBackServerUrl();
   const bool again = failed == LM_ERR_RELEASED || failed == LM_ERR_REBIND_REQUIRED ||
                      (reply.status == kHttpUnauthorized && reply.code == "signature_invalid");
   if (again && allow_reactivate && !key.empty()) {
@@ -741,6 +799,129 @@ LM_Result Module::CheckOnce(bool allow_reactivate) {
     return ActivateWith(key);
   }
   return failed;
+}
+
+Module::Directives Module::RunDirectives(const std::vector<json>& directives) {
+  Directives run;
+  if (directives.empty()) return run;
+  std::vector<LM_EventType> events;
+  {
+    const std::scoped_lock lock(state_mutex_);
+    const std::int64_t now = TrustedNowLocked();
+    json done = JsonEntry(entries_, kDoneDirectives, json::array());
+    json messages = JsonEntry(entries_, kDirectiveMessages, json::array());
+    for (const auto& directive : directives) {
+      const std::string type = StringOf(directive, "type");
+      const json params = directive.value("params", json::object());
+      if (type == "refresh_now") {
+        entries_[kNextCheck] = std::to_string(now);
+      } else if (type == "set_check_interval") {
+        const std::int64_t hours = params.value("hours", std::int64_t{0});
+        if (hours >= 1 && hours <= kMaxCheckIntervalHours) {
+          entries_[kCheckInterval] = std::to_string(hours);
+          entries_[kNextCheck] = std::to_string(now + hours * kHour);
+        }
+      } else if (type == "show_message") {
+        const json message = params.value("message", json::object());
+        if (message.is_object() && !StringOf(message, "id").empty()) {
+          messages.push_back(message);
+          while (messages.size() > kMaxDirectiveMessages) messages.erase(messages.begin());
+          events.push_back(LM_EVENT_MESSAGE);
+        }
+      } else if (type == "set_server_url") {
+        const std::string url = StringOf(params, "url");
+        // Only https: a directive cannot send the product to a plain or foreign scheme.
+        if (url.rfind("https://", 0) == 0 && url != ServerUrlLocked()) {
+          const std::int64_t days = params.value("fallback_days", kDefaultFallbackDays);
+          entries_[kPreviousServerUrl] = ServerUrlLocked();
+          entries_[kFallbackUntil] = std::to_string(now + std::max<std::int64_t>(days, 1) * kDay);
+          entries_[kServerUrl] = url;
+          entries_[kNextCheck] = std::to_string(now);
+        }
+      } else if (type == "update_trust") {
+        run.update_trust = true;
+      } else if (type == "release") {
+        run.release = true;
+      } else if (type == "rebind") {
+        run.rebind = true;
+      }
+      done.push_back(StringOf(directive, "id"));
+    }
+    while (done.size() > kMaxDoneDirectives) done.erase(done.begin());
+    entries_[kDoneDirectives] = done.dump();
+    entries_[kDirectiveMessages] = messages.dump();
+    (void)SaveLocked();
+  }
+  Notify(events);
+  WakeBackground();
+  return run;
+}
+
+void Module::FallBackServerUrl() {
+  const std::scoped_lock lock(state_mutex_);
+  const std::string previous = Get(entries_, kPreviousServerUrl);
+  const auto until = Integer(entries_, kFallbackUntil);
+  if (previous.empty() || !until || TrustedNowLocked() < *until) return;
+  // The address of set_server_url did not answer for fallback_days: back to the previous one.
+  entries_[kServerUrl] = previous;
+  entries_.erase(kPreviousServerUrl);
+  entries_.erase(kFallbackUntil);
+  (void)SaveLocked();
+}
+
+LM_Result Module::UpdateTrust() {
+  std::string base_url;
+  std::vector<std::string> revoked;
+  std::int64_t now = 0;
+  std::int64_t stored_seq = 0;
+  {
+    const std::scoped_lock lock(state_mutex_);
+    base_url = ServerUrlLocked();
+    revoked = RevokedKidsLocked();
+    now = TrustedNowLocked();
+    stored_seq = Integer(entries_, kTrustSeq).value_or(0);
+  }
+  transport::Options options;
+  options.base_url = base_url;
+  options.allow_plain_http_loopback = settings_.allow_plain_http_loopback;
+  options.sleep = settings_.sleep;
+  const transport::Transport transport(options);
+  transport::Request request;
+  request.method = "GET";
+  request.path = "/api/v1/trust";
+  request.headers["ALMI-Protocol"] = kProtocolVersion;
+  const transport::Response response = transport.Send(request, std::nullopt);
+  if (response.failure != transport::Failure::kNone || response.status != kHttpOk) return LM_ERR_NETWORK;
+  const json body = json::parse(response.body, nullptr, false);
+  if (!body.is_object() || !body.contains("bundle") || !body["bundle"].is_string())
+    return LM_ERR_INVALID_FILE;
+  // The bundle is signed by a root itself, without a chain (section 5.5 of document 2); only a newer
+  // seq replaces the stored one.
+  const std::string token = body["bundle"].get<std::string>();
+  const auto dot = token.find('.');
+  const auto header_bytes = crypto::Base64UrlDecode(token.substr(0, dot == std::string::npos ? 0 : dot));
+  const json header =
+      header_bytes ? json::parse(header_bytes->begin(), header_bytes->end(), nullptr, false) : json();
+  if (!header.is_object() || (header.contains("chain") && !header["chain"].empty())) {
+    const std::scoped_lock lock(state_mutex_);
+    SetErrorLocked("trust bundle rejected: not signed by a root");
+    return LM_ERR_INVALID_SIGNATURE;
+  }
+  const auto verified = verifier_->VerifySigned(token, "alm-trust+jws", revoked, now);
+  const std::scoped_lock lock(state_mutex_);
+  if (!verified.Valid()) {
+    SetErrorLocked(std::string("trust bundle rejected: ") + std::string(crypto::ErrorCode(verified.error)));
+    return LM_ERR_INVALID_SIGNATURE;
+  }
+  const std::int64_t seq = verified.claims.value("seq", std::int64_t{0});
+  if (seq <= stored_seq) return LM_OK;
+  json kids = json::array();
+  for (const auto& kid : verified.claims.value("revoked_kids", json::array())) {
+    if (kid.is_string()) kids.push_back(kid);
+  }
+  entries_[kRevokedKids] = kids.dump();
+  entries_[kTrustSeq] = std::to_string(seq);
+  return SaveLocked() ? LM_OK : LM_ERR_INTERNAL;
 }
 
 LM_Result Module::Deactivate() {
@@ -870,12 +1051,14 @@ LM_Result Module::ActivateFromFile(const fs::path& input) {
     return invalid("not an .alk-lic file of version 1");
   }
   std::int64_t now = 0;
+  std::vector<std::string> revoked;
   {
     const std::scoped_lock lock(state_mutex_);
     now = TrustedNowLocked();
+    revoked = RevokedKidsLocked();
   }
   const auto verified =
-      verifier_->VerifySigned(container["payload"].get<std::string>(), "alm-lic+jws", {}, now);
+      verifier_->VerifySigned(container["payload"].get<std::string>(), "alm-lic+jws", revoked, now);
   if (!verified.Valid()) {
     const std::scoped_lock lock(state_mutex_);
     SetErrorLocked(std::string("answer rejected: ") + std::string(crypto::ErrorCode(verified.error)));
@@ -902,7 +1085,8 @@ LM_Result Module::ActivateFromFile(const fs::path& input) {
       entries_[kOffline] = "1";
     }
   } else if (claims.contains("receipt")) {
-    const auto receipt = verifier_->VerifySigned(StringOf(claims, "receipt"), "alm-receipt+jws", {}, now);
+    const auto receipt =
+        verifier_->VerifySigned(StringOf(claims, "receipt"), "alm-receipt+jws", revoked, now);
     if (!receipt.Valid() || StringOf(receipt.claims, "activation_id") != activation_id) {
       return invalid("the release receipt does not match");
     }
@@ -974,6 +1158,14 @@ void Module::Notify(const std::vector<LM_EventType>& events) {
   for (const auto event : events) callback(event, context);
 }
 
+void Module::WakeBackground() {
+  {
+    const std::scoped_lock lock(wake_mutex_);
+    wake_requested_ = true;
+  }
+  wake_.notify_all();
+}
+
 void Module::BackgroundLoop() {
   std::unique_lock wait(wake_mutex_);
   while (!stopping_) {
@@ -991,7 +1183,8 @@ void Module::BackgroundLoop() {
     if (!due) {
       // Wakes early on Shutdown or after a new lease (its next_check_at may be sooner).
       wake_.wait_for(wait, std::chrono::seconds(std::clamp<std::int64_t>(delay, 1, kRetryLater)),
-                     [this] { return stopping_; });
+                     [this] { return stopping_ || wake_requested_; });
+      wake_requested_ = false;
       continue;
     }
     wait.unlock();

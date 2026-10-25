@@ -7,7 +7,9 @@
 #include <httplib.h>
 #include <sodium.h>
 
+#include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -80,6 +82,16 @@ class Issuer {
         lm::crypto::Base64UrlDecode(ReadText(fs::path(LM_VECTORS_DIR) / "keys" / "dev-issuer.key"));
     key_ = lm::crypto::DeviceKey::FromSeed(*seed);
     certificate_ = ReadText(fs::path(LM_DEV_DIR) / "dev-issuer-1.cert.jws");
+  }
+
+  // As the root key (a trust bundle alm-trust+jws has no chain).
+  [[nodiscard]] static std::string SignAsRoot(const std::string& typ, const json& claims) {
+    const auto seed =
+        lm::crypto::Base64UrlDecode(ReadText(fs::path(LM_VECTORS_DIR) / "keys" / "dev-root.key"));
+    const auto root = lm::crypto::DeviceKey::FromSeed(*seed);
+    const json header{{"alg", "EdDSA"}, {"typ", typ}, {"kid", "dev-root"}};
+    const std::string input = Part(header) + "." + Part(claims);
+    return input + "." + lm::crypto::Base64UrlEncode(root->Sign(input));
   }
 
   [[nodiscard]] std::string Sign(const std::string& typ, const json& claims) const {
@@ -157,6 +169,7 @@ class FakeServer {
     server_.Post("/api/v1/activations", [this](const httplib::Request& request, httplib::Response& response) {
       const std::scoped_lock lock(mutex_);
       calls.push_back("activate");
+      protocols.push_back(request.get_header_value("ALMI-Protocol"));
       const json body = json::parse(request.body);
       last_body = body;
       idempotency_key = request.get_header_value("Idempotency-Key");
@@ -177,7 +190,13 @@ class FakeServer {
                  [this](const httplib::Request& request, httplib::Response& response) {
                    const std::scoped_lock lock(mutex_);
                    calls.push_back("check");
+                   protocols.push_back(request.get_header_value("ALMI-Protocol"));
                    last_body = json::parse(request.body);
+                   if (!check_problem.empty()) {
+                     response.status = check_status;
+                     response.set_content(check_problem, "application/problem+json");
+                     return;
+                   }
                    if (released) {
                      response.status = 410;
                      response.set_content(R"({"code":"activation_released"})", "application/problem+json");
@@ -204,6 +223,12 @@ class FakeServer {
                                             .dump(),
                                         "application/json");
                  });
+    server_.Get("/api/v1/trust", [this](const httplib::Request& request, httplib::Response& response) {
+      const std::scoped_lock lock(mutex_);
+      calls.push_back("trust");
+      protocols.push_back(request.get_header_value("ALMI-Protocol"));
+      response.set_content(trust_body.dump(), "application/json");
+    });
     port_ = server_.bind_to_any_port("127.0.0.1");
     thread_ = std::thread([this] { server_.listen_after_bind(); });
     server_.wait_until_ready();
@@ -231,6 +256,11 @@ class FakeServer {
   int activations = 0;
   bool refuse_seats = false;
   bool released = false;
+  json directives = json::array();  // sent with the next lease only
+  json trust_body = json::object();
+  std::vector<std::string> protocols;  // ALMI-Protocol of every request
+  std::string check_problem;           // a problem answer of check instead of a lease
+  int check_status = 0;
   std::mutex mutex_;
 
  private:
@@ -243,9 +273,11 @@ class FakeServer {
                               {"next_check_at", lm::util::FormatRfc3339(now + kDay)},
                               {"server_time", lm::util::FormatRfc3339(now)},
                               {"messages", json::array()},
-                              {"directives", json::array()}}
+                              {"directives", directives},
+                              {"unknown_field_of_a_later_server", {{"x", 1}}}}
                              .dump(),
                          "application/json");
+    directives = json::array();
   }
 
   const TestClock& clock_;
@@ -265,14 +297,15 @@ class ModuleTest : public testing::Test {
   void TearDown() override { fs::remove_all(directory_); }
 
   [[nodiscard]] std::unique_ptr<Module> Open(const std::string& url,
-                                             const std::vector<lm::crypto::TrustRoot>& roots = {}) const {
+                                             const std::vector<lm::crypto::TrustRoot>& roots = {},
+                                             bool background = false) const {
     Settings settings;
     settings.product_code = "alteroffice-desktop";
     settings.app_version = "3.2.0";
     settings.server_url = url;
     settings.data_dir = directory_;
     settings.mark_dir = directory_ / "marks";
-    settings.background_check = false;
+    settings.background_check = background;
     settings.sealer = TestSealer();
     settings.clock = &clock_;
     settings.trust_roots = roots.empty()
@@ -518,6 +551,235 @@ TEST_F(ModuleTest, AnswerFileOfAnotherDeviceOrAnOldLeaseIsRefused) {
   std::ofstream(replay) << answer(old).dump();
   EXPECT_NE(module->ActivateFromFile(replay), LM_OK);
   EXPECT_EQ(module->GetStatus().state, State::kActive);  // the current lease stays
+}
+
+json Directive(const std::string& id, const std::string& type, json params = json::object()) {
+  return {{"id", id}, {"type", type}, {"params", std::move(params)}};
+}
+
+TEST_F(ModuleTest, EveryRequestCarriesTheProtocolVersion) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  server.directives = json::array({Directive("dir_t", "update_trust")});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  ASSERT_GE(server.protocols.size(), 4U);  // activate, check, check, trust
+  for (const auto& value : server.protocols) EXPECT_EQ(value, "1");
+}
+
+TEST_F(ModuleTest, DirectivesRunOnceAndAreReportedAtTheNextCheck) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  server.directives =
+      json::array({Directive("dir_r", "refresh_now"), Directive("dir_x", "collect_diagnostics"),
+                   Directive("dir_new", "a_type_of_a_later_server")});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(module->GetStatus().next_check_at, clock_.now.load());  // refresh_now: due at once
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(server.last_body.at("acked_directives"), json::array({"dir_r"}));
+  EXPECT_EQ(server.last_body.at("unsupported_directives"), json::array({"dir_x", "dir_new"}));
+  // The same id again is acked but not run again: the next check stays a day away.
+  const std::int64_t next = module->GetStatus().next_check_at;
+  server.directives = json::array({Directive("dir_r", "refresh_now")});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(module->GetStatus().next_check_at, next);
+}
+
+TEST_F(ModuleTest, SetCheckIntervalReplacesThePeriodOfTheProfile) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  server.directives = json::array({Directive("dir_i", "set_check_interval", {{"hours", 6}})});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(module->GetStatus().next_check_at, clock_.now.load() + 6 * 3600);
+  ASSERT_EQ(module->CheckNow(), LM_OK);  // the server answers next_check_at in a day
+  EXPECT_EQ(module->GetStatus().next_check_at, clock_.now.load() + 6 * 3600);
+}
+
+TEST_F(ModuleTest, ShowMessageIsShownUntilMarked) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  int events = 0;
+  module->SetCallback(
+      [](LM_EventType type, void* context) {
+        if (type == LM_EVENT_MESSAGE) ++*static_cast<int*>(context);
+      },
+      &events);
+  const json message{
+      {"id", "ops.maintenance"},
+      {"severity", "warning"},
+      {"placement", "banner"},
+      {"repeat", "once"},
+      {"text", {{"ru", "Сервер лицензирования обновляется 10.11."}, {"en", "Maintenance on 10.11."}}}};
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  const int by_lease = events;  // the lease carries messages of its own
+  server.directives = json::array({Directive("dir_m", "show_message", {{"message", message}})});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(events, 2 * by_lease + 1);
+  auto messages = module->Messages();
+  ASSERT_EQ(messages.size(), 1U);
+  EXPECT_EQ(messages[0].id, "ops.maintenance");
+  EXPECT_EQ(messages[0].placement, "banner");
+  EXPECT_EQ(messages[0].text, "Сервер лицензирования обновляется 10.11.");  // as the server sent it
+  ASSERT_EQ(module->MarkMessageShown("ops.maintenance"), LM_OK);
+  EXPECT_TRUE(module->Messages().empty());
+  // repeat "once" holds across restarts: the mark is in the store.
+  module.reset();
+  EXPECT_TRUE(Open(server.Url())->Messages().empty());
+}
+
+TEST_F(ModuleTest, MarkMessageShownFollowsTheRepeatOfTheLease) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  clock_.now = kNow + 340 * kDay;  // NOTICE: the banner of the lease, repeat daily
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  ASSERT_EQ(module->Messages().size(), 1U);
+  ASSERT_EQ(module->MarkMessageShown("notice.banner"), LM_OK);
+  EXPECT_TRUE(module->Messages().empty());
+  clock_.now = clock_.now.load() + kDay + 1;  // the next day
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(module->Messages().size(), 1U);
+}
+
+TEST_F(ModuleTest, SetServerUrlDirectiveFallsBackWhenTheNewServerStaysSilent) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  server.directives = json::array(
+      {Directive("dir_s", "set_server_url", {{"url", "https://127.0.0.1:9"}, {"fallback_days", 2}})});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(module->GetStatus().server_url, "https://127.0.0.1:9");
+  EXPECT_EQ(module->CheckNow(), LM_ERR_NETWORK);  // nobody there yet
+  EXPECT_EQ(module->GetStatus().server_url, "https://127.0.0.1:9");
+  clock_.now = clock_.now.load() + 3 * kDay;
+  EXPECT_EQ(module->CheckNow(), LM_ERR_NETWORK);  // fallback_days passed: back to the old address
+  EXPECT_EQ(module->GetStatus().server_url, server.Url());
+  EXPECT_EQ(module->CheckNow(), LM_OK);
+}
+
+TEST_F(ModuleTest, SetServerUrlDirectiveRefusesPlainHttp) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  server.directives = json::array({Directive("dir_p", "set_server_url", {{"url", "http://evil.example"}})});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(module->GetStatus().server_url, server.Url());
+}
+
+TEST_F(ModuleTest, SetServerUrlMovesTheModuleAndEmptyReturnsToTheConfiguredOne) {
+  FakeServer central(clock_);
+  FakeServer local(clock_);
+  auto module = Open(central.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  ASSERT_EQ(module->SetServerUrl(local.Url()), LM_OK);
+  EXPECT_EQ(module->GetStatus().server_url, local.Url());
+  (void)module->CheckNow();  // the local server does not know the activation: activates again there
+  EXPECT_FALSE(local.calls.empty());
+  ASSERT_EQ(module->SetServerUrl(""), LM_OK);
+  EXPECT_EQ(module->GetStatus().server_url, central.Url());
+}
+
+TEST_F(ModuleTest, UpdateTrustRevokesTheIssuerOfTheBundle) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  ASSERT_EQ(module->GetStatus().state, State::kActive);
+  const auto bundle = [&](int seq, json revoked) {
+    const json claims{{"ver", 1},
+                      {"seq", seq},
+                      {"iat", kNow},
+                      {"roots", json::array()},
+                      {"issuers", json::array()},
+                      {"revoked_kids", std::move(revoked)}};
+    return json{{"bundle", Issuer::SignAsRoot("alm-trust+jws", claims)}};
+  };
+  // A bundle not signed by a root is refused.
+  server.trust_body = {{"bundle", server.issuer.Sign("alm-trust+jws", {{"ver", 1}, {"seq", 9}})}};
+  EXPECT_EQ(module->UpdateTrust(), LM_ERR_INVALID_SIGNATURE);
+  EXPECT_EQ(module->GetStatus().state, State::kActive);
+  server.trust_body = bundle(2, json::array({"dev-issuer-1"}));
+  server.directives = json::array({Directive("dir_u", "update_trust")});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(server.calls.back(), "trust");
+  // The lease of the revoked issuer is not trusted any more.
+  EXPECT_NE(module->GetStatus().state, State::kActive);
+  // An older bundle does not bring the issuer back.
+  server.trust_body = bundle(1, json::array());
+  ASSERT_EQ(module->UpdateTrust(), LM_OK);
+  EXPECT_NE(module->GetStatus().state, State::kActive);
+}
+
+TEST_F(ModuleTest, ReleaseRequestFileNamesTheActivation) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  const fs::path file = directory_ / "release.alk-req";
+  EXPECT_EQ(module->GenerateReleaseRequest(file), LM_ERR_INVALID_KEY);  // nothing to release
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  ASSERT_EQ(module->GenerateReleaseRequest(file), LM_OK);
+  const json container = json::parse(ReadText(file));
+  EXPECT_EQ(container.at("format"), "alk-req");
+  const std::string payload = container.at("payload").get<std::string>();
+  const auto first = payload.find('.');
+  const auto bytes = lm::crypto::Base64UrlDecode(payload.substr(first + 1, payload.rfind('.') - first - 1));
+  const json claims = json::parse(std::string(bytes->begin(), bytes->end()));
+  EXPECT_EQ(claims.at("type"), "release");
+  EXPECT_EQ(claims.at("activation_id"), server.activation_id);
+  EXPECT_EQ(claims.at("nonce").get<std::string>().size(), 22U);  // 16 bytes, base64url
+  EXPECT_FALSE(claims.contains("license_key"));
+}
+
+TEST_F(ModuleTest, UnknownCodesFollowSection16) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  server.check_status = 418;
+  server.check_problem = R"({"code":"code_of_a_later_server","user_message":"Новая причина отказа."})";
+  EXPECT_EQ(module->CheckNow(), LM_ERR_INTERNAL);  // 4xx: as invalid_request, with user_message
+  EXPECT_EQ(module->LastError(), "Новая причина отказа.");
+  server.check_status = 599;
+  server.check_problem = R"({"code":"another_new_code"})";
+  EXPECT_EQ(module->CheckNow(), LM_ERR_NETWORK);  // 5xx: as internal_error, work by the lease
+  EXPECT_EQ(module->GetStatus().state, State::kActive);
+}
+
+TEST_F(ModuleTest, BackgroundCheckRunsWhenDue) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url(), {}, true);
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  // refresh_now makes the check due at once; the background thread wakes and runs it.
+  server.directives = json::array({Directive("dir_b", "refresh_now")});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  for (int i = 0; i < 50; ++i) {
+    {
+      const std::scoped_lock lock(server.mutex_);
+      if (std::count(server.calls.begin(), server.calls.end(), "check") > 1) break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  const std::scoped_lock lock(server.mutex_);
+  EXPECT_EQ(std::count(server.calls.begin(), server.calls.end(), "check"), 2);
+}
+
+TEST_F(ModuleTest, StartWithAStoredLeaseTakesAtMostFiftyMilliseconds) {
+  {
+    FakeServer server(clock_);
+    ASSERT_EQ(Open(server.Url())->Activate(kLicense), LM_OK);
+  }
+  // Checklist item 18 of section 18: start and status from the stored lease, no network.
+  const auto started = std::chrono::steady_clock::now();
+  auto module = Open("http://127.0.0.1:9");
+  const auto status = module->GetStatus();
+  const auto took = std::chrono::steady_clock::now() - started;
+  EXPECT_EQ(status.state, State::kActive);
+#if defined(NDEBUG)
+  EXPECT_LT(took, std::chrono::milliseconds(50));
+#else
+  EXPECT_LT(took, std::chrono::milliseconds(500));  // sanitizer and coverage builds
+#endif
 }
 
 }  // namespace
