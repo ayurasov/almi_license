@@ -98,8 +98,8 @@ admin-schema: ## Admin API schema -> console/src/api/admin-api.yaml and generate
 # placeholder DATABASE_URL is enough when none is set.
 lint-server: ## Server linters: ruff, mypy, import-linter
 	cd server && export DATABASE_URL="$${DATABASE_URL:-postgres://localhost/lint}" && \
-		uv run ruff check . ../tests/e2e ../tests/load && \
-		uv run ruff format --check . ../tests/e2e ../tests/load && \
+		uv run ruff check . ../tests/e2e ../tests/load ../tools/anonymize-lk.py && \
+		uv run ruff format --check . ../tests/e2e ../tests/load ../tools/anonymize-lk.py && \
 		uv run mypy . && \
 		uv run lint-imports
 

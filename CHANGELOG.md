@@ -1,6 +1,13 @@
 # Изменения
 
 ## Unreleased
+- Центральный сервер на одном хосте: `deploy/central` (установка из репозитория, ключ выпуска создаётся на хосте, пробный режим `DEV_ISSUER=1`, проверка, копии, обновление и откат); руководства `docs/deployment.md` (Ubuntu 24.04) и `docs/user-guide.md`.
+- Прототипы продуктов для ручных тестов и переноса: `prototypes/mini-office` (C ABI), `prototypes/mini-web` (Nextcloud), `prototypes/mini-os` (`registration.sh`); `make prototypes`, сценарий E2E 12.
+- `manage.py seed_minimal --trial` — тестовый набор из 10 лицензий; `tools/anonymize-lk.py` — обезличенная выгрузка ЛК.
+- DL: число дней в сообщениях склоняется («30 дней»), в отсрочке показывается её остаток.
+- Откат обновления восстанавливает базу в пустую схему: таблицы новой версии больше не мешают.
+- `make contract-check` сверяет маршруты сервера с OpenAPI, `make vectors` прогоняет векторы на сервере и в DL.
+- Отчёты перед выпуском: `docs/progress/release-check-v1.0.0.md`, проект протокола `docs/progress/readiness-gate-stage1.md`, сверка `docs/progress/gaps-i1-i5.md`.
 - Нагрузочные сценарии k6 (`tests/load`, `make load-smoke` в CI, `make load` на стенде) и `manage.py seed_load` (E16-05).
 - Пул соединений psycopg (`DATABASE_POOL_MAX_SIZE`): под ASGI одновременные запросы больше не исчерпывают `max_connections`.
 - Негативные тесты (`tests/security/README.md`); экспорт статистики пишет строки текстом; ответы на перебор ключей не различаются по времени.
