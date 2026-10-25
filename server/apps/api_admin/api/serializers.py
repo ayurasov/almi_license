@@ -481,3 +481,34 @@ class StatsSerializer(serializers.Serializer[dict[str, Any]]):
     by_os = serializers.DictField(child=serializers.IntegerField())
     by_state = serializers.DictField(child=serializers.IntegerField())
     rows = LicenseStatsSerializer(many=True)
+
+
+class AuditQuerySerializer(serializers.Serializer[dict[str, Any]]):
+    object_type = serializers.CharField(required=False, allow_blank=True, default="", max_length=64)
+    object_id = serializers.CharField(required=False, allow_blank=True, default="", max_length=64)
+    actor = serializers.CharField(required=False, allow_blank=True, default="", max_length=256)
+    action = serializers.CharField(required=False, allow_blank=True, default="", max_length=64)
+    since = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    until = serializers.DateTimeField(required=False, allow_null=True, default=None)
+    page = serializers.IntegerField(required=False, default=1, min_value=1)
+    page_size = serializers.IntegerField(required=False, default=50, min_value=1, max_value=200)
+
+
+class AuditEventSerializer(serializers.Serializer[dict[str, Any]]):
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        # "data" is an attribute of DRF serializers, so the fields are listed here.
+        return {
+            "seq": serializers.IntegerField(),
+            "at": serializers.DateTimeField(),
+            "actor": serializers.CharField(),
+            "action": serializers.CharField(),
+            "object_type": serializers.CharField(),
+            "object_id": serializers.CharField(),
+            "ip": serializers.CharField(allow_null=True),
+            "data": serializers.DictField(),
+        }
+
+
+class AuditPageSerializer(serializers.Serializer[dict[str, Any]]):
+    count = serializers.IntegerField()
+    results = AuditEventSerializer(many=True)

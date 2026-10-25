@@ -2,6 +2,7 @@ from django.urls import path
 from drf_spectacular.views import SpectacularAPIView
 
 from apps.api_admin.api import accounts as acc
+from apps.api_admin.api import audit as aud
 from apps.api_admin.api import catalog as cat
 from apps.api_admin.api import imports as imp
 from apps.api_admin.api import licenses as lic
@@ -58,6 +59,8 @@ urlpatterns = [
     path("setup", local_only(loc.SetupView.as_view())),
     path("package", local_only(loc.PackageUploadView.as_view())),
     path("package/sync", local_only(loc.PackageSyncView.as_view())),
+    path("audit", aud.AuditView.as_view()),
+    path("audit/export", aud.AuditExportView.as_view()),
     path("stats", sta.StatsView.as_view()),
     path("stats/export", sta.StatsExportView.as_view()),
     path("accounts", acc.AccountsView.as_view()),

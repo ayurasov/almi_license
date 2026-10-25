@@ -235,3 +235,14 @@ def active_activation_ids(license_ids: list[UUID]) -> dict[UUID, list[str]]:
     for license_id, external_id in rows.values_list("license_id", "external_id"):
         result[license_id].append(external_id)
     return result
+
+
+def customer_objects(license_ids: list[UUID]) -> frozenset[tuple[str, str]]:
+    """Audit objects of a customer: its licences and their activations (E10-04, E07-08)."""
+    activations = Activation.objects.filter(license_id__in=license_ids).values_list(
+        "external_id", flat=True
+    )
+    return frozenset(
+        [("license", str(license_id)) for license_id in license_ids]
+        + [("activation", external_id) for external_id in activations]
+    )

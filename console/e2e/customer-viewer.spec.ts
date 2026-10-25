@@ -5,7 +5,8 @@ import { apiPost, innOf, signIn } from './helpers'
 test('a customer administrator sees only its licences and changes nothing', async ({ page, browser }) => {
   await signIn(page, '/users', 'admin')
   const stamp = String(Date.now())
-  const name = `ООО «Просмотр ${stamp}»`
+  // "АО" sorts before the "ООО" customers of other runs: the dialog lists the first 100 by name.
+  const name = `АО «Просмотр ${stamp}»`
   const customer = await apiPost(page, '/api/admin/customers', { name, inn: innOf((Date.now() + 11) % 10_000_000) })
   const products = (await (await page.request.get('/api/admin/products')).json()) as {
     id: string
@@ -45,6 +46,7 @@ test('a customer administrator sees only its licences and changes nothing', asyn
   await expect(viewer).toHaveURL(/\/licenses/)
   await expect(viewer.getByRole('menuitem', { name: 'Заказчики' })).toHaveCount(0)
   await expect(viewer.getByRole('menuitem', { name: 'Статистика' })).toHaveCount(1)
+  await expect(viewer.getByRole('menuitem', { name: 'Журнал' })).toHaveCount(1)
 
   const rows = viewer.getByTestId('licenses-table').locator('tbody tr')
   await expect(rows).toHaveCount(1)

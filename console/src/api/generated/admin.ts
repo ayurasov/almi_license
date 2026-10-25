@@ -117,6 +117,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read access for operators and customer viewers (E07-08). */
+        get: operations["audit_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/audit/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read access for operators and customer viewers (E07-08). */
+        get: operations["audit_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/catalog/metrics": {
         parameters: {
             query?: never;
@@ -799,6 +833,23 @@ export interface components {
             edition_id?: string | null;
             /** Format: uuid */
             metric_id: string;
+        };
+        AuditEvent: {
+            seq: number;
+            /** Format: date-time */
+            at: string;
+            actor: string;
+            action: string;
+            object_type: string;
+            object_id: string;
+            ip: string | null;
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        AuditPage: {
+            count: number;
+            results: components["schemas"]["AuditEvent"][];
         };
         Capability: {
             /** Format: uuid */
@@ -1518,6 +1569,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArticleMapping"];
+                };
+            };
+        };
+    };
+    audit_list: {
+        parameters: {
+            query?: {
+                action?: string;
+                actor?: string;
+                object_id?: string;
+                object_type?: string;
+                page?: number;
+                page_size?: number;
+                since?: string | null;
+                until?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+        };
+    };
+    audit_export: {
+        parameters: {
+            query?: {
+                action?: string;
+                actor?: string;
+                object_id?: string;
+                object_type?: string;
+                page?: number;
+                page_size?: number;
+                since?: string | null;
+                until?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };
