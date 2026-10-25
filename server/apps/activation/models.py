@@ -122,3 +122,26 @@ class Directive(UUIDModel):
 
     def __str__(self) -> str:
         return self.external_id
+
+
+class ProductEvent(UUIDModel):
+    """An event reported by the product (POST /api/v1/events, section 4 of document 2).
+
+    The id is chosen by the module, so a repeated delivery is stored once.
+    """
+
+    activation = models.ForeignKey(Activation, on_delete=models.CASCADE, related_name="events")
+    event_id = models.CharField(max_length=64)
+    type = models.CharField(max_length=64)
+    at = models.DateTimeField()
+    data = models.JSONField(default=dict, blank=True)
+    received_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["activation", "event_id"], name="activation_event_once")
+        ]
+        indexes = [models.Index(fields=["type", "at"], name="activation_event_type_at")]
+
+    def __str__(self) -> str:
+        return f"{self.type}@{self.at}"

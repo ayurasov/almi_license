@@ -21,6 +21,8 @@ from apps.activation.domain import (
     ActivationResult,
     CheckRequest,
     OfflineRequest,
+    ProductEventIn,
+    accept_events,
     activate,
     answer,
     check,
@@ -31,6 +33,7 @@ from apps.activation.domain.leases import rfc3339
 from apps.api_product.api.serializers import (
     ActivateRequestSerializer,
     CheckRequestSerializer,
+    EventsRequestSerializer,
     OfflineActivateSerializer,
     OfflineDeviceSerializer,
     ReleaseRequestSerializer,
@@ -232,6 +235,25 @@ class CheckView(APIView):
             issuer=settings.LEASE_ISSUER,
         )
         return _lease_response(result, now, 200)
+
+
+class EventsView(APIView):
+    """POST /api/v1/events (postEvents): events of the product, signed by its device key."""
+
+    authentication_classes = [DeviceSignatureAuthentication]
+
+    def post(self, request: Request) -> Response:
+        signed = cast(SignedRequest, request.auth)
+        data = _valid(EventsRequestSerializer, request)
+        if signed.keyid != data["activation_id"]:
+            raise Problem("signature_invalid")
+        accepted = accept_events(
+            data["activation_id"],
+            [ProductEventIn(e["id"], e["type"], e["at"], dict(e["data"])) for e in data["events"]],
+            now=current_clock().now(),
+            ip=request.META.get("REMOTE_ADDR"),
+        )
+        return Response({"accepted": accepted}, status=202)
 
 
 class ReleaseView(IdempotentView):

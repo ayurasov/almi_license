@@ -179,6 +179,13 @@ class FakeServer {
                    ++seq;
                    Lease(response, 200);
                  });
+    server_.Post("/api/v1/events", [this](const httplib::Request& request, httplib::Response& response) {
+      const std::scoped_lock lock(mutex_);
+      calls.push_back("events");
+      events.push_back(json::parse(request.body));
+      response.status = 202;
+      response.set_content(R"({"accepted":1})", "application/json");
+    });
     server_.Post(R"(/api/v1/activations/([^/]+)/release)",
                  [this](const httplib::Request&, httplib::Response& response) {
                    const std::scoped_lock lock(mutex_);
@@ -207,6 +214,7 @@ class FakeServer {
   Issuer issuer;
   std::vector<std::string> calls;
   json last_body;
+  std::vector<json> events;
   std::string idempotency_key;
   std::string instance_id;
   std::string device_pubkey;
@@ -355,6 +363,25 @@ TEST_F(ModuleTest, ClockRollbackDoesNotMoveTheLicenseBack) {
   EXPECT_EQ(module->GetStatus().state, State::kNotice);
   clock_.now = kNow + 10 * kDay;  // moved far back
   EXPECT_EQ(module->GetStatus().state, State::kNotice);
+}
+
+TEST_F(ModuleTest, QueuedEventsAreSentOnceAfterACheck) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  clock_.now = kNow + 20 * kDay;
+  (void)module->GetStatus();
+  clock_.now = kNow + 10 * kDay;  // moved back: clock_rollback_detected is queued
+  (void)module->GetStatus();
+  ASSERT_EQ(module->CheckNow(), LM_OK) << module->LastError();
+  ASSERT_EQ(server.events.size(), 1U);
+  const json& sent = server.events.front();
+  EXPECT_EQ(sent.at("activation_id"), server.activation_id);
+  ASSERT_EQ(sent.at("events").size(), 1U);
+  EXPECT_EQ(sent.at("events")[0].at("type"), "clock_rollback_detected");
+  EXPECT_EQ(sent.at("events")[0].at("id").get<std::string>().size(), 36U);
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(server.events.size(), 1U);  // accepted events are not sent again
 }
 
 TEST_F(ModuleTest, OfflineRequestAndAnswerFile) {

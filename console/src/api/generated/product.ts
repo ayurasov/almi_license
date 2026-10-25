@@ -642,6 +642,7 @@ export interface components {
                 id: string;
                 /**
                  * @example clock_rollback_detected
+                 * @example store_corrupted
                  * @example lease_verification_failed
                  * @example user_limit_exceeded
                  * @example state_changed
@@ -1026,14 +1027,20 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Принято */
+            /** @description Принято; accepted — сколько событий новые (повтор id не сохраняется) */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        accepted?: number;
+                    };
+                };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
         };
     };
     processOfflineRequest: {

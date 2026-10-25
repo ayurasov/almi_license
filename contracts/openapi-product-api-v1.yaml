@@ -161,8 +161,17 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/EventsRequest'}
       responses:
-        '202': {description: Принято}
+        '202':
+          description: Принято; accepted — сколько событий новые (повтор id не сохраняется)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: {type: integer}
         '401': {$ref: '#/components/responses/Problem'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
 
   /api/v1/offline/requests:
     post:
@@ -845,7 +854,7 @@ components:
             required: [id, type, at]
             properties:
               id: {type: string}
-              type: {type: string, examples: [clock_rollback_detected, lease_verification_failed, user_limit_exceeded, state_changed, feature_denied, unknown_state, unsupported_directive]}
+              type: {type: string, examples: [clock_rollback_detected, store_corrupted, lease_verification_failed, user_limit_exceeded, state_changed, feature_denied, unknown_state, unsupported_directive]}
               at: {type: string, format: date-time}
               data: {type: object, additionalProperties: true}
 
