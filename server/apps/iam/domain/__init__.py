@@ -9,6 +9,7 @@ import re
 import string
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from django.contrib.auth import authenticate, password_validation
@@ -35,7 +36,7 @@ GENERATED_ALPHABET = "".join(c for c in string.ascii_letters + string.digits if 
 PASSWORD_LENGTH = 20
 MIN_OWN_PASSWORD = 12
 # Rules of a password chosen by the user (not of the generated one).
-OWN_PASSWORD_RULES = [
+OWN_PASSWORD_RULES: list[Any] = [
     password_validation.MinimumLengthValidator(MIN_OWN_PASSWORD),
     password_validation.UserAttributeSimilarityValidator(),
     password_validation.CommonPasswordValidator(),
@@ -260,7 +261,7 @@ def account_info(user: AbstractBaseUser) -> AccountInfo | None:
 
 
 def change_own_password(
-    user: AbstractBaseUser, current: str, new: str, *, now: datetime, ip: str | None = None
+    user: User, current: str, new: str, *, now: datetime, ip: str | None = None
 ) -> AccountInfo:
     """The user's own new password (question 31); the temporary one stops being required."""
     if not user.check_password(current):

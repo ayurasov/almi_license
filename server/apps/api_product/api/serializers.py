@@ -87,17 +87,21 @@ class CheckRequestSerializer(serializers.Serializer[dict[str, Any]]):
 
 
 class ProductEventSerializer(serializers.Serializer[dict[str, Any]]):
-    id = serializers.CharField(max_length=64)
-    type = serializers.CharField(max_length=64)
-    at = serializers.DateTimeField()
-    data = serializers.DictField(required=False, default=dict)
+    def get_fields(self) -> dict[str, serializers.Field[Any, Any, Any, Any]]:
+        # "data" is an attribute of DRF serializers, so the fields are listed here.
+        return {
+            "id": serializers.CharField(max_length=64),
+            "type": serializers.CharField(max_length=64),
+            "at": serializers.DateTimeField(),
+            "data": serializers.DictField(required=False, default=dict),
+        }
 
 
 class EventsRequestSerializer(serializers.Serializer[dict[str, Any]]):
     """EventsRequest of the contract (question 36)."""
 
     activation_id = serializers.CharField(max_length=30)
-    events = ProductEventSerializer(many=True, max_length=100)
+    events = serializers.ListField(child=ProductEventSerializer(), max_length=100)
 
 
 class ReleaseRequestSerializer(serializers.Serializer[dict[str, Any]]):

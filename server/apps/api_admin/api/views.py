@@ -1,11 +1,12 @@
 """Admin API views: parse, call the domain, shape the response (AGENTS.md, rule 2)."""
 
 from dataclasses import asdict
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -111,15 +112,16 @@ class SessionPasswordView(APIView):
     )
     def post(self, request: Request) -> Response:
         data = valid(PasswordChangeSerializer(data=request.data))
+        user = cast(User, request.user)  # IsAuthenticated: a console user
         account = change_own_password(
-            request.user,
+            user,
             data["current_password"],
             data["new_password"],
             now=current_clock().now(),
             ip=request.META.get("REMOTE_ADDR"),
         )
         # The session stays valid with the new password hash.
-        update_session_auth_hash(request._request, request.user)
+        update_session_auth_hash(request._request, user)
         return Response(asdict(account))
 
 

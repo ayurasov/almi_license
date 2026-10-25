@@ -1,4 +1,4 @@
-"""manage.py grant_app_role ROLE [--password-file FILE]: rights of the application role (question 38).
+"""manage.py grant_app_role ROLE [--password-file FILE]: the application role (question 38).
 
 Run by the owner of the tables right after the migrations (deploy/entrypoint.sh, migrate). The
 API and the worker connect as ROLE: it reads and writes the tables but owns none of them, so it

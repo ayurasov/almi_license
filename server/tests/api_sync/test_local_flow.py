@@ -43,11 +43,7 @@ def central_transport() -> Iterator[list[str]]:
                 path,
                 body,
                 content_type="application/json",
-                **{
-                    "HTTP_" + name.upper().replace("-", "_"): value
-                    for name, value in headers.items()
-                    if name.lower() != "content-type"
-                },
+                headers={k: v for k, v in headers.items() if k.lower() != "content-type"},
             )
         return HttpResponse(reply.status_code, reply.content)
 

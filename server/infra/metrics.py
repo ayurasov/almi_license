@@ -49,7 +49,7 @@ def gauge(name: str, help_text: str, value: float) -> list[str]:
 def render(extra: Iterable[str] = ()) -> str:
     if os.environ.get("PROMETHEUS_MULTIPROC_DIR"):
         registry = CollectorRegistry()
-        multiprocess.MultiProcessCollector(registry)
+        multiprocess.MultiProcessCollector(registry)  # type: ignore[no-untyped-call]
     else:
         registry = REGISTRY
     text = generate_latest(registry).decode()
