@@ -98,6 +98,7 @@ paths:
   /api/admin/activations:
     get:
       operationId: activations_list
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: query
         name: license_id
@@ -619,6 +620,7 @@ paths:
   /api/admin/licenses:
     get:
       operationId: licenses_list
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: query
         name: customer_id
@@ -674,6 +676,7 @@ paths:
           description: ''
     post:
       operationId: licenses_create
+      description: Read access for operators and customer viewers (E07-08).
       tags:
       - licenses
       requestBody:
@@ -700,6 +703,7 @@ paths:
   /api/admin/licenses/{license_id}:
     get:
       operationId: licenses_get
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: path
         name: license_id
@@ -720,6 +724,7 @@ paths:
   /api/admin/licenses/{license_id}/history:
     get:
       operationId: licenses_history
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: path
         name: license_id
@@ -985,6 +990,7 @@ paths:
   /api/admin/licenses/{license_id}/usage:
     get:
       operationId: licenses_usage
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: path
         name: license_id
@@ -1162,6 +1168,7 @@ paths:
   /api/admin/products:
     get:
       operationId: products_list
+      description: Read access for operators and customer viewers (E07-08).
       tags:
       - products
       security:
@@ -1350,6 +1357,7 @@ paths:
   /api/admin/stats:
     get:
       operationId: stats_get
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: query
         name: customer_id
@@ -1375,6 +1383,7 @@ paths:
   /api/admin/stats/export:
     get:
       operationId: stats_export
+      description: Read access for operators and customer viewers (E07-08).
       parameters:
       - in: query
         name: customer_id
@@ -1420,9 +1429,15 @@ components:
         created_at:
           type: string
           format: date-time
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: customer_viewer only
       required:
       - active
       - created_at
+      - customer_id
       - last_login
       - locked_until
       - role
@@ -1434,7 +1449,11 @@ components:
           type: string
           maxLength: 64
         role:
-          $ref: '#/components/schemas/ManagedRoleEnum'
+          $ref: '#/components/schemas/RoleEnum'
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
       required:
       - role
       - username
@@ -2271,14 +2290,6 @@ components:
       - package_valid_until
       - registered
       - server_id
-    ManagedRoleEnum:
-      enum:
-      - operator
-      - admin
-      type: string
-      description: |-
-        * `operator` - operator
-        * `admin` - admin
     Metric:
       type: object
       properties:
@@ -2325,7 +2336,11 @@ components:
       type: object
       properties:
         role:
-          $ref: '#/components/schemas/ManagedRoleEnum'
+          $ref: '#/components/schemas/RoleEnum'
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
         active:
           type: boolean
     PatchedCapabilityUpdate:
@@ -2558,6 +2573,10 @@ components:
           type: string
         role:
           $ref: '#/components/schemas/RoleEnum'
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
       required:
       - role
       - username

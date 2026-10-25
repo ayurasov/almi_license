@@ -8,7 +8,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from infra.clock import FrozenClock, use_clock
-from infra.crypto.encoding import b64url_encode
+from infra.crypto.encoding import b64url_decode, b64url_encode
 from tests.api_admin.session import Console, sign_in
 from tests.api_sync.local import LocalServerClient, claims
 
@@ -111,7 +111,10 @@ def test_bad_seats_new_code_and_forged_file(console: Console, licensed: Any, iss
     )
     container = json.loads(server_request(local, fresh))
     head, payload, sig = container["payload"].split(".")
-    container["payload"] = f"{head}.{payload}.{sig[:-2]}AA"
+    # Flip one bit of the signature: always a different, invalid signature.
+    broken = bytearray(b64url_decode(sig))
+    broken[0] ^= 1
+    container["payload"] = f"{head}.{payload}.{b64url_encode(bytes(broken))}"
     assert upload(console, json.dumps(container).encode()).json()["code"] == "signature_invalid"
 
     seats = console.client.put(

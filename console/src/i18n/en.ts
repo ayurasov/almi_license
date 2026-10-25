@@ -264,7 +264,7 @@ const en: typeof ru = {
     block: 'Block',
     unblock: 'Unblock',
     reset: 'Reset password',
-    form: { username: 'Login', role: 'Role', save: 'Create', cancel: 'Cancel' },
+    form: { username: 'Login', role: 'Role', customer: 'Customer', save: 'Create', cancel: 'Cancel' },
     confirmReset: 'Issue a new password to {username}? Current sessions will end.',
     confirmBlock: 'Block {username}? The session ends at the next request.',
     confirm: 'Confirm',

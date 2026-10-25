@@ -13,6 +13,7 @@ const account: Account = {
   locked_until: null,
   last_login: null,
   created_at: '2026-10-24T08:00:00Z',
+  customer_id: null,
 }
 
 beforeEach(() => {

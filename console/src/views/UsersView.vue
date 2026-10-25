@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 
 import { ApiError } from '@/api/problem'
 import { type Account, type ManagedRole, useAccountsStore } from '@/stores/accounts'
+import { DEFAULT_QUERY, useCustomersStore } from '@/stores/customers'
 import { useSessionStore } from '@/stores/session'
 
 const { t, d } = useI18n()
@@ -22,16 +23,30 @@ const toast = useToast()
 const store = useAccountsStore()
 const session = useSessionStore()
 const createOpen = ref(false)
-const draft = reactive<{ username: string; role: ManagedRole }>({ username: '', role: 'operator' })
+const customers = useCustomersStore()
+const draft = reactive<{ username: string; role: ManagedRole; customerId: string }>({
+  username: '',
+  role: 'operator',
+  customerId: '',
+})
 const errors = ref<Record<string, string[]>>({})
 const confirming = ref<{ kind: 'reset' | 'block'; account: Account } | null>(null)
 const issued = ref<{ username: string; password: string } | null>(null)
 
-const roles = computed(() =>
+const staffRoles = computed(() =>
   (['operator', 'admin'] as const).map((value) => ({ value, label: t(`users.role.${value}`) })),
 )
+const roles = computed(() => [...staffRoles.value, { value: 'customer_viewer' as const, label: t('users.role.customer_viewer') }])
+const customerOptions = computed(() => customers.items.map((customer) => ({ value: customer.id, label: customer.name })))
 
-onMounted(() => void store.list())
+function customerName(id: string | null): string {
+  return customers.items.find((customer) => customer.id === id)?.name ?? ''
+}
+
+onMounted(() => {
+  void store.list()
+  void customers.list({ ...DEFAULT_QUERY, pageSize: 100 })
+})
 
 function isSelf(account: Account): boolean {
   return account.username === session.user?.username
@@ -55,10 +70,11 @@ async function run(action: () => Promise<unknown>): Promise<boolean> {
 
 async function create(): Promise<void> {
   await run(async () => {
-    const result = await store.create(draft.username.trim(), draft.role)
+    const customer = draft.role === 'customer_viewer' ? draft.customerId : undefined
+    const result = await store.create(draft.username.trim(), draft.role, customer)
     createOpen.value = false
     issued.value = { username: result.account.username, password: result.password }
-    Object.assign(draft, { username: '', role: 'operator' })
+    Object.assign(draft, { username: '', role: 'operator', customerId: '' })
   })
 }
 
@@ -132,13 +148,17 @@ async function confirm(): Promise<void> {
           <Select
             v-if="(data as Account).role !== 'customer_viewer' && !isSelf(data as Account)"
             :model-value="(data as Account).role"
-            :options="roles"
+            :options="staffRoles"
             option-label="label"
             option-value="value"
             :aria-label="t('users.columns.role')"
             @update:model-value="changeRole(data as Account, $event as ManagedRole)"
           />
           <span v-else>{{ t(`users.role.${(data as Account).role}`) }}</span>
+          <small
+            v-if="(data as Account).customer_id"
+            class="customer"
+          > — {{ customerName((data as Account).customer_id) }}</small>
         </template>
       </Column>
       <Column :header="t('users.columns.status')">
@@ -227,7 +247,26 @@ async function confirm(): Promise<void> {
           :options="roles"
           option-label="label"
           option-value="value"
+          data-testid="user-role"
         />
+        <template v-if="draft.role === 'customer_viewer'">
+          <label for="user-customer">{{ t('users.form.customer') }}</label>
+          <Select
+            v-model="draft.customerId"
+            input-id="user-customer"
+            :options="customerOptions"
+            option-label="label"
+            option-value="value"
+            filter
+            :invalid="!!errors.customer_id"
+            data-testid="user-customer"
+          />
+          <small
+            v-for="text in errors.customer_id ?? []"
+            :key="text"
+            class="error"
+          >{{ text }}</small>
+        </template>
         <div class="actions">
           <Button
             :label="t('users.form.cancel')"

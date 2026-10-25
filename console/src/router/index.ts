@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 import AppLayout from '@/layouts/AppLayout.vue'
+import { canOpen } from '@/lib/roles'
 import { useInstanceStore } from '@/stores/instance'
 import { useSessionStore } from '@/stores/session'
 
@@ -62,5 +63,6 @@ router.beforeEach(async (to) => {
   await instance.load()
   // A local server works only after the first-run wizard (E09-01).
   if (instance.instance?.setup_required && to.name !== 'setup' && to.name !== 'package') return { name: 'setup' }
-  return typeof to.name === 'string' && !instance.allows(to.name) ? { name: 'licenses' } : true
+  if (typeof to.name !== 'string') return true
+  return instance.allows(to.name) && canOpen(session.user.role, to.name) ? true : { name: 'licenses' }
 })

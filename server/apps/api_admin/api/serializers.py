@@ -13,6 +13,7 @@ class SessionRequestSerializer(serializers.Serializer[dict[str, Any]]):
 class SessionSerializer(serializers.Serializer[dict[str, Any]]):
     username = serializers.CharField()
     role = serializers.ChoiceField(["operator", "admin", "customer_viewer"])
+    customer_id = serializers.UUIDField(allow_null=True, required=False)
 
 
 class CustomerSerializer(serializers.Serializer[dict[str, Any]]):
@@ -293,15 +294,18 @@ class AccountSerializer(serializers.Serializer[dict[str, Any]]):
     locked_until = serializers.DateTimeField(allow_null=True)
     last_login = serializers.DateTimeField(allow_null=True)
     created_at = serializers.DateTimeField()
+    customer_id = serializers.UUIDField(allow_null=True, help_text="customer_viewer only")
 
 
 class AccountCreateSerializer(serializers.Serializer[dict[str, Any]]):
     username = serializers.CharField(max_length=64)
-    role = serializers.ChoiceField(["operator", "admin"])
+    role = serializers.ChoiceField(["operator", "admin", "customer_viewer"])
+    customer_id = serializers.UUIDField(required=False, allow_null=True)
 
 
 class AccountUpdateSerializer(serializers.Serializer[dict[str, Any]]):
-    role = serializers.ChoiceField(["operator", "admin"], required=False)
+    role = serializers.ChoiceField(["operator", "admin", "customer_viewer"], required=False)
+    customer_id = serializers.UUIDField(required=False, allow_null=True)
     active = serializers.BooleanField(required=False)
 
 

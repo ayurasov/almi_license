@@ -203,13 +203,12 @@ def find_licenses(
     return [_data(r) for r in rows[:limit]]
 
 
-def get_license(license_id: UUID) -> LicenseData:
-    row = (
-        License.objects.select_related("customer")
-        .prefetch_related("keys")
-        .filter(id=license_id)
-        .first()
-    )
+def get_license(license_id: UUID, *, customer_id: UUID | None = None) -> LicenseData:
+    """customer_id limits the lookup to one customer (a customer viewer, E07-08)."""
+    rows = License.objects.select_related("customer").prefetch_related("keys").filter(id=license_id)
+    if customer_id is not None:
+        rows = rows.filter(customer_id=customer_id)
+    row = rows.first()
     if row is None:
         raise DomainError("invalid_request", "license not found")
     return _data(row)

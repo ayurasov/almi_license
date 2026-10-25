@@ -41,7 +41,12 @@ class AccountsView(_Admin):
     )
     def post(self, request: Request) -> Response:
         data = valid(s.AccountCreateSerializer(data=request.data))
-        issued = add_account(data["username"], data["role"], **self.context(request))
+        issued = add_account(
+            data["username"],
+            data["role"],
+            customer_id=data.get("customer_id"),
+            **self.context(request),
+        )
         return Response(s.IssuedPasswordSerializer(asdict(issued)).data, status=201)
 
 

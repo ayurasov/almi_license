@@ -21,8 +21,14 @@ def server_clock(clock: FrozenClock) -> Iterator[FrozenClock]:
 
 def signed_in(role: str, clock: FrozenClock) -> tuple[Client, str]:
     from apps.iam.domain import create_account
+    from apps.licensing.models import Customer
 
-    create_account(f"user-{role}", PASSWORD, role, now=clock.now())
+    customer = None
+    if role == "customer_viewer":
+        customer = Customer.objects.create(
+            name="ООО «Клиент»", inn="7701234560", created_at=clock.now()
+        ).id
+    create_account(f"user-{role}", PASSWORD, role, now=clock.now(), customer_id=customer)
     client = Client(enforce_csrf_checks=True)
     token = client.get("/api/admin/session").cookies["csrftoken"].value
     response = client.post(

@@ -270,7 +270,7 @@ def test_products_for_selects(console: Console, licensed: Any) -> None:
 
 def test_viewer_cannot_manage_licenses(clock: FrozenClock, licensed: Any) -> None:
     viewer = sign_in("customer_viewer", clock)
-    assert viewer.get("/api/admin/licenses").status_code == 400
+    assert viewer.get("/api/admin/licenses").json()["count"] == 0  # another customer (E07-08)
     assert viewer.post(url(licensed, "revoke"), {"reason": "x"}).status_code == 400
 
 

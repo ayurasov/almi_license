@@ -69,5 +69,6 @@ def test_xlsx_export_has_summary_and_activations(
     assert len(list(book["Активации"].iter_rows(values_only=True))) == 2
 
 
-def test_viewer_has_no_statistics(clock: FrozenClock) -> None:
-    assert sign_in("customer_viewer", clock).get("/api/admin/stats").status_code == 400
+def test_viewer_sees_only_its_statistics(clock: FrozenClock, licensed: Any) -> None:
+    stats = sign_in("customer_viewer", clock).get("/api/admin/stats").json()
+    assert stats["licenses"] == 0  # licensed belongs to another customer (E07-08)

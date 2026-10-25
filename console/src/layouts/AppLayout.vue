@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+import { canOpen } from '@/lib/roles'
 import { SECTIONS } from '@/router'
 import { useInstanceStore } from '@/stores/instance'
 import { useSessionStore } from '@/stores/session'
@@ -15,9 +16,9 @@ const router = useRouter()
 const session = useSessionStore()
 const instance = useInstanceStore()
 
-// Console users are managed by an administrator only (E07-09); the server checks it too.
+// Sections by role (E07-08, E07-09); the server checks the same rights.
 const items = computed<MenuItem[]>(() =>
-  SECTIONS.filter((name) => (name !== 'users' || session.user?.role === 'admin') && instance.allows(name)).map((name) => ({
+  SECTIONS.filter((name) => canOpen(session.user?.role, name) && instance.allows(name)).map((name) => ({
     label: t(`menu.${name}`),
     command: () => void router.push({ name }),
   })),

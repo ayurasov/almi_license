@@ -4,10 +4,10 @@ from typing import Any
 
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.request import Request
 
-from apps.iam.domain import ADMIN_ROLE, OPERATOR_ROLES, account_info
+from apps.iam.domain import ADMIN_ROLE, OPERATOR_ROLES, VIEWER_ROLE, account_info
 
 
 class ConsoleSession(SessionAuthentication):
@@ -24,6 +24,21 @@ class IsOperator(BasePermission):
             return False
         account = account_info(user)
         return account is not None and account.role in OPERATOR_ROLES
+
+
+class CanRead(BasePermission):
+    """Operators; a customer viewer reads only (E07-08); the data is limited to its customer."""
+
+    def has_permission(self, request: Request, view: Any) -> bool:
+        user = request.user
+        if user is None or not user.is_authenticated:
+            return False
+        account = account_info(user)
+        if account is None:
+            return False
+        if account.role in OPERATOR_ROLES:
+            return True
+        return account.role == VIEWER_ROLE and request.method in SAFE_METHODS
 
 
 class IsAdmin(BasePermission):
