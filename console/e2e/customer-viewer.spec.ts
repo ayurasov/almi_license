@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { apiPost, innOf, signIn } from './helpers'
+import { apiPost, innOf, setOwnPassword, signIn } from './helpers'
 
 test('a customer administrator sees only its licences and changes nothing', async ({ page, browser }) => {
   await signIn(page, '/users', 'admin')
@@ -42,6 +42,7 @@ test('a customer administrator sees only its licences and changes nothing', asyn
   await viewer.getByLabel('Логин').fill(username)
   await viewer.locator('#password').fill(password)
   await viewer.getByRole('button', { name: 'Войти' }).click()
+  await setOwnPassword(viewer, password)
   await expect(viewer.getByTestId('current-user')).toHaveText(username)
   await expect(viewer).toHaveURL(/\/licenses/)
   await expect(viewer.getByRole('menuitem', { name: 'Заказчики' })).toHaveCount(0)

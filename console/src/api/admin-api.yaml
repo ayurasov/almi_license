@@ -1465,6 +1465,34 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/admin/session/password:
+    post:
+      operationId: session_change_password
+      description: 'POST /api/admin/session/password: the user changes the own password
+        (question 31).'
+      tags:
+      - session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
   /api/admin/setup:
     get:
       operationId: local_status
@@ -2561,6 +2589,18 @@ components:
     NullEnum:
       enum:
       - null
+    PasswordChange:
+      type: object
+      properties:
+        current_password:
+          type: string
+          maxLength: 256
+        new_password:
+          type: string
+          maxLength: 256
+      required:
+      - current_password
+      - new_password
     PatchedAccountUpdate:
       type: object
       properties:
@@ -2806,7 +2846,11 @@ components:
           type: string
           format: uuid
           nullable: true
+        must_change_password:
+          type: boolean
+          description: 'Временный пароль: консоль сначала просит его сменить'
       required:
+      - must_change_password
       - role
       - username
     SessionRequest:

@@ -48,6 +48,13 @@ function toggleTheme(): void {
         />
         <span data-testid="current-user">{{ session.user?.username }}</span>
         <Button
+          :label="t('password.open')"
+          icon="pi pi-key"
+          text
+          data-testid="change-password"
+          @click="router.push({ name: 'password' })"
+        />
+        <Button
           :label="t('app.signOut')"
           icon="pi pi-sign-out"
           text

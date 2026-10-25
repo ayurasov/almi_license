@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto'
+
 import { expect, type Page } from '@playwright/test'
 
 export async function signIn(page: Page, path: string, role: 'operator' | 'admin' = 'operator'): Promise<void> {
@@ -30,4 +32,17 @@ export function innOf(seed: number): string {
   const body = `77${String(seed).padStart(7, '0').slice(-7)}`
   const sum = weights.reduce((total, weight, i) => total + Number(body.charAt(i)) * weight, 0)
   return body + String((sum % 11) % 10)
+}
+
+/** A user signed in with an issued (temporary) password sets its own first (question 31). */
+export async function setOwnPassword(page: Page, temporary: string): Promise<string> {
+  const own = `Своё-${randomBytes(6).toString('hex')}-Пароль`
+  await expect(page).toHaveURL(/\/password/)
+  await expect(page.getByTestId('password-required')).toBeVisible()
+  await page.locator('#current-password').fill(temporary)
+  await page.locator('#new-password').fill(own)
+  await page.locator('#repeat-password').fill(own)
+  await page.getByTestId('password-submit').click()
+  await expect(page).not.toHaveURL(/\/password/)
+  return own
 }

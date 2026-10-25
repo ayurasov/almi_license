@@ -9,12 +9,19 @@ from apps.api_admin.api import licenses as lic
 from apps.api_admin.api import local as loc
 from apps.api_admin.api import servers as srv
 from apps.api_admin.api import stats as sta
-from apps.api_admin.api.views import CustomersView, CustomerView, InstanceView, SessionView
+from apps.api_admin.api.views import (
+    CustomersView,
+    CustomerView,
+    InstanceView,
+    SessionPasswordView,
+    SessionView,
+)
 from infra.modes import central_only, local_only
 
 urlpatterns = [
     path("instance", InstanceView.as_view(), name="admin-instance"),
     path("session", SessionView.as_view(), name="admin-session"),
+    path("session/password", SessionPasswordView.as_view(), name="admin-session-password"),
     path("customers", CustomersView.as_view(), name="admin-customers"),
     path("customers/<uuid:customer_id>", CustomerView.as_view(), name="admin-customer"),
     path("licenses", lic.LicensesView.as_view()),

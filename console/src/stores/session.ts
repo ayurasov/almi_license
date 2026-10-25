@@ -32,6 +32,14 @@ export const useSessionStore = defineStore('session', () => {
     user.value = data ?? null
   }
 
+  /** The user's own new password (question 31); a temporary one stops being required. */
+  async function changePassword(current: string, next: string): Promise<void> {
+    const { data } = await api.POST('/api/admin/session/password', {
+      body: { current_password: current, new_password: next },
+    })
+    user.value = data ?? user.value
+  }
+
   async function signOut(): Promise<void> {
     await api.DELETE('/api/admin/session')
     user.value = null
@@ -41,5 +49,5 @@ export const useSessionStore = defineStore('session', () => {
     user.value = null
   }
 
-  return { user, checked, load, signIn, signOut, forget }
+  return { user, checked, load, signIn, changePassword, signOut, forget }
 })

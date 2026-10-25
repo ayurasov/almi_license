@@ -17,6 +17,18 @@ const en: typeof ru = {
   },
   placeholder: 'This section comes in later iterations.',
   login: { title: 'Console sign-in', username: 'User name', password: 'Password', submit: 'Sign in' },
+  password: {
+    title: 'Change password',
+    required: 'You were given a temporary password. Set your own password to continue.',
+    open: 'Change password',
+    current: 'Current password',
+    next: 'New password',
+    repeat: 'Repeat the new password',
+    rules: 'At least 12 characters, not like the user name, not only digits and not a common one.',
+    mismatch: 'The passwords do not match.',
+    submit: 'Change password',
+    done: 'The password has been changed.',
+  },
   offline: {
     title: 'Offline activation',
     intro: 'For a computer without internet access. Create a request file (.alk-req) in the application, upload it here and move the answer file (.alk-lic) back to the computer.',

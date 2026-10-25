@@ -5,11 +5,11 @@ from typing import Any
 from uuid import UUID
 
 from django.conf import settings
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,10 +22,17 @@ from apps.api_admin.api.serializers import (
     CustomerSerializer,
     CustomerWriteSerializer,
     InstanceSerializer,
+    PasswordChangeSerializer,
     SessionRequestSerializer,
     SessionSerializer,
 )
-from apps.iam.domain import AccountLocked, LoginFailed, account_info, sign_in
+from apps.iam.domain import (
+    AccountLocked,
+    LoginFailed,
+    account_info,
+    change_own_password,
+    sign_in,
+)
 from apps.licensing.domain import create_customer, get_customer, list_customers, update_customer
 from apps.packages.domain import local_status
 from infra.clock import current_clock
@@ -52,7 +59,7 @@ class SessionView(APIView):
             account_info(request.user) if request.user and request.user.is_authenticated else None
         )
         if account is None:
-            raise Problem("signature_invalid", "not signed in")
+            raise Problem("not_authenticated", "not signed in")
         return Response(asdict(account))
 
     @extend_schema(
@@ -88,6 +95,32 @@ class SessionView(APIView):
     def delete(self, request: Request) -> Response:
         logout(request._request)
         return Response(status=204)
+
+
+@method_decorator(csrf_protect, name="post")
+class SessionPasswordView(APIView):
+    """POST /api/admin/session/password: the user changes the own password (question 31)."""
+
+    authentication_classes = [ConsoleSession]
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=PasswordChangeSerializer,
+        responses={200: SessionSerializer},
+        operation_id="session_change_password",
+    )
+    def post(self, request: Request) -> Response:
+        data = valid(PasswordChangeSerializer(data=request.data))
+        account = change_own_password(
+            request.user,
+            data["current_password"],
+            data["new_password"],
+            now=current_clock().now(),
+            ip=request.META.get("REMOTE_ADDR"),
+        )
+        # The session stays valid with the new password hash.
+        update_session_auth_hash(request._request, request.user)
+        return Response(asdict(account))
 
 
 class CustomersView(APIView):

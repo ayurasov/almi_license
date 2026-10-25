@@ -14,6 +14,14 @@ class SessionSerializer(serializers.Serializer[dict[str, Any]]):
     username = serializers.CharField()
     role = serializers.ChoiceField(["operator", "admin", "customer_viewer"])
     customer_id = serializers.UUIDField(allow_null=True, required=False)
+    must_change_password = serializers.BooleanField(
+        help_text="Временный пароль: консоль сначала просит его сменить"
+    )
+
+
+class PasswordChangeSerializer(serializers.Serializer[dict[str, Any]]):
+    current_password = serializers.CharField(max_length=256, trim_whitespace=False)
+    new_password = serializers.CharField(max_length=256, trim_whitespace=False)
 
 
 class CustomerSerializer(serializers.Serializer[dict[str, Any]]):

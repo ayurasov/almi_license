@@ -26,6 +26,9 @@ class Account(UUIDModel):
     )
     failed_logins = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
+    must_change_password = models.BooleanField(
+        default=False, help_text="Временный пароль: до смены доступна только смена пароля"
+    )
     created_at = models.DateTimeField()
 
     class Meta:
