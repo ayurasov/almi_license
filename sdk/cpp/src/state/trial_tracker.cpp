@@ -53,9 +53,12 @@ std::optional<std::int64_t> Parse(std::string_view text) {
 TrialTracker::TrialTracker(fs::path mark_file, std::string product, store::Sealer sealer)
     : mark_file_(std::move(mark_file)), product_(std::move(product)), sealer_(std::move(sealer)) {}
 
+fs::path TrialTracker::MarkDirectory(const fs::path& preferred, const fs::path& fallback) {
+  return Writable(preferred) ? preferred : fallback;
+}
+
 TrialTracker TrialTracker::ForProduct(const std::string& product) {
-  fs::path directory = platform::SystemMarkDirectory();
-  if (!Writable(directory)) directory = platform::UserMarkDirectory();
+  const fs::path directory = MarkDirectory(platform::SystemMarkDirectory(), platform::UserMarkDirectory());
   return {directory / (product + ".mark"), product, store::MachineSealer()};
 }
 

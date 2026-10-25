@@ -24,8 +24,11 @@ if ! docker compose exec -T api almi-entrypoint manage local_status --check; the
   bad "the local server needs attention (see above)"
 fi
 
-free="$(df --output=pcent . | tail -1 | tr -dc '0-9')"
-if [[ "$free" -ge 90 ]]; then bad "disk is ${free} % full"; elif [[ "$free" -ge 80 ]]; then warn "disk is ${free} % full"; else ok "disk ${free} % used"; fi
+# Thresholds of the disk in percent used (CHECK_DISK_WARN, CHECK_DISK_FAIL).
+warn_at="${CHECK_DISK_WARN:-80}"
+fail_at="${CHECK_DISK_FAIL:-90}"
+used="$(df --output=pcent . | tail -1 | tr -dc '0-9')"
+if [[ "$used" -ge "$fail_at" ]]; then bad "disk is ${used} % full"; elif [[ "$used" -ge "$warn_at" ]]; then warn "disk is ${used} % full"; else ok "disk ${used} % used"; fi
 if [[ -f backups/last-success ]]; then
   age=$(( $(date -u +%s) - $(< backups/last-success) ))
   if (( age < 93600 )); then ok "last backup $(( age / 3600 )) h ago"; else warn "last backup is older than 26 h"; fi

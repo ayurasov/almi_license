@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -161,6 +162,22 @@ TEST_F(ClockStateTest, ForeignOrDamagedMarkIsIgnored) {
   (void)Launch(entries);
   const TrialTracker other(Tracker().MarkPath(), "alteroffice-web", TestSealer());
   EXPECT_FALSE(other.ReadMark().has_value());
+}
+
+TEST(TrialTrackerPlace, MarkDirectoryFallsBackWhenThePreferredOneIsNotWritable) {
+  const fs::path root = fs::temp_directory_path() / "lm-tests-mark-directory";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const fs::path blocker = root / "a-file";
+  {
+    std::ofstream(blocker) << "x";
+  }
+  // A directory cannot be created under a regular file, as for a system directory without rights.
+  EXPECT_EQ(TrialTracker::MarkDirectory(blocker / "marks", root / "user"), root / "user");
+  EXPECT_EQ(TrialTracker::MarkDirectory(root / "system", root / "user"), root / "system");
+  EXPECT_TRUE(fs::is_directory(root / "system"));
+  EXPECT_FALSE(fs::exists(root / "system" / ".probe"));
+  fs::remove_all(root);
 }
 
 TEST(TrialTrackerPlace, ForProductPutsTheMarkInAWritableDirectory) {

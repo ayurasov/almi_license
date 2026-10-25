@@ -256,12 +256,14 @@ jobs:
       - name: Install from the unpacked bundle and check
         run: |
           mkdir "$RUNNER_TEMP/host" && tar -C "$RUNNER_TEMP/host" -xzf "$RUNNER_TEMP"/bundle/*.tar.gz
+          rm -rf "$RUNNER_TEMP/bundle"  # the archive and the build copy: the runner disk is small
           cd "$RUNNER_TEMP"/host/almi-license-local-*
           cp .env.example .env
           sed -i 's/^SERVER_NAME=.*/SERVER_NAME=localhost/; s/^HTTPS_PORT=.*/HTTPS_PORT=8443/' .env
           ./install.sh
           curl -fsSk https://localhost:8443/.well-known/almi-license
-          ./backup.sh && ./check.sh
+          # The runner disk holds the images twice (the bundle and Docker): fail only when full.
+          ./backup.sh && CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99 ./check.sh
       - if: failure()
         run: cd "$RUNNER_TEMP"/host/almi-license-local-* && docker compose logs --no-color | tail -200
 

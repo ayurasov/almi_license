@@ -36,7 +36,8 @@ FROM ${PYTHON_IMAGE} AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH=/opt/venv/bin:$PATH \
-    DJANGO_SETTINGS_MODULE=almi_license.settings.prod
+    DJANGO_SETTINGS_MODULE=almi_license.settings.prod \
+    HOME=/tmp
 RUN groupadd --gid 10001 app \
     && useradd --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 COPY --from=base /opt/venv /opt/venv
