@@ -29,9 +29,16 @@ class Console:
 
 
 def sign_in(role: str, clock: FrozenClock) -> Console:
+    """A customer viewer is bound to a customer of its own (not the one of the licensed fixture)."""
     from apps.iam.domain import create_account
+    from apps.licensing.models import Customer
 
-    create_account(f"user-{role}", PASSWORD, role, now=clock.now())
+    customer = None
+    if role == "customer_viewer":
+        customer = Customer.objects.create(
+            name="ООО «Клиент»", inn="7712345671", created_at=clock.now()
+        ).id
+    create_account(f"user-{role}", PASSWORD, role, now=clock.now(), customer_id=customer)
     client = Client(enforce_csrf_checks=True)
     token = client.get("/api/admin/session").cookies["csrftoken"].value
     response = client.post(

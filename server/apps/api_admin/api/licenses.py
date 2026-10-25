@@ -12,9 +12,10 @@ from rest_framework.views import APIView
 from apps.activation.domain import license_usage, list_activations, release_by_operator
 from apps.api_admin.api import serializers as s
 from apps.api_admin.api.common import actor_of, valid
-from apps.api_admin.api.permissions import ConsoleSession, IsOperator
+from apps.api_admin.api.permissions import CanRead, ConsoleSession, IsOperator
 from apps.audit.domain import events_for
 from apps.catalog.domain import list_products
+from apps.iam.domain import viewer_customer
 from apps.licensing.domain import (
     create_license,
     get_license,
@@ -28,6 +29,7 @@ from apps.licensing.domain import (
 )
 from apps.packages.domain import license_allocated
 from infra.clock import current_clock
+from infra.problems import Problem
 
 LICENSE_ID = OpenApiParameter("license_id", str, OpenApiParameter.PATH)
 ACTIVATION_ID = OpenApiParameter("activation_id", str, OpenApiParameter.PATH)
@@ -45,18 +47,32 @@ class _Operator(APIView):
         }
 
 
+class _Reader(_Operator):
+    """Read access for operators and customer viewers (E07-08)."""
+
+    permission_classes = [CanRead]
+
+    def scope(self, request: Request) -> UUID | None:
+        """The customer of a customer viewer; None for ALMI staff."""
+        return viewer_customer(request.user)
+
+
 def _license(data: Any) -> dict[str, Any]:
     return dict(s.LicenseSerializer(asdict(data)).data)
 
 
-class LicensesView(_Operator):
+class LicensesView(_Reader):
     @extend_schema(
         parameters=[s.LicenseQuerySerializer],
         responses={200: s.LicensePageSerializer},
         operation_id="licenses_list",
     )
     def get(self, request: Request) -> Response:
-        page = list_licenses(**valid(s.LicenseQuerySerializer(data=request.query_params)))
+        query = valid(s.LicenseQuerySerializer(data=request.query_params))
+        scope = self.scope(request)
+        if scope is not None:
+            query["customer_id"] = scope
+        page = list_licenses(**query)
         return Response({"count": page.count, "results": [_license(item) for item in page.results]})
 
     @extend_schema(
@@ -69,12 +85,12 @@ class LicensesView(_Operator):
         return Response(_license(create_license(data, **self.context(request))), status=201)
 
 
-class LicenseView(_Operator):
+class LicenseView(_Reader):
     @extend_schema(
         parameters=[LICENSE_ID], responses={200: s.LicenseSerializer}, operation_id="licenses_get"
     )
     def get(self, request: Request, license_id: UUID) -> Response:
-        return Response(_license(get_license(license_id)))
+        return Response(_license(get_license(license_id, customer_id=self.scope(request))))
 
 
 class LicenseRenewView(_Operator):
@@ -182,36 +198,42 @@ class LicenseKeysView(_Operator):
         )
 
 
-class LicenseUsageView(_Operator):
+class LicenseUsageView(_Reader):
     @extend_schema(
         parameters=[LICENSE_ID], responses={200: s.UsageSerializer}, operation_id="licenses_usage"
     )
     def get(self, request: Request, license_id: UUID) -> Response:
-        get_license(license_id)
+        get_license(license_id, customer_id=self.scope(request))
         return Response(s.UsageSerializer(asdict(license_usage(license_id))).data)
 
 
-class LicenseHistoryView(_Operator):
+class LicenseHistoryView(_Reader):
     @extend_schema(
         parameters=[LICENSE_ID],
         responses={200: s.HistoryEventSerializer(many=True)},
         operation_id="licenses_history",
     )
     def get(self, request: Request, license_id: UUID) -> Response:
+        get_license(license_id, customer_id=self.scope(request))
         events = events_for("license", str(license_id))
         return Response([s.HistoryEventSerializer(event).data for event in events])
 
 
-class ActivationsView(_Operator):
+class ActivationsView(_Reader):
     @extend_schema(
         parameters=[s.ActivationQuerySerializer],
         responses={200: s.ActivationPageSerializer},
         operation_id="activations_list",
     )
     def get(self, request: Request) -> Response:
-        count, items = list_activations(
-            **valid(s.ActivationQuerySerializer(data=request.query_params))
-        )
+        query = valid(s.ActivationQuerySerializer(data=request.query_params))
+        scope = self.scope(request)
+        if scope is not None:
+            # A customer viewer sees the activations of one of its licences at a time.
+            if query.get("license_id") is None:
+                raise Problem("invalid_request", "license_id is required")
+            get_license(query["license_id"], customer_id=scope)
+        count, items = list_activations(**query)
         return Response(
             {"count": count, "results": [s.ActivationSerializer(asdict(i)).data for i in items]}
         )
@@ -230,7 +252,7 @@ class ActivationReleaseView(_Operator):
         return Response(s.ActivationSerializer(asdict(result)).data)
 
 
-class ProductsView(_Operator):
+class ProductsView(_Reader):
     @extend_schema(responses={200: s.ProductSerializer(many=True)}, operation_id="products_list")
     def get(self, request: Request) -> Response:
         return Response([s.ProductSerializer(product).data for product in list_products()])

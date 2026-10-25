@@ -8,7 +8,7 @@ import { NetworkError } from '@/api/problem'
 
 type Schemas = components['schemas']
 export type Account = Schemas['Account']
-export type ManagedRole = Schemas['ManagedRoleEnum']
+export type ManagedRole = Schemas['RoleEnum']
 export type IssuedPassword = Schemas['IssuedPassword']
 
 function required<T>(data: T | undefined): T {
@@ -42,8 +42,10 @@ export const useAccountsStore = defineStore('accounts', () => {
   }
 
   /** The password of the result is shown once and is not kept in the store. */
-  async function create(username: string, role: ManagedRole): Promise<IssuedPassword> {
-    const { data } = await api.POST('/api/admin/accounts', { body: { username, role } })
+  /** customerId binds a customer viewer to its customer (E07-08). */
+  async function create(username: string, role: ManagedRole, customerId?: string): Promise<IssuedPassword> {
+    const body = customerId ? { username, role, customer_id: customerId } : { username, role }
+    const { data } = await api.POST('/api/admin/accounts', { body })
     const issued = required(data)
     replace(issued.account)
     return issued

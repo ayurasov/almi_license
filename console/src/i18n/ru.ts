@@ -267,7 +267,7 @@ export default {
     block: 'Заблокировать',
     unblock: 'Разблокировать',
     reset: 'Сбросить пароль',
-    form: { username: 'Логин', role: 'Роль', save: 'Создать', cancel: 'Отмена' },
+    form: { username: 'Логин', role: 'Роль', customer: 'Заказчик', save: 'Создать', cancel: 'Отмена' },
     confirmReset: 'Выдать пользователю {username} новый пароль? Текущие сеансы будут завершены.',
     confirmBlock: 'Заблокировать пользователя {username}? Сеанс завершится при следующем запросе.',
     confirm: 'Подтвердить',

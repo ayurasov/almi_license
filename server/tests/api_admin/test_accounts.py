@@ -50,6 +50,7 @@ def test_create_block_role_and_reset(admin: Console) -> None:
         "locked_until": None,
         "last_login": None,
         "created_at": created.json()["account"]["created_at"],
+        "customer_id": None,
     }
     session = password_sign_in("ivanova", first)
     assert session.get("/api/admin/customers").status_code == 200
@@ -103,7 +104,7 @@ def test_reset_lifts_the_lockout(admin: Console, clock: FrozenClock) -> None:
     [
         ({"username": "Bad Name", "role": "operator"}, "username"),
         ({"username": "user-admin", "role": "operator"}, "username"),
-        ({"username": "viewer", "role": "customer_viewer"}, "role"),
+        ({"username": "viewer", "role": "customer_viewer"}, "customer_id"),
     ],
 )
 def test_create_validation(admin: Console, body: dict[str, Any], field: str) -> None:

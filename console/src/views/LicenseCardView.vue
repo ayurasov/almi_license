@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import LicenseActionDialog from '@/components/LicenseActionDialog.vue'
+import { canChange } from '@/lib/roles'
 import { type Activation, DEFAULT_ACTIVATION_QUERY, useActivationsStore } from '@/stores/activations'
 import {
   type HistoryEvent,
@@ -25,10 +26,12 @@ import {
   type Usage,
   useLicensesStore,
 } from '@/stores/licenses'
+import { useSessionStore } from '@/stores/session'
 
 const { t, d } = useI18n()
 const route = useRoute()
 const store = useLicensesStore()
+const session = useSessionStore()
 const activations = useActivationsStore()
 const license = ref<License | null>(null)
 const usage = ref<Usage | null>(null)
@@ -46,7 +49,7 @@ const productName = computed(() => {
 })
 const actions = computed<LicenseAction[]>(() => {
   const status = license.value?.status
-  if (status === 'revoked') return []
+  if (status === 'revoked' || !canChange(session.user?.role)) return []
   return [
     'renew',
     status === 'suspended' ? 'resume' : 'suspend',
@@ -187,6 +190,7 @@ function closeKey(): void {
             {{ t('licenses.key.empty') }}
           </p>
           <Button
+            v-if="canChange(session.user?.role)"
             :label="t('licenses.actions.issueKey')"
             icon="pi pi-key"
             :disabled="license.status === 'revoked'"

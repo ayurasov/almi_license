@@ -59,6 +59,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["activations_list"];
         put?: never;
         post?: never;
@@ -301,8 +302,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["licenses_list"];
         put?: never;
+        /** @description Read access for operators and customer viewers (E07-08). */
         post: operations["licenses_create"];
         delete?: never;
         options?: never;
@@ -317,6 +320,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["licenses_get"];
         put?: never;
         post?: never;
@@ -333,6 +337,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["licenses_history"];
         put?: never;
         post?: never;
@@ -477,6 +482,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["licenses_usage"];
         put?: never;
         post?: never;
@@ -592,6 +598,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["products_list"];
         put?: never;
         post?: never;
@@ -679,6 +686,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["stats_get"];
         put?: never;
         post?: never;
@@ -695,6 +703,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Read access for operators and customer viewers (E07-08). */
         get: operations["stats_export"];
         put?: never;
         post?: never;
@@ -718,10 +727,17 @@ export interface components {
             last_login: string | null;
             /** Format: date-time */
             created_at: string;
+            /**
+             * Format: uuid
+             * @description customer_viewer only
+             */
+            customer_id: string | null;
         };
         AccountCreate: {
             username: string;
-            role: components["schemas"]["ManagedRoleEnum"];
+            role: components["schemas"]["RoleEnum"];
+            /** Format: uuid */
+            customer_id?: string | null;
         };
         Activation: {
             activation_id: string;
@@ -1092,12 +1108,6 @@ export interface components {
             package_valid_until: string | null;
             package_expires_soon: boolean;
         };
-        /**
-         * @description * `operator` - operator
-         *     * `admin` - admin
-         * @enum {string}
-         */
-        ManagedRoleEnum: "operator" | "admin";
         Metric: {
             /** Format: uuid */
             readonly id: string;
@@ -1121,7 +1131,9 @@ export interface components {
         /** @enum {unknown} */
         NullEnum: null;
         PatchedAccountUpdate: {
-            role?: components["schemas"]["ManagedRoleEnum"];
+            role?: components["schemas"]["RoleEnum"];
+            /** Format: uuid */
+            customer_id?: string | null;
             active?: boolean;
         };
         PatchedCapabilityUpdate: {
@@ -1236,6 +1248,8 @@ export interface components {
         Session: {
             username: string;
             role: components["schemas"]["RoleEnum"];
+            /** Format: uuid */
+            customer_id?: string | null;
         };
         SessionRequest: {
             username: string;
