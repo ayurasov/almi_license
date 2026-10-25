@@ -10,12 +10,17 @@
 
 #include "license_module.h"
 
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 namespace {
 
 // Trial marks of these tests stay in their directory (a build with test roots honours it).
 void SetMarkDir(const std::filesystem::path& directory) {
 #ifdef _WIN32
-  _putenv_s("LM_TEST_MARK_DIR", directory.string().c_str());
+  SetEnvironmentVariableW(L"LM_TEST_MARK_DIR", directory.wstring().c_str());  // read by the module DLL
 #else
   setenv("LM_TEST_MARK_DIR", directory.string().c_str(), 1);  // NOLINT(concurrency-mt-unsafe)
 #endif

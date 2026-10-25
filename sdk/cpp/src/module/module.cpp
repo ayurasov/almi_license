@@ -1,7 +1,6 @@
 #include "module/module.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -169,19 +168,7 @@ json ReadConfig(const fs::path& directory) {
 }
 
 // LM_TEST_MARK_DIR: the trial marks of a test or a stand (builds with test roots only).
-fs::path TestMarkDir() {
-#ifdef _WIN32
-  char* value = nullptr;
-  std::size_t size = 0;
-  if (_dupenv_s(&value, &size, "LM_TEST_MARK_DIR") != 0 || value == nullptr) return {};
-  const fs::path result = fs::u8path(value);
-  free(value);  // NOLINT(cppcoreguidelines-no-malloc): memory of _dupenv_s
-  return result;
-#else
-  const char* value = std::getenv("LM_TEST_MARK_DIR");
-  return value != nullptr ? fs::path(value) : fs::path();
-#endif
-}
+fs::path TestMarkDir() { return platform::EnvironmentPath("LM_TEST_MARK_DIR"); }
 
 std::string JwsPart(const json& value) {
   const std::string text = value.dump();

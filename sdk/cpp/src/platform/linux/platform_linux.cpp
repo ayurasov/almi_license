@@ -178,6 +178,11 @@ fs::path SystemStoreDirectory(std::string_view product) {
 
 fs::path SystemMarkDirectory() { return "/var/lib/almi/marks"; }
 
+fs::path EnvironmentPath(const char* name) {
+  const char* value = std::getenv(name);
+  return value != nullptr ? fs::path(value) : fs::path();
+}
+
 fs::path UserMarkDirectory() {
   const char* cache = std::getenv("XDG_CACHE_HOME");
   const char* home = std::getenv("HOME");

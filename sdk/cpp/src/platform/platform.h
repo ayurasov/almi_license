@@ -42,6 +42,8 @@ std::filesystem::path UserStoreDirectory(std::string_view product);
 // per-user fallback.
 std::filesystem::path SystemMarkDirectory();
 std::filesystem::path UserMarkDirectory();
+// A path from the process environment (not the copy of a C runtime); empty when not set.
+std::filesystem::path EnvironmentPath(const char* name);
 
 // Seals data for this machine: DPAPI (machine scope) on Windows; XChaCha20-Poly1305 with a key
 // derived from /etc/machine-id on Linux. Open returns nullopt for data sealed elsewhere or altered.

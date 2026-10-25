@@ -251,6 +251,17 @@ fs::path SystemMarkDirectory() { return KnownFolder(FOLDERID_ProgramData) / "ALM
 
 fs::path UserMarkDirectory() { return KnownFolder(FOLDERID_LocalAppData) / "ALMI" / "Marks"; }
 
+fs::path EnvironmentPath(const char* name) {
+  const std::wstring wide(name, name + std::char_traits<char>::length(name));
+  const DWORD size = GetEnvironmentVariableW(wide.c_str(), nullptr, 0);
+  if (size == 0) return {};
+  std::wstring value(size, L'\0');
+  const DWORD written = GetEnvironmentVariableW(wide.c_str(), value.data(), size);
+  if (written == 0 || written >= size) return {};
+  value.resize(written);
+  return fs::path(value);
+}
+
 fs::path UserStoreDirectory(std::string_view product) {
   return KnownFolder(FOLDERID_LocalAppData) / "ALMI" / "License" / std::string(product);
 }
