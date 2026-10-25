@@ -23,7 +23,7 @@ define not_implemented
 	@echo "$@: not implemented"
 endef
 
-.PHONY: help up down up-local up-pair seed test test-server test-compat test-console test-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
+.PHONY: help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
 	contract-check vectors cross-verify offline-e2e admin-schema e2e bundle-airgap
 
 help: ## Show available targets
@@ -66,6 +66,13 @@ test-dl: dl-configure ## DL module build and tests (ctest)
 
 test-keytool: ## almi-keytool tests (pytest)
 	cd tools/almi-keytool && uv run --locked pytest
+
+coverage-dl: ## DL line coverage of LeaseVerifier, StateEvaluator, TrialTracker >= 90 % (E13-12; GCC)
+	cmake -S sdk/cpp -B $(DL_BUILD)-coverage -DCMAKE_BUILD_TYPE=Debug -DLM_COVERAGE=ON $(DL_CMAKE_ARGS)
+	cmake --build $(DL_BUILD)-coverage --parallel --target lm_tests
+	find $(DL_BUILD)-coverage -name '*.gcda' -delete
+	ctest --test-dir $(DL_BUILD)-coverage --output-on-failure
+	python3 tools/dl_coverage.py $(DL_BUILD)-coverage --min 90
 
 dl-configure:
 	cmake -S sdk/cpp -B $(DL_BUILD) -DCMAKE_BUILD_TYPE=$(DL_CONFIG) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(DL_CMAKE_ARGS)

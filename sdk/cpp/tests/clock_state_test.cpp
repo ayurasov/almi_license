@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "crypto/aead.h"
+#include "platform/platform.h"
 #include "policy/state_evaluator.h"
 #include "state/clock.h"
 #include "state/rollback_guard.h"
@@ -160,6 +161,16 @@ TEST_F(ClockStateTest, ForeignOrDamagedMarkIsIgnored) {
   (void)Launch(entries);
   const TrialTracker other(Tracker().MarkPath(), "alteroffice-web", TestSealer());
   EXPECT_FALSE(other.ReadMark().has_value());
+}
+
+TEST(TrialTrackerPlace, ForProductPutsTheMarkInAWritableDirectory) {
+  // The system directory when it is writable, the user directory otherwise (E13-08).
+  const TrialTracker tracker = TrialTracker::ForProduct("lm-tests-placement");
+  const fs::path directory = tracker.MarkPath().parent_path();
+  EXPECT_TRUE(directory == lm::platform::SystemMarkDirectory() ||
+              directory == lm::platform::UserMarkDirectory());
+  EXPECT_EQ(tracker.MarkPath().filename(), "lm-tests-placement.mark");
+  EXPECT_FALSE(tracker.ReadMark().has_value());
 }
 
 }  // namespace
