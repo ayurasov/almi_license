@@ -173,65 +173,67 @@ function seats(server: LocalServer): number {
       {{ t('errors.network') }}
     </Message>
 
-    <DataTable
-      :value="store.items"
-      :loading="store.loading"
-      data-key="id"
-      data-testid="servers-table"
-    >
-      <template #empty>
-        {{ t('servers.empty') }}
-      </template>
-      <Column
-        field="name"
-        :header="t('servers.columns.name')"
-      />
-      <Column :header="t('servers.columns.serverId')">
-        <template #body="{ data }">
-          <code v-if="(data as LocalServer).registered">{{ (data as LocalServer).server_id }}</code>
+    <div class="panel">
+      <DataTable
+        :value="store.items"
+        :loading="store.loading"
+        data-key="id"
+        data-testid="servers-table"
+      >
+        <template #empty>
+          {{ t('servers.empty') }}
         </template>
-      </Column>
-      <Column :header="t('servers.columns.status')">
-        <template #body="{ data }">
-          <Tag
-            :value="t(`servers.status.${(data as LocalServer).status}`)"
-            :severity="(data as LocalServer).status === 'active' ? 'success' : 'secondary'"
-          />
-        </template>
-      </Column>
-      <Column :header="t('servers.columns.seats')">
-        <template #body="{ data }">
-          {{ seats(data as LocalServer) }}
-        </template>
-      </Column>
-      <Column :header="t('servers.columns.package')">
-        <template #body="{ data }">
-          {{ (data as LocalServer).last_package_seq || '—' }}
-          <Tag
-            v-if="(data as LocalServer).package_expires_soon"
-            :value="t('servers.packageExpires', { date: d(new Date((data as LocalServer).package_valid_until ?? '')) })"
-            severity="warn"
-            data-testid="package-expires"
-          />
-        </template>
-      </Column>
-      <Column :header="t('servers.columns.lastSeen')">
-        <template #body="{ data }">
-          {{ (data as LocalServer).last_seen_at ? d(new Date((data as LocalServer).last_seen_at ?? '')) : t('servers.never') }}
-        </template>
-      </Column>
-      <Column>
-        <template #body="{ data }">
-          <Button
-            v-if="!(data as LocalServer).registered"
-            text
-            size="small"
-            :label="t('servers.newCode')"
-            @click="newCode(data as LocalServer)"
-          />
-        </template>
-      </Column>
-    </DataTable>
+        <Column
+          field="name"
+          :header="t('servers.columns.name')"
+        />
+        <Column :header="t('servers.columns.serverId')">
+          <template #body="{ data }">
+            <code v-if="(data as LocalServer).registered">{{ (data as LocalServer).server_id }}</code>
+          </template>
+        </Column>
+        <Column :header="t('servers.columns.status')">
+          <template #body="{ data }">
+            <Tag
+              :value="t(`servers.status.${(data as LocalServer).status}`)"
+              :severity="(data as LocalServer).status === 'active' ? 'success' : 'secondary'"
+            />
+          </template>
+        </Column>
+        <Column :header="t('servers.columns.seats')">
+          <template #body="{ data }">
+            {{ seats(data as LocalServer) }}
+          </template>
+        </Column>
+        <Column :header="t('servers.columns.package')">
+          <template #body="{ data }">
+            {{ (data as LocalServer).last_package_seq || '—' }}
+            <Tag
+              v-if="(data as LocalServer).package_expires_soon"
+              :value="t('servers.packageExpires', { date: d(new Date((data as LocalServer).package_valid_until ?? '')) })"
+              severity="warn"
+              data-testid="package-expires"
+            />
+          </template>
+        </Column>
+        <Column :header="t('servers.columns.lastSeen')">
+          <template #body="{ data }">
+            {{ (data as LocalServer).last_seen_at ? d(new Date((data as LocalServer).last_seen_at ?? '')) : t('servers.never') }}
+          </template>
+        </Column>
+        <Column>
+          <template #body="{ data }">
+            <Button
+              v-if="!(data as LocalServer).registered"
+              text
+              size="small"
+              :label="t('servers.newCode')"
+              @click="newCode(data as LocalServer)"
+            />
+          </template>
+        </Column>
+      </DataTable>
+    </div>
 
     <Dialog
       v-model:visible="createOpen"

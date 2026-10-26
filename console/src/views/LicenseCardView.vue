@@ -19,6 +19,7 @@ import { useRoute } from 'vue-router'
 import DirectiveDialog from '@/components/DirectiveDialog.vue'
 import LicenseActionDialog from '@/components/LicenseActionDialog.vue'
 import { canChange } from '@/lib/roles'
+import { stateSeverity } from '@/lib/states'
 import { type Activation, DEFAULT_ACTIVATION_QUERY, useActivationsStore } from '@/stores/activations'
 import {
   type HistoryEvent,
@@ -45,6 +46,15 @@ const keyOpen = ref(false)
 const directiveTarget = ref<{ kind: 'license'; id: string } | null>(null)
 
 const id = computed(() => (typeof route.params.id === 'string' ? route.params.id : ''))
+const ACTION_ICONS: Record<LicenseAction, string> = {
+  renew: 'pi-calendar-plus',
+  suspend: 'pi-pause',
+  resume: 'pi-play',
+  liftBlock: 'pi-unlock',
+  settings: 'pi-sliders-h',
+  transfer: 'pi-arrow-right-arrow-left',
+  revoke: 'pi-ban',
+}
 const productName = computed(() => {
   const product = store.products.find((item) => item.id === license.value?.product_id)
   return product ? (product.name.ru ?? product.code) : ''
@@ -115,34 +125,57 @@ function closeKey(): void {
 
 <template>
   <section v-if="license">
-    <div class="toolbar">
-      <h1>{{ license.customer_name }} — {{ productName }}</h1>
-      <Tag
-        :value="t(`licenses.status.${license.status}`)"
-        :severity="license.status === 'active' ? 'success' : 'warn'"
-        data-testid="license-status"
-      />
+    <RouterLink
+      :to="{ name: 'licenses' }"
+      class="back"
+    >
+      <i class="pi pi-arrow-left" />
+      {{ t('licenses.title') }}
+    </RouterLink>
+    <div class="toolbar card-head">
+      <div class="title">
+        <h1>{{ license.customer_name }}</h1>
+        <span class="subtitle">
+          <span>{{ productName }} · {{ t(`licenses.type.${license.type}`) }}</span>
+          <Tag
+            :value="t(`licenses.status.${license.status}`)"
+            :severity="license.status === 'active' ? 'success' : 'warn'"
+            data-testid="license-status"
+          />
+          <Tag
+            v-if="license.state"
+            :value="t(`licenses.state.${license.state}`)"
+            :severity="stateSeverity(license.state)"
+          />
+        </span>
+      </div>
     </div>
-    <div class="actions">
+    <div
+      v-if="actions.length > 0"
+      class="actions"
+    >
       <Button
         v-for="item in actions"
         :key="item"
         :label="t(`licenses.actions.${item}`)"
+        :icon="`pi ${ACTION_ICONS[item]}`"
         :severity="item === 'revoke' ? 'danger' : 'secondary'"
+        outlined
         :data-testid="`action-${item}`"
         @click="start(item)"
       />
       <Button
-        v-if="actions.length > 0"
         :label="t('licenses.actions.directive')"
         icon="pi pi-send"
-        severity="secondary"
         data-testid="action-directive"
         @click="directiveTarget = { kind: 'license', id: license.id }"
       />
     </div>
 
-    <Tabs value="params">
+    <Tabs
+      value="params"
+      class="panel"
+    >
       <TabList>
         <Tab value="params">
           {{ t('licenses.tabs.params') }}
@@ -338,20 +371,58 @@ function closeKey(): void {
 </template>
 
 <style scoped>
-.toolbar,
+.back {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  color: var(--p-text-muted-color);
+  text-decoration: none;
+}
+.back:hover {
+  color: var(--p-primary-color);
+}
+.card-head {
+  margin-bottom: 1rem;
+}
+.title {
+  display: grid;
+  gap: 0.4rem;
+}
+.subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  color: var(--p-text-muted-color);
+}
 .actions {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 }
-.actions {
-  margin-bottom: 1rem;
+.panel {
+  padding: 0.25rem 1.25rem 1.25rem;
 }
 .fields {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.25rem 1rem;
+  grid-template-columns: max-content minmax(10rem, 1fr) max-content minmax(10rem, 1fr);
+  gap: 0.7rem 1.5rem;
+  margin: 0.5rem 0 0;
+}
+.fields dt {
+  color: var(--p-text-muted-color);
+}
+.fields dd {
+  margin: 0;
+  font-weight: 500;
+}
+@media (max-width: 1000px) {
+  .fields {
+    grid-template-columns: max-content 1fr;
+  }
 }
 .key {
   font-size: 1.4rem;

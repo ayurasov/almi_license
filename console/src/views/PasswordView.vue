@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { ApiError, userMessage } from '@/api/problem'
 import { useSessionStore } from '@/stores/session'
+import BrandLogo from '@/components/BrandLogo.vue'
 
 // The user's own password (question 31); required while the issued password is temporary.
 const { t, locale } = useI18n()
@@ -51,6 +52,7 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="password-page">
+    <BrandLogo />
     <Card class="password-card">
       <template #title>
         <h1 class="password-title">
@@ -131,12 +133,18 @@ async function submit(): Promise<void> {
 <style scoped>
 .password-page {
   display: grid;
-  place-items: center;
+  place-content: center;
+  justify-items: center;
+  gap: 1.5rem;
   min-height: 100vh;
   padding: 1rem;
+  box-sizing: border-box;
+  background: var(--app-shell);
 }
 .password-card {
   max-width: 28rem;
+  border: 1px solid var(--app-border);
+  box-shadow: none;
 }
 .password-title {
   margin: 0;

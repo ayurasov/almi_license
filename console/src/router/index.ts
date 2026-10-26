@@ -6,6 +6,7 @@ import { useInstanceStore } from '@/stores/instance'
 import { useSessionStore } from '@/stores/session'
 
 export const SECTIONS = [
+  'overview',
   'customers',
   'licenses',
   'activations',
@@ -19,8 +20,49 @@ export const SECTIONS = [
   'package',
 ] as const
 
+export interface MenuItem {
+  name: (typeof SECTIONS)[number]
+  icon: string
+}
+
+// The side menu: sections in groups by the work of an operator (console/docs/design.md).
+export const MENU: { key: string; items: MenuItem[] }[] = [
+  { key: 'main', items: [{ name: 'overview', icon: 'pi-th-large' }] },
+  {
+    key: 'licensing',
+    items: [
+      { name: 'customers', icon: 'pi-building' },
+      { name: 'licenses', icon: 'pi-key' },
+      { name: 'activations', icon: 'pi-desktop' },
+      { name: 'import', icon: 'pi-upload' },
+    ],
+  },
+  {
+    key: 'reference',
+    items: [
+      { name: 'catalog', icon: 'pi-box' },
+      { name: 'profiles', icon: 'pi-sliders-h' },
+    ],
+  },
+  {
+    key: 'control',
+    items: [
+      { name: 'stats', icon: 'pi-chart-bar' },
+      { name: 'audit', icon: 'pi-history' },
+    ],
+  },
+  {
+    key: 'admin',
+    items: [
+      { name: 'servers', icon: 'pi-server' },
+      { name: 'package', icon: 'pi-inbox' },
+      { name: 'users', icon: 'pi-users' },
+    ],
+  },
+]
+
 // Sections without their screen yet show a placeholder.
-const READY = new Set(['customers', 'licenses', 'activations', 'catalog', 'profiles', 'import', 'users', 'servers', 'package', 'stats', 'audit'])
+const READY = new Set(['overview', 'customers', 'licenses', 'activations', 'catalog', 'profiles', 'import', 'users', 'servers', 'package', 'stats', 'audit'])
 const sections: RouteRecordRaw[] = SECTIONS.filter((name) => !READY.has(name)).map((name) => ({
   path: name,
   name,
@@ -37,7 +79,8 @@ export const routes: RouteRecordRaw[] = [
     path: '/',
     component: AppLayout,
     children: [
-      { path: '', redirect: { name: 'customers' } },
+      { path: '', redirect: { name: 'overview' } },
+      { path: 'overview', name: 'overview', component: () => import('@/views/OverviewView.vue') },
       { path: 'customers', name: 'customers', component: () => import('@/views/CustomersView.vue') },
       { path: 'licenses', name: 'licenses', component: () => import('@/views/LicensesView.vue') },
       { path: 'licenses/:id', name: 'license', component: () => import('@/views/LicenseCardView.vue') },

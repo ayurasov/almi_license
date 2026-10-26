@@ -84,6 +84,13 @@ function applyFilters(): void {
   navigate({ ...filters.value, page: 1 })
 }
 
+const filtered = computed(() => Boolean(query.value.search || query.value.status))
+
+function resetFilters(): void {
+  filters.value = { search: '', status: '' }
+  navigate({ search: '', status: '', page: 1 })
+}
+
 function onPage(event: DataTablePageEvent): void {
   navigate({ page: event.page + 1, pageSize: event.rows })
 }
@@ -120,126 +127,146 @@ async function release(): Promise<void> {
   <section>
     <h1>{{ t('activations.title') }}</h1>
 
-    <form
-      class="filters"
-      @submit.prevent="applyFilters"
-    >
-      <InputText
-        v-model="filters.search"
-        :placeholder="t('activations.filters.search')"
-        data-testid="filter-search"
-      />
-      <Select
-        v-model="filters.status"
-        :options="statusOptions"
-        option-label="label"
-        option-value="value"
-        :placeholder="t('activations.filters.status')"
-      />
-      <Button
-        type="submit"
-        icon="pi pi-search"
-        :aria-label="t('activations.filters.search')"
-        data-testid="filter-apply"
-      />
-    </form>
-
-    <Message
-      v-if="store.failed === 'network'"
-      severity="error"
-    >
-      {{ t('errors.network') }}
-      <Button
-        :label="t('errors.retry')"
-        text
-        @click="store.list(query)"
-      />
-    </Message>
-
-    <DataTable
-      :value="store.items"
-      lazy
-      paginator
-      data-key="activation_id"
-      :loading="store.loading"
-      :rows="query.pageSize"
-      :first="(query.page - 1) * query.pageSize"
-      :total-records="store.total"
-      :rows-per-page-options="[10, 20, 50, 100]"
-      :sort-field="sortField"
-      :sort-order="sortOrder"
-      data-testid="activations-table"
-      @page="onPage"
-      @sort="onSort"
-    >
-      <template #empty>
-        {{ t('activations.empty') }}
-      </template>
-      <Column
-        field="activation_id"
-        :header="t('activations.columns.id')"
-      />
-      <Column
-        field="instance_name"
-        :header="t('activations.columns.name')"
-      />
-      <Column
-        field="product_version"
-        :header="t('activations.columns.version')"
-      />
-      <Column :header="t('activations.columns.status')">
-        <template #body="{ data }">
-          {{ t(`activations.status.${(data as Activation).status}`) }}
-        </template>
-      </Column>
-      <Column :header="t('activations.columns.marks')">
-        <template #body="{ data }">
-          <Tag
-            v-if="(data as Activation).in_reserve"
-            :value="t('activations.reserve')"
-            severity="warn"
-          />
-          <Tag
-            v-if="(data as Activation).offline"
-            :value="t('activations.offline')"
-            severity="info"
-            data-testid="activation-offline"
-          />
-          <Tag
-            v-if="(data as Activation).status === 'conflict'"
-            :value="t('activations.conflict')"
-            severity="danger"
-          />
-        </template>
-      </Column>
-      <Column
-        field="last_seen_at"
-        :header="t('activations.columns.lastSeen')"
-        sortable
+    <div class="panel">
+      <form
+        class="filters"
+        @submit.prevent="applyFilters"
       >
-        <template #body="{ data }">
-          {{ d(new Date((data as Activation).last_seen_at)) }}
+        <InputText
+          v-model="filters.search"
+          :placeholder="t('activations.filters.search')"
+          data-testid="filter-search"
+        />
+        <Select
+          v-model="filters.status"
+          :options="statusOptions"
+          option-label="label"
+          option-value="value"
+          :placeholder="t('activations.filters.status')"
+        />
+        <Button
+          type="submit"
+          icon="pi pi-search"
+          :label="t('common.find')"
+          :aria-label="t('activations.filters.search')"
+          data-testid="filter-apply"
+        />
+        <Button
+          v-if="filtered"
+          :label="t('common.reset')"
+          icon="pi pi-filter-slash"
+          text
+          severity="secondary"
+          data-testid="filter-reset"
+          @click="resetFilters"
+        />
+      </form>
+
+      <Message
+        v-if="store.failed === 'network'"
+        severity="error"
+      >
+        {{ t('errors.network') }}
+        <Button
+          :label="t('errors.retry')"
+          text
+          @click="store.list(query)"
+        />
+      </Message>
+
+      <DataTable
+        :value="store.items"
+        lazy
+        paginator
+        data-key="activation_id"
+        :loading="store.loading"
+        :rows="query.pageSize"
+        :first="(query.page - 1) * query.pageSize"
+        :total-records="store.total"
+        :rows-per-page-options="[10, 20, 50, 100]"
+        :sort-field="sortField"
+        :sort-order="sortOrder"
+        data-testid="activations-table"
+        @page="onPage"
+        @sort="onSort"
+      >
+        <template #empty>
+          {{ t('activations.empty') }}
         </template>
-      </Column>
-      <Column>
-        <template #body="{ data }">
-          <Button
-            v-if="(data as Activation).status === 'active'"
-            :label="t('activations.release')"
-            text
-            data-testid="activation-release"
-            @click="startRelease(data as Activation)"
-          />
-          <Button
-            v-if="(data as Activation).status === 'active'"
-            :label="t('activations.directive')"
-            text
-            data-testid="activation-directive"
-            @click="directiveTarget = { kind: 'activation', id: (data as Activation).activation_id }"
-          />
-        </template>
-      </Column>
-    </DataTable>
+        <Column
+          field="activation_id"
+          :header="t('activations.columns.id')"
+        />
+        <Column
+          field="instance_name"
+          :header="t('activations.columns.name')"
+        />
+        <Column
+          field="product_version"
+          :header="t('activations.columns.version')"
+        />
+        <Column :header="t('activations.columns.status')">
+          <template #body="{ data }">
+            {{ t(`activations.status.${(data as Activation).status}`) }}
+          </template>
+        </Column>
+        <Column :header="t('activations.columns.marks')">
+          <template #body="{ data }">
+            <Tag
+              v-if="(data as Activation).in_reserve"
+              :value="t('activations.reserve')"
+              severity="warn"
+            />
+            <Tag
+              v-if="(data as Activation).offline"
+              :value="t('activations.offline')"
+              severity="info"
+              data-testid="activation-offline"
+            />
+            <Tag
+              v-if="(data as Activation).status === 'conflict'"
+              :value="t('activations.conflict')"
+              severity="danger"
+            />
+          </template>
+        </Column>
+        <Column
+          field="last_seen_at"
+          :header="t('activations.columns.lastSeen')"
+          sortable
+        >
+          <template #body="{ data }">
+            {{ d(new Date((data as Activation).last_seen_at)) }}
+          </template>
+        </Column>
+        <Column>
+          <template #body="{ data }">
+            <span
+              v-if="(data as Activation).status === 'active'"
+              class="row-actions"
+            >
+              <Button
+                :label="t('activations.release')"
+                icon="pi pi-sign-out"
+                size="small"
+                outlined
+                data-testid="activation-release"
+                @click="startRelease(data as Activation)"
+              />
+              <Button
+                :label="t('activations.directive')"
+                icon="pi pi-send"
+                size="small"
+                outlined
+                severity="secondary"
+                data-testid="activation-directive"
+                @click="directiveTarget = { kind: 'activation', id: (data as Activation).activation_id }"
+              />
+            </span>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
 
     <DirectiveDialog
       :target="directiveTarget"

@@ -30,6 +30,8 @@ const session = useSessionStore()
 const filter = reactive({ customerId: '', productId: '' })
 const customers = ref<Option[]>([])
 const products = ref<Option[]>([])
+// Rows name a product by its code; the catalog gives its name.
+const productNames = ref<Record<string, string>>({})
 const exporting = ref(false)
 
 onMounted(async () => {
@@ -45,7 +47,8 @@ onMounted(async () => {
     value: c.id,
     label: c.name,
   }))
-  products.value = (productList.data ?? []).map((p) => ({ value: p.id, label: p.code }))
+  products.value = (productList.data ?? []).map((p) => ({ value: p.id, label: p.name.ru ?? p.code }))
+  productNames.value = Object.fromEntries((productList.data ?? []).map((p) => [p.code, p.name.ru ?? p.code]))
 })
 
 const withAll = (options: Option[]) => [{ value: '', label: t('stats.all') }, ...options]
@@ -161,7 +164,11 @@ async function exportXlsx(): Promise<void> {
         field="product"
         :header="t('stats.columns.product')"
         sortable
-      />
+      >
+        <template #body="{ data }">
+          {{ productNames[(data as LicenseStats).product] ?? (data as LicenseStats).product }}
+        </template>
+      </Column>
       <Column
         field="limit"
         :header="t('stats.columns.limit')"

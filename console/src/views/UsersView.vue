@@ -130,92 +130,94 @@ async function confirm(): Promise<void> {
       {{ text }}
     </Message>
 
-    <DataTable
-      :value="store.items"
-      :loading="store.loading"
-      data-key="username"
-      data-testid="users-table"
-    >
-      <template #empty>
-        {{ t('users.empty') }}
-      </template>
-      <Column
-        field="username"
-        :header="t('users.columns.username')"
-      />
-      <Column :header="t('users.columns.role')">
-        <template #body="{ data }">
-          <Select
-            v-if="(data as Account).role !== 'customer_viewer' && !isSelf(data as Account)"
-            :model-value="(data as Account).role"
-            :options="staffRoles"
-            option-label="label"
-            option-value="value"
-            :aria-label="t('users.columns.role')"
-            @update:model-value="changeRole(data as Account, $event as ManagedRole)"
-          />
-          <span v-else>{{ t(`users.role.${(data as Account).role}`) }}</span>
-          <small
-            v-if="(data as Account).customer_id"
-            class="customer"
-          > — {{ customerName((data as Account).customer_id) }}</small>
+    <div class="panel">
+      <DataTable
+        :value="store.items"
+        :loading="store.loading"
+        data-key="username"
+        data-testid="users-table"
+      >
+        <template #empty>
+          {{ t('users.empty') }}
         </template>
-      </Column>
-      <Column :header="t('users.columns.status')">
-        <template #body="{ data }">
-          <Tag
-            v-if="!(data as Account).active"
-            :value="t('users.status.blocked')"
-            severity="danger"
-          />
-          <Tag
-            v-else-if="locked(data as Account)"
-            :value="t('users.status.locked', { until: d(new Date((data as Account).locked_until ?? '')) })"
-            severity="warn"
-          />
-          <Tag
-            v-else
-            :value="t('users.status.active')"
-            severity="success"
-          />
-        </template>
-      </Column>
-      <Column :header="t('users.columns.lastLogin')">
-        <template #body="{ data }">
-          {{ (data as Account).last_login ? d(new Date((data as Account).last_login ?? '')) : t('users.never') }}
-        </template>
-      </Column>
-      <Column>
-        <template #body="{ data }">
-          <template v-if="!isSelf(data as Account)">
-            <Button
-              v-if="(data as Account).active"
-              text
-              size="small"
+        <Column
+          field="username"
+          :header="t('users.columns.username')"
+        />
+        <Column :header="t('users.columns.role')">
+          <template #body="{ data }">
+            <Select
+              v-if="(data as Account).role !== 'customer_viewer' && !isSelf(data as Account)"
+              :model-value="(data as Account).role"
+              :options="staffRoles"
+              option-label="label"
+              option-value="value"
+              :aria-label="t('users.columns.role')"
+              @update:model-value="changeRole(data as Account, $event as ManagedRole)"
+            />
+            <span v-else>{{ t(`users.role.${(data as Account).role}`) }}</span>
+            <small
+              v-if="(data as Account).customer_id"
+              class="customer"
+            > — {{ customerName((data as Account).customer_id) }}</small>
+          </template>
+        </Column>
+        <Column :header="t('users.columns.status')">
+          <template #body="{ data }">
+            <Tag
+              v-if="!(data as Account).active"
+              :value="t('users.status.blocked')"
               severity="danger"
-              :label="t('users.block')"
-              data-testid="user-block"
-              @click="confirming = { kind: 'block', account: data as Account }"
             />
-            <Button
+            <Tag
+              v-else-if="locked(data as Account)"
+              :value="t('users.status.locked', { until: d(new Date((data as Account).locked_until ?? '')) })"
+              severity="warn"
+            />
+            <Tag
               v-else
-              text
-              size="small"
-              :label="t('users.unblock')"
-              data-testid="user-unblock"
-              @click="run(() => store.update((data as Account).username, { active: true }))"
-            />
-            <Button
-              text
-              size="small"
-              :label="t('users.reset')"
-              data-testid="user-reset"
-              @click="confirming = { kind: 'reset', account: data as Account }"
+              :value="t('users.status.active')"
+              severity="success"
             />
           </template>
-        </template>
-      </Column>
-    </DataTable>
+        </Column>
+        <Column :header="t('users.columns.lastLogin')">
+          <template #body="{ data }">
+            {{ (data as Account).last_login ? d(new Date((data as Account).last_login ?? '')) : t('users.never') }}
+          </template>
+        </Column>
+        <Column>
+          <template #body="{ data }">
+            <template v-if="!isSelf(data as Account)">
+              <Button
+                v-if="(data as Account).active"
+                text
+                size="small"
+                severity="danger"
+                :label="t('users.block')"
+                data-testid="user-block"
+                @click="confirming = { kind: 'block', account: data as Account }"
+              />
+              <Button
+                v-else
+                text
+                size="small"
+                :label="t('users.unblock')"
+                data-testid="user-unblock"
+                @click="run(() => store.update((data as Account).username, { active: true }))"
+              />
+              <Button
+                text
+                size="small"
+                :label="t('users.reset')"
+                data-testid="user-reset"
+                @click="confirming = { kind: 'reset', account: data as Account }"
+              />
+            </template>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
 
     <Dialog
       v-model:visible="createOpen"

@@ -1,8 +1,21 @@
 import type ru from './ru'
 
 const en: typeof ru = {
-  app: { title: 'ALMI licensing', signOut: 'Sign out' },
+  app: {
+    title: 'ALicense — licence server',
+    name: 'ALicense',
+    subtitle: 'Licence server',
+    vendor: 'ALMI · AlterSoft',
+    modeCentral: 'Central server',
+    modeLocal: 'Local server',
+    theme: 'Light or dark theme',
+    collapse: 'Collapse or expand the menu',
+    signOut: 'Sign out',
+  },
+  menuGroups: { licensing: 'Licensing', reference: 'Reference', control: 'Control', admin: 'Administration' },
+  common: { find: 'Find', reset: 'Reset' },
   menu: {
+    overview: 'Overview',
     customers: 'Customers',
     licenses: 'Licenses',
     activations: 'Activations',
@@ -16,7 +29,15 @@ const en: typeof ru = {
     package: 'Package',
   },
   placeholder: 'This section comes in later iterations.',
-  login: { title: 'Console sign-in', username: 'User name', password: 'Password', submit: 'Sign in' },
+  login: {
+    tagline: 'Licence server of the ALMI and AlterSoft products: AlterOffice, AlterOffice Web, AlterOS.',
+    points: { licenses: 'Licences, keys and terms of customers', activations: 'Activations and seats of products', servers: 'Local servers and offline activation' },
+    offline: 'Offline activation without signing in',
+    title: 'Console sign-in',
+    username: 'User name',
+    password: 'Password',
+    submit: 'Sign in',
+  },
   password: {
     title: 'Change password',
     required: 'You were given a temporary password. Set your own password to continue.',
@@ -32,6 +53,7 @@ const en: typeof ru = {
   offline: {
     title: 'Offline activation',
     intro: 'For a computer without internet access. Create a request file (.alk-req) in the application, upload it here and move the answer file (.alk-lic) back to the computer.',
+    fileHint: 'The request file .alk-req of the program; click to choose',
     choose: 'Choose a request file',
     tooLarge: 'The request file is larger than 64 KB. Make sure an .alk-req file is chosen.',
     ready: 'The answer file {name} is ready. If the download did not start, click “Download again”.',
@@ -311,6 +333,7 @@ const en: typeof ru = {
   imports: {
     title: 'LK export import',
     steps: { upload: 'Upload', preview: 'Preview', mapping: 'Mapping', confirm: 'Confirmation', report: 'Report' },
+    chooseHint: 'An XLSX file of the LK; click to choose',
     choose: 'Choose the XLSX export of the LK',
     upload: 'Upload and check',
     hint: 'Nothing is written until the confirmation. License keys are shown masked only.',
@@ -460,6 +483,27 @@ const en: typeof ru = {
     cancel: 'Cancel',
     sent: 'The command is queued',
     sentMany: 'The command is queued for activations: {count}',
+  },
+  overview: {
+    title: 'Overview',
+    subtitle: 'Licences and seats on {date}',
+    import: 'Import from LK',
+    licenses: 'All licences',
+    tiles: {
+      licenses: 'Licences',
+      customers: 'customers: {count}',
+      seats: 'Seats taken',
+      free: 'Seats free',
+      reserve: 'in reserve: {count}',
+      attention: 'Need attention',
+      attentionHint: 'grace, restricted, blocked',
+    },
+    soon: 'Ending within {days} days',
+    all: 'All licences',
+    noneSoon: 'No terms end within 30 days.',
+    left: 'Left',
+    days: '{count} d.',
+    states: 'States of licences',
   },
   stats: {
     notReported: 'not reported',

@@ -45,9 +45,9 @@ test('a customer administrator sees only its licences and changes nothing', asyn
   await setOwnPassword(viewer, password)
   await expect(viewer.getByTestId('current-user')).toHaveText(username)
   await expect(viewer).toHaveURL(/\/licenses/)
-  await expect(viewer.getByRole('menuitem', { name: 'Заказчики' })).toHaveCount(0)
-  await expect(viewer.getByRole('menuitem', { name: 'Статистика' })).toHaveCount(1)
-  await expect(viewer.getByRole('menuitem', { name: 'Журнал' })).toHaveCount(1)
+  await expect(viewer.getByTestId('main-menu').getByRole('link', { name: 'Заказчики' })).toHaveCount(0)
+  await expect(viewer.getByTestId('main-menu').getByRole('link', { name: 'Статистика' })).toHaveCount(1)
+  await expect(viewer.getByTestId('main-menu').getByRole('link', { name: 'Журнал' })).toHaveCount(1)
 
   const rows = viewer.getByTestId('licenses-table').locator('tbody tr')
   await expect(rows).toHaveCount(1)

@@ -4,7 +4,7 @@ import { canChange, canOpen } from './roles'
 
 describe('roles', () => {
   it('a customer viewer opens licences, statistics and the journal only', () => {
-    expect(['licenses', 'license', 'stats', 'audit'].every((s) => canOpen('customer_viewer', s))).toBe(true)
+    expect(['overview', 'licenses', 'license', 'stats', 'audit'].every((s) => canOpen('customer_viewer', s))).toBe(true)
     expect(['customers', 'import', 'users', 'servers', 'catalog'].some((s) => canOpen('customer_viewer', s))).toBe(false)
     expect(canChange('customer_viewer')).toBe(false)
   })

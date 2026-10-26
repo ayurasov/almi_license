@@ -154,10 +154,18 @@ function restart(): void {
           <p class="hint">
             {{ t('imports.hint') }}
           </p>
-          <label for="import-file">{{ t('imports.choose') }}</label>
+          <label
+            for="import-file"
+            class="dropzone"
+          >
+            <i class="pi pi-file-excel" />
+            <strong>{{ selected ? selected.name : t('imports.choose') }}</strong>
+            <span class="muted">{{ t('imports.chooseHint') }}</span>
+          </label>
           <input
             id="import-file"
             ref="fileInput"
+            class="visually-hidden"
             type="file"
             accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             data-testid="import-file"
