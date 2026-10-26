@@ -1,0 +1,12 @@
+# Syft configuration of the ALMI SBOMs (tools/sbom/build.sh, docs/sbom.md).
+check-for-app-update: false
+# Files are not components: the SBOM lists packages and their licences.
+file:
+  metadata:
+    selection: none
+format:
+  cyclonedx-json:
+    pretty: true
+javascript:
+  # A lock file gives the packages the console bundles; dev dependencies go to the dev SBOM.
+  include-dev-dependencies: false

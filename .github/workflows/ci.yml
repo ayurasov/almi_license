@@ -184,6 +184,19 @@ jobs:
       - name: Line coverage of LeaseVerifier, StateEvaluator, TrialTracker >= 90 % (E13-12)
         if: steps.detect.outputs.present == 'true' && runner.os == 'Linux'
         run: make coverage-dl DL_BUILD=build DL_CMAKE_ARGS=-DLM_TRUST_ROOTS=ci
+      # SBOM of the module with the notices of what it links (docs/sbom.md): only permissive licences.
+      - name: SBOM of the module
+        if: steps.detect.outputs.present == 'true'
+        run: |
+          py=python3 triplet=x64-linux
+          if [ "${RUNNER_OS}" = "Windows" ]; then py=python triplet=x64-windows-static; fi
+          version=$(sed -n 's/^project(license_module VERSION \([0-9.]*\).*/\1/p' sdk/cpp/CMakeLists.txt)
+          "$py" tools/sbom/sbom.py --timestamp "$(git log -1 --format=%cI)" vcpkg --installed build/vcpkg_installed \
+            --triplet "$triplet" --version "$version" --out "build/sbom/dl/license_module-$triplet.cdx.json" \
+            --dev-out "build/sbom/dl/license_module-tests-$triplet.cdx.json" \
+            --notices "build/sbom/notices/license_module-$triplet.txt"
+          "$py" tools/sbom/sbom.py report "build/sbom/dl/license_module-$triplet.cdx.json" \
+            --out "build/sbom/license_module-$triplet.md"
       - if: steps.detect.outputs.present == 'true'
         uses: actions/upload-artifact@v7
         with:
@@ -200,7 +213,49 @@ jobs:
             build/bin/**/lm-demo-stub.exe
             build/lib/**/license_module.lib
             build/lib/**/license_module_stub.lib
+            build/sbom/**
             sdk/cpp/include/license_module.h
+
+  # SBOM of the deliverables with licences, notices and the licence policy (docs/sbom.md): the images
+  # of this commit, PostgreSQL and Nginx of the bundle, the keytool, the DL module of both platforms
+  # (test-dl) and the tools of development. Exit code 1 on a violation of the policy.
+  sbom:
+    needs: test-dl
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci --prefix console
+      - run: shellcheck tools/sbom/*.sh && make test-sbom
+      - name: Images of this commit
+        run: |
+          docker build -q -f deploy/Dockerfile --target runtime --build-arg APP_VERSION=0.0.0-ci -t almi-license:0.0.0-ci .
+          docker build -q -f deploy/console/Dockerfile -t almi-license-console:0.0.0-ci .
+          docker pull -q postgres:17 && docker pull -q nginx:1.27
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: license_module-*
+          path: ${{ runner.temp }}/module
+      - name: SBOM
+        run: |
+          mkdir -p dist/sbom/dl dist/sbom/notices
+          cp "$RUNNER_TEMP"/module/*/build/sbom/dl/*.cdx.json dist/sbom/dl/
+          cp "$RUNNER_TEMP"/module/*/build/sbom/notices/*.txt dist/sbom/notices/
+          PARTS="images keytool dev" VERSION=0.0.0-ci tools/sbom/build.sh dist/sbom
+          cat dist/sbom/sbom-report.md | sed -n '/## 1/,/## 2/p' >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          if-no-files-found: error
+          path: dist/sbom
 
   # Leases signed by the server (issue_jws, a real activation) pass the two independent
   # verifiers: almi-keytool (PyNaCl) and the DL LeaseVerifier (E02-03, E03-01).

@@ -108,6 +108,8 @@
 | clang-format | 23.1.3 | pre-commit, `make lint-dl` (`uvx`) | Форматирование C++ | I0-01, I0-04 |
 | clang-tidy | 18 (раннер ubuntu-24.04) | `make lint-dl` | Анализ C++ | I0-04 |
 | astral-sh/setup-uv | v10.3.2 | CI | Плавающих тегов после v7 нет | I0-03 |
+| Syft (anchore/syft) | 1.54.1 (sha256 в `tools/sbom/install-syft.sh`) | CI `sbom`, `make sbom` (в `.tools/`, не в образах) | SBOM образов и lock-файлов (`docs/sbom.md`); инструмент назван в документе 1 (раздел 13) и документе 7 (раздел 6); 1.55.0 моложе двух недель | v0.6.2, запрос руководителя проекта 26.10.2026 |
+| actions/download-artifact | v8 | CI `sbom` | SBOM модуля DL из `test-dl` (пара к upload-artifact v7) | v0.6.2 |
 
 ## Примечания
 

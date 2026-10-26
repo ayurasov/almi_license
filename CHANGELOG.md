@@ -1,6 +1,8 @@
 # Изменения
 
 ## Unreleased
+- SBOM поставки (`docs/sbom.md`, `make sbom`, задача CI `sbom`): CycloneDX 1.6 образов сервера, консоли, PostgreSQL и Nginx, модуля DL (Linux, Windows), almi-keytool и инструментов разработки; лицензии, библиотеки внутри колёс Python, тексты лицензий (notices), политика лицензий с проверкой в CI; комплект изолированного контура получает каталог `sbom/` (`SBOM_DIR`).
+- Артефакт модуля DL содержит его SBOM и уведомления связанных библиотек (`build/sbom/`).
 - Контракт 1.2.0 (добавляющее изменение): коды ответов адаптеров `/api/activate/` (400/403/404/409), подписки Nextcloud (400) и `getTrust` (503).
 - `ALMI-Protocol`: модуль DL отправляет `1`; сервер отвечает `426 upgrade_required` на другую версию, запрос без заголовка принимает и считает (`almi_product_requests_without_protocol_total`).
 - Поле лицензии «Версии продукта до» (`max_product_version`); активация более новой версии — `422 unsupported_product_version`.

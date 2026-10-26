@@ -1,0 +1,67 @@
+{
+  "$comment": "Libraries inside Python wheels that Syft does not list (docs/sbom.md, section 3). Shared ones are the <wheel>.libs files of auditwheel and are checked against the image; static ones come from the documentation of the wheel. The version of each wheel is pinned: when uv.lock moves it, finalize fails until the entry is checked and updated. Versions of the libraries are those reported by the libraries themselves where they do; empty where only a soname is known.",
+  "psycopg-binary": {
+    "version": "3.3.6",
+    "libraries": [
+      {"id": "libpq", "name": "libpq (PostgreSQL)", "version": "18.0.6", "license": "PostgreSQL", "url": "https://www.postgresql.org/", "files": ["psycopg_binary.libs/libpq"]},
+      {"id": "openssl", "name": "OpenSSL", "version": "3.5.8", "license": "Apache-2.0", "url": "https://www.openssl.org/", "files": ["psycopg_binary.libs/libssl", "psycopg_binary.libs/libcrypto"]},
+      {"id": "krb5", "name": "MIT Kerberos (krb5)", "license": "MIT", "url": "https://web.mit.edu/kerberos/", "files": ["psycopg_binary.libs/libgssapi_krb5", "psycopg_binary.libs/libk5crypto", "psycopg_binary.libs/libkrb5", "psycopg_binary.libs/libkrb5support"]},
+      {"id": "com_err", "name": "com_err (e2fsprogs)", "license": "MIT", "url": "https://e2fsprogs.sourceforge.net/", "files": ["psycopg_binary.libs/libcom_err"]},
+      {"id": "keyutils", "name": "keyutils (libkeyutils)", "license": "LGPL-2.1-or-later", "url": "https://people.redhat.com/~dhowells/keyutils/", "files": ["psycopg_binary.libs/libkeyutils"]},
+      {"id": "libxcrypt", "name": "libxcrypt (libcrypt)", "license": "LGPL-2.1-or-later", "url": "https://github.com/besser82/libxcrypt", "files": ["psycopg_binary.libs/libcrypt"]},
+      {"id": "openldap", "name": "OpenLDAP (libldap, liblber)", "license": "OLDAP-2.8", "url": "https://www.openldap.org/", "files": ["psycopg_binary.libs/libldap", "psycopg_binary.libs/liblber"]},
+      {"id": "cyrus-sasl", "name": "Cyrus SASL (libsasl2)", "license": "BSD-Attribution-HPND-disclaimer", "url": "https://www.cyrusimap.org/sasl/", "files": ["psycopg_binary.libs/libsasl2"]},
+      {"id": "pcre", "name": "PCRE (libpcre)", "license": "BSD-3-Clause", "url": "https://www.pcre.org/", "files": ["psycopg_binary.libs/libpcre"]},
+      {"id": "libselinux", "name": "libselinux", "license": "libselinux-1.0", "url": "https://github.com/SELinuxProject/selinux", "files": ["psycopg_binary.libs/libselinux"]}
+    ]
+  },
+  "pillow": {
+    "version": "12.3.0",
+    "libraries": [
+      {"id": "freetype", "name": "FreeType", "version": "2.14.3", "license": "FTL OR GPL-2.0-or-later", "url": "https://freetype.org/", "files": ["pillow.libs/libfreetype"]},
+      {"id": "harfbuzz", "name": "HarfBuzz", "license": "MIT-Modern-Variant", "url": "https://harfbuzz.github.io/", "files": ["pillow.libs/libharfbuzz"]},
+      {"id": "libjpeg-turbo", "name": "libjpeg-turbo", "version": "3.1.4", "license": "IJG AND BSD-3-Clause AND Zlib", "url": "https://libjpeg-turbo.org/", "files": ["pillow.libs/libjpeg"]},
+      {"id": "lcms2", "name": "Little CMS", "version": "2.19", "license": "MIT", "url": "https://www.littlecms.com/", "files": ["pillow.libs/liblcms2"]},
+      {"id": "xz", "name": "liblzma (XZ Utils)", "version": "5.8.3", "license": "0BSD", "url": "https://tukaani.org/xz/", "files": ["pillow.libs/liblzma"]},
+      {"id": "openjpeg", "name": "OpenJPEG", "version": "2.5.4", "license": "BSD-2-Clause", "url": "https://www.openjpeg.org/", "files": ["pillow.libs/libopenjp2"]},
+      {"id": "libpng", "name": "libpng", "version": "1.6.58", "license": "Libpng-2.0", "url": "http://www.libpng.org/pub/png/libpng.html", "files": ["pillow.libs/libpng16"]},
+      {"id": "libtiff", "name": "LibTIFF", "version": "4.7.1", "license": "libtiff", "url": "https://libtiff.gitlab.io/libtiff/", "files": ["pillow.libs/libtiff"]},
+      {"id": "libwebp", "name": "libwebp (libwebp, libwebpdemux, libwebpmux, libsharpyuv)", "version": "1.6.0", "license": "BSD-3-Clause", "url": "https://chromium.googlesource.com/webm/libwebp", "files": ["pillow.libs/libwebp", "pillow.libs/libwebpdemux", "pillow.libs/libwebpmux", "pillow.libs/libsharpyuv"]},
+      {"id": "libavif", "name": "libavif", "version": "1.4.2", "license": "BSD-2-Clause", "url": "https://github.com/AOMediaCodec/libavif", "files": ["pillow.libs/libavif"]},
+      {"id": "brotli", "name": "Brotli (decoder)", "version": "1.2.0", "license": "MIT", "url": "https://github.com/google/brotli", "files": ["pillow.libs/libbrotlicommon", "pillow.libs/libbrotlidec"]},
+      {"id": "zstd", "name": "Zstandard", "version": "1.5.7", "license": "BSD-3-Clause OR GPL-2.0-only", "url": "https://facebook.github.io/zstd/", "files": ["pillow.libs/libzstd"]},
+      {"id": "libxcb", "name": "libxcb", "license": "X11", "url": "https://xcb.freedesktop.org/", "files": ["pillow.libs/libxcb"]},
+      {"id": "libxau", "name": "libXau", "license": "MIT-open-group", "url": "https://gitlab.freedesktop.org/xorg/lib/libxau", "files": ["pillow.libs/libXau"]}
+    ]
+  },
+  "cryptography": {
+    "version": "50.0.2",
+    "libraries": [
+      {"id": "openssl", "name": "OpenSSL (статически в _rust.abi3.so)", "version": "4.0.3", "license": "Apache-2.0", "url": "https://www.openssl.org/", "linkage": "static"}
+    ]
+  },
+  "cffi": {
+    "version": "2.1.1",
+    "libraries": [
+      {"id": "libffi", "name": "libffi (статически в _cffi_backend)", "license": "MIT", "url": "https://sourceware.org/libffi/", "linkage": "static"}
+    ]
+  },
+  "argon2-cffi-bindings": {
+    "version": "26.1.0",
+    "libraries": [
+      {"id": "libargon2", "name": "Argon2 reference implementation (статически в _ffi.abi3.so)", "license": "CC0-1.0 OR Apache-2.0", "url": "https://github.com/P-H-C/phc-winner-argon2", "linkage": "static"}
+    ]
+  },
+  "pyyaml": {
+    "version": "6.0.3",
+    "libraries": [
+      {"id": "libyaml", "name": "LibYAML (статически в _yaml)", "version": "0.2.5", "license": "MIT", "url": "https://pyyaml.org/wiki/LibYAML", "linkage": "static"}
+    ]
+  },
+  "pynacl": {
+    "version": "1.6.2",
+    "libraries": [
+      {"id": "libsodium", "name": "libsodium (статически в _sodium.abi3.so)", "license": "ISC", "url": "https://libsodium.org/", "linkage": "static"}
+    ]
+  }
+}
