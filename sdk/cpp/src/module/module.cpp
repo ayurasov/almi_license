@@ -131,6 +131,17 @@ std::string StringOf(const json& object, const char* name) {
   return found != object.end() && found->is_string() ? found->get<std::string>() : std::string();
 }
 
+// user_message of a problem (problem.schema.json): an object of texts by language — the language of
+// the product, then Russian; a plain string of an older server is taken as it is.
+std::string UserMessage(const json& problem, const std::string& locale) {
+  const auto found = problem.find("user_message");
+  if (found == problem.end()) return {};
+  if (found->is_string()) return found->get<std::string>();
+  if (!found->is_object()) return {};
+  const std::string text = StringOf(*found, locale.c_str());
+  return text.empty() ? StringOf(*found, "ru") : text;
+}
+
 policy::Capabilities Strings(const json& array) {
   policy::Capabilities result;
   if (!array.is_array()) return result;
@@ -585,7 +596,7 @@ Module::Reply Module::Post(const std::string& path, const json& body, const std:
     reply = Reply{response.failure, response.status, json::parse(response.body, nullptr, false), "", ""};
     if (reply.body.is_discarded()) reply.body = json::object();
     reply.code = StringOf(reply.body, "code");
-    reply.user_message = StringOf(reply.body, "user_message");
+    reply.user_message = UserMessage(reply.body, settings_.locale);
     if (reply.status != kHttpUnauthorized || reply.code != "clock_skew") break;
     // 401 clock_skew: correct "created" by the server time and repeat once (section 16).
     const auto server_time = TimeOf(reply.body, "server_time");
@@ -777,10 +788,12 @@ LM_Result Module::CheckOnce(bool allow_reactivate) {
     if (run.release) {
       (void)Post("/api/v1/activations/" + activation_id + "/release", {{"reason", "directive"}},
                  activation_id);
-      const std::scoped_lock lock(state_mutex_);
-      for (const char* entry : {kLease, kLeaseSeq, kActivationId, kLicenseKey}) entries_.erase(entry);
-      (void)SaveLocked();
-      Notify({LM_EVENT_STATE_CHANGED});
+      {
+        const std::scoped_lock lock(state_mutex_);
+        for (const char* entry : {kLease, kLeaseSeq, kActivationId, kLicenseKey}) entries_.erase(entry);
+        (void)SaveLocked();
+      }
+      Notify({LM_EVENT_STATE_CHANGED});  // without the state lock: the callback may read the state
     } else if (run.rebind && allow_reactivate && !key.empty()) {
       return ActivateWith(key);
     }
@@ -885,6 +898,9 @@ LM_Result Module::UpdateTrust() {
   options.base_url = base_url;
   options.allow_plain_http_loopback = settings_.allow_plain_http_loopback;
   options.sleep = settings_.sleep;
+  // One attempt: the bundle is refreshed again by the next update_trust, and a 503 with
+  // Retry-After must not hold the check (and the operation lock) for minutes.
+  options.max_retries = 0;
   const transport::Transport transport(options);
   transport::Request request;
   request.method = "GET";

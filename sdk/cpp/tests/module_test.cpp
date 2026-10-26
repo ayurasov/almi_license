@@ -175,8 +175,9 @@ class FakeServer {
       idempotency_key = request.get_header_value("Idempotency-Key");
       if (refuse_seats) {
         response.status = 409;
-        response.set_content(R"({"code":"seats_exhausted","user_message":"Все 10 мест заняты."})",
-                             "application/problem+json");
+        response.set_content(
+            R"({"code":"seats_exhausted","user_message":{"ru":"Все 10 мест заняты.","en":"All 10 seats are taken."}})",
+            "application/problem+json");
         return;
       }
       instance_id = body.at("instance").at("instance_id").get<std::string>();
@@ -227,6 +228,12 @@ class FakeServer {
       const std::scoped_lock lock(mutex_);
       calls.push_back("trust");
       protocols.push_back(request.get_header_value("ALMI-Protocol"));
+      if (trust_status != 0) {
+        response.status = trust_status;
+        response.set_header("Retry-After", "300");
+        response.set_content(R"({"code":"maintenance"})", "application/problem+json");
+        return;
+      }
       response.set_content(trust_body.dump(), "application/json");
     });
     port_ = server_.bind_to_any_port("127.0.0.1");
@@ -258,6 +265,7 @@ class FakeServer {
   bool released = false;
   json directives = json::array();  // sent with the next lease only
   json trust_body = json::object();
+  int trust_status = 0;
   std::vector<std::string> protocols;  // ALMI-Protocol of every request
   std::string check_problem;           // a problem answer of check instead of a lease
   int check_status = 0;
@@ -713,6 +721,35 @@ TEST_F(ModuleTest, UpdateTrustRevokesTheIssuerOfTheBundle) {
   EXPECT_NE(module->GetStatus().state, State::kActive);
 }
 
+TEST_F(ModuleTest, UnavailableTrustBundleDoesNotHoldTheCheck) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  server.trust_status = 503;  // no bundle on the server: maintenance with Retry-After
+  server.directives = json::array({Directive("dir_t", "update_trust")});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(std::count(server.calls.begin(), server.calls.end(), "trust"), 1);  // no retries
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(server.last_body.at("acked_directives"), json::array({"dir_t"}));
+}
+
+TEST_F(ModuleTest, ReleaseDirectiveFreesTheSeatAndNotifies) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  int changes = 0;
+  module->SetCallback(
+      [](LM_EventType type, void* context) {
+        if (type == LM_EVENT_STATE_CHANGED) ++*static_cast<int*>(context);
+      },
+      &changes);
+  server.directives = json::array({Directive("dir_rel", "release", {{"reason", "замена ПК"}})});
+  ASSERT_EQ(module->CheckNow(), LM_OK);
+  EXPECT_EQ(server.calls.back(), "release");
+  EXPECT_EQ(module->GetStatus().state, State::kTrial);
+  EXPECT_GE(changes, 1);
+}
+
 TEST_F(ModuleTest, ReleaseRequestFileNamesTheActivation) {
   FakeServer server(clock_);
   auto module = Open(server.Url());
@@ -737,9 +774,12 @@ TEST_F(ModuleTest, UnknownCodesFollowSection16) {
   auto module = Open(server.Url());
   ASSERT_EQ(module->Activate(kLicense), LM_OK);
   server.check_status = 418;
-  server.check_problem = R"({"code":"code_of_a_later_server","user_message":"Новая причина отказа."})";
+  server.check_problem = R"({"code":"code_of_a_later_server","user_message":{"ru":"Новая причина отказа."}})";
   EXPECT_EQ(module->CheckNow(), LM_ERR_INTERNAL);  // 4xx: as invalid_request, with user_message
   EXPECT_EQ(module->LastError(), "Новая причина отказа.");
+  server.check_problem = R"({"code":"code_of_a_later_server","user_message":"Строка старого сервера."})";
+  EXPECT_EQ(module->CheckNow(), LM_ERR_INTERNAL);
+  EXPECT_EQ(module->LastError(), "Строка старого сервера.");
   server.check_status = 599;
   server.check_problem = R"({"code":"another_new_code"})";
   EXPECT_EQ(module->CheckNow(), LM_ERR_NETWORK);  // 5xx: as internal_error, work by the lease

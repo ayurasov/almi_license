@@ -310,7 +310,7 @@ def test_seats_and_reserve(licensed: Any, issuer: Any) -> None:
     assert exhausted.status_code == 409 and code_of(exhausted) == "seats_exhausted"
     problem = exhausted.json()
     assert problem["data"] == {"used": 3, "limit": 2, "reserve": 1}
-    assert "(3 из 2)" in problem["user_message"]["ru"]
+    assert "(3 из 3)" in problem["user_message"]["ru"]
 
 
 def test_reserve_pct_comes_from_the_profile(licensed: Any, issuer: Any) -> None:

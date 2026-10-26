@@ -117,7 +117,9 @@ def test_01_server_address_from_the_configuration(stand: Stand, product: Product
     """1. The address comes from the configuration (ALMI_LICENSE_SERVER_URL), not the build."""
     lic = stand.license(enforcement="enforce")
     out = product.run(
-        "about", server=None, env={"ALMI_LICENSE_SERVER_URL": stand.url, "ALMI_LICENSE_KEY": lic["key"]}
+        "about",
+        server=None,
+        env={"ALMI_LICENSE_SERVER_URL": stand.url, "ALMI_LICENSE_KEY": lic["key"]},
     )
     assert "Лицензия активирована по настройке администратора." in out, out
     assert f"Сервер: {stand.url}" in out
@@ -161,7 +163,7 @@ def test_04_background_check_runs_a_refresh_now(stand: Stand, product: Product) 
 
 
 def test_05_works_without_network_by_the_lease(stand: Stand, product: Product) -> None:
-    """5. Without the server the product works by its lease (offline_grace_days of Desktop: none)."""
+    """5. Without the server the product works by its lease (Desktop: no offline_grace_days)."""
     lic = stand.license(enforcement="enforce")
     product.run(f"license activate {lic['key']}")
     out = product.run("about", "type текст", "save /dev/null", server=UNREACHABLE)
@@ -183,7 +185,9 @@ def test_06_damaged_store_is_not_trusted(stand: Stand, product: Product) -> None
     assert f"Состояние: {FULL}" not in out
 
 
-def test_07_clock_moved_back_does_not_bring_the_licence_back(stand: Stand, product: Product) -> None:
+def test_07_clock_moved_back_does_not_bring_the_licence_back(
+    stand: Stand, product: Product
+) -> None:
     """7. The clock moved back: the trusted time does not go back (RollbackGuard)."""
     lic = stand.license(valid_days=40, enforcement="enforce")
     product.run(f"license activate {lic['key']}")
@@ -193,7 +197,9 @@ def test_07_clock_moved_back_does_not_bring_the_licence_back(stand: Stand, produ
 
 def test_08_09_states_and_functions_by_has_feature(stand: Stand, product: Product) -> None:
     """8, 9. Every state is shown, functions follow LM_HasFeature: NOTICE → GRACE → RESTRICTED."""
-    lic = stand.license(valid_days=40, enforcement="enforce", edition_id=edition(stand, "professional"))
+    lic = stand.license(
+        valid_days=40, enforcement="enforce", edition_id=edition(stand, "professional")
+    )
     product.run(f"license activate {lic['key']}")
     assert "Макрос UPPER выполнен." in product.run("type a", "macro")
     for days, state in ((15, NOTICE), (45, GRACE), (60, RESTRICTED)):
@@ -214,7 +220,9 @@ def test_09_edition_without_a_function(stand: Stand, product: Product) -> None:
 
 def test_10_monitor_does_not_restrict(stand: Stand, product: Product) -> None:
     """10. monitor: past the grace the functions stay, the messages are shown."""
-    lic = stand.license(valid_days=10, enforcement="monitor", edition_id=edition(stand, "professional"))
+    lic = stand.license(
+        valid_days=10, enforcement="monitor", edition_id=edition(stand, "professional")
+    )
     product.run(f"license activate {lic['key']}")
     stand.shift(60)
     product.run("license check", days=60)
@@ -225,13 +233,17 @@ def test_10_monitor_does_not_restrict(stand: Stand, product: Product) -> None:
 
 def test_11_lifted_block_applies_at_the_next_check(stand: Stand, product: Product) -> None:
     """11. "Снять блок" in the console: the next check gives the functions back."""
-    lic = stand.license(valid_days=10, enforcement="enforce", edition_id=edition(stand, "professional"))
+    lic = stand.license(
+        valid_days=10, enforcement="enforce", edition_id=edition(stand, "professional")
+    )
     product.run(f"license activate {lic['key']}")
     stand.shift(60)
     product.run("license check", days=60)
     assert "недоступна: ограниченный режим" in product.run("type a", "macro", days=60)
     until = (stand.now() + timedelta(days=30)).isoformat()
-    stand.api("POST", f"licenses/{lic['license_id']}/lift-block", {"until": until, "reason": "оплата"})
+    stand.api(
+        "POST", f"licenses/{lic['license_id']}/lift-block", {"until": until, "reason": "оплата"}
+    )
     product.run("license check", days=60)
     assert "Макрос UPPER выполнен." in product.run("type a", "macro", days=60)
 
@@ -258,8 +270,8 @@ def test_12_14_directives_from_the_console(stand: Stand, product: Product) -> No
     }
 
     stand.api("POST", path, {"type": "release", "params": {"reason": "замена ПК"}})
-    out = product.run("license check", "about")
-    assert f"Состояние: {FULL}" not in out
+    product.run("license check")
+    assert product.state(server=UNREACHABLE) == TRIAL  # released: the product is back in trial
     assert [a["status"] for a in stand.activations(lic["license_id"])] == ["released"]
 
 
@@ -285,12 +297,18 @@ def test_15_16_release_and_codes(stand: Stand, product: Product, tmp_path: Path)
     """15, 16. Release (uninstall) frees the seat; a refusal shows user_message of the server."""
     lic = stand.license(limit=1, enforcement="enforce")
     product.run(f"license activate {lic['key']}")
-    other = Product(tmp_path / "pc-2", stand.url)
-    out = other.run(f"license activate {lic['key']}")
-    assert "Ошибка -2" in out and "мест" in out, out  # seats_exhausted, LM_ERR_DEVICE_LIMIT
+    # 1 seat and the reserve of the profile (3 %, rounded up): the second computer takes the
+    # reserve, the third is refused.
+    second = Product(tmp_path / "pc-2", stand.url)
+    assert "Лицензия активирована." in second.run(f"license activate {lic['key']}")
+    third = Product(tmp_path / "pc-3", stand.url)
+    out = third.run(f"license activate {lic['key']}")
+    # seats_exhausted (LM_ERR_DEVICE_LIMIT), user_message of the server: 2 seats with the reserve.
+    assert "Ошибка -2: Все лицензии по этому ключу уже используются (2 из 2)" in out, out
     assert "Место освобождено." in product.run("license deactivate")
-    assert [a["status"] for a in stand.activations(lic["license_id"])] == ["released"]
-    assert "Лицензия активирована." in other.run(f"license activate {lic['key']}")
+    statuses = sorted(a["status"] for a in stand.activations(lic["license_id"]))
+    assert statuses == ["active", "released"]
+    assert "Лицензия активирована." in third.run(f"license activate {lic['key']}")
 
 
 def test_17_no_secrets_in_the_output_or_the_files(stand: Stand, product: Product) -> None:
@@ -353,7 +371,10 @@ class ConnectProxy:
             if not ready:
                 break
             for source in ready:
-                data = source.recv(65536)
+                try:
+                    data = source.recv(65536)
+                except OSError:
+                    data = b""
                 if not data:
                     client.close()
                     upstream.close()
@@ -371,7 +392,9 @@ def proxy() -> Iterator[ConnectProxy]:
     started.close()
 
 
-def test_19_system_proxy_and_corporate_root(stand: Stand, product: Product, proxy: ConnectProxy) -> None:
+def test_19_system_proxy_and_corporate_root(
+    stand: Stand, product: Product, proxy: ConnectProxy
+) -> None:
     """19. Through the system proxy (https_proxy) and with the certificate of a corporate CA in the
     system store (the CA of the stand, installed by prepare-tls.sh), without any setting of the
     product."""
@@ -406,7 +429,16 @@ def test_web_and_os_adapters(stand: Stand, tmp_path: Path) -> None:
 
     os_lic = stand.license(limit=1, product="alteros", enforcement="enforce")
     script = str(REPO / "prototypes/mini-os/alteros-register.sh")
-    args = [script, "--server", stand.url, "--state", str(tmp_path / "os"), "--cacert", CA, "register"]
+    args = [
+        script,
+        "--server",
+        stand.url,
+        "--state",
+        str(tmp_path / "os"),
+        "--cacert",
+        CA,
+        "register",
+    ]
     env = os.environ | {"ALMI_LICENSE_KEY": os_lic["key"]}
     for _ in range(2):
         done = subprocess.run(args, capture_output=True, text=True, env=env, check=False)  # noqa: S603

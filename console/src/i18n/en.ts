@@ -462,6 +462,7 @@ const en: typeof ru = {
     sentMany: 'The command is queued for activations: {count}',
   },
   stats: {
+    notReported: 'not reported',
     title: 'Statistics',
     customer: 'Customer',
     product: 'Product',

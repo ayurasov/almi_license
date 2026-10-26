@@ -465,6 +465,7 @@ export default {
     sentMany: 'Команда поставлена в очередь для активаций: {count}',
   },
   stats: {
+    notReported: 'не сообщается',
     title: 'Статистика',
     customer: 'Заказчик',
     product: 'Продукт',

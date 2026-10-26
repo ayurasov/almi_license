@@ -64,7 +64,8 @@ const tiles = computed(() => {
 })
 const spread = (values: Record<string, number> | undefined) =>
   Object.entries(values ?? {})
-    .map(([name, count]) => ({ name, count }))
+    // A product that does not report its version or OS (AlterOS registration) is shown as such.
+    .map(([name, count]) => ({ name: name.trim() || t('stats.notReported'), count }))
     .sort((a, b) => b.count - a.count)
 
 async function exportXlsx(): Promise<void> {
