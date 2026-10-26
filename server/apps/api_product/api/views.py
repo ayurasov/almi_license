@@ -97,7 +97,34 @@ class _Replayed(Exception):
         self.stored = stored
 
 
-class DeniedCounted(APIView):
+PROTOCOL = "1"
+
+
+class ProtocolChecked(APIView):
+    """ALMI-Protocol (section 4 of document 2): another version than 1 gets 426 upgrade_required.
+
+    A request without the header is accepted, counted and logged, as one without Idempotency-Key
+    (question 37): modules before 1.0 and test tools do not send it.
+    """
+
+    checks_protocol = True  # False for pages of a browser (the offline portal)
+
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
+        value = request.META.get("HTTP_ALMI_PROTOCOL") if self.checks_protocol else PROTOCOL
+        if value is None:
+            operation = type(self).__name__.removesuffix("View")
+            metrics.WITHOUT_PROTOCOL.labels(operation=operation).inc()
+            logger.info(
+                "request without ALMI-Protocol: %s, client %s",
+                operation,
+                request.META.get("HTTP_ALMI_CLIENT", "-")[:64],
+            )
+        elif value.strip() != PROTOCOL:
+            raise Problem("upgrade_required")
+        super().initial(request, *args, **kwargs)
+
+
+class DeniedCounted(ProtocolChecked):
     """Refusals of a licence or a seat are counted by code for the usage report (question 43)."""
 
     def handle_exception(self, exc: Exception) -> Response:
@@ -305,6 +332,8 @@ class OfflineRequestView(DeniedCounted):
     No session and no request signature: the file itself is signed by the device key.
     """
 
+    checks_protocol = False  # a page of the console, not a product
+
     authentication_classes: list[type[Any]] = []
     permission_classes: list[type[Any]] = []
     parser_classes = [MultiPartParser]
@@ -408,7 +437,7 @@ class OfflineCaptchaView(APIView):
         )
 
 
-class TrustView(APIView):
+class TrustView(ProtocolChecked):
     """GET /api/v1/trust (getTrust, section 5.5 of document 2): no request signature."""
 
     authentication_classes: list[type[Any]] = []

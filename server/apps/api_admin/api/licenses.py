@@ -9,7 +9,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.activation.domain import license_usage, list_activations, release_by_operator
+from apps.activation.domain import (
+    directives_of,
+    issue_directive,
+    issue_license_directive,
+    license_usage,
+    list_activations,
+    release_by_operator,
+)
 from apps.api_admin.api import serializers as s
 from apps.api_admin.api.common import actor_of, valid
 from apps.api_admin.api.permissions import CanRead, ConsoleSession, IsOperator
@@ -254,6 +261,48 @@ class ActivationReleaseView(_Operator):
         data = valid(s.ReasonSerializer(data=request.data))
         result = release_by_operator(activation_id, reason=data["reason"], **self.context(request))
         return Response(s.ActivationSerializer(asdict(result)).data)
+
+
+class ActivationDirectivesView(_Operator):
+    """Directives of an activation (section 8 of document 2): sent with the next check."""
+
+    @extend_schema(
+        parameters=[ACTIVATION_ID],
+        responses={200: s.DirectiveSerializer(many=True)},
+        operation_id="activations_directives_list",
+    )
+    def get(self, request: Request, activation_id: str) -> Response:
+        return Response(
+            [s.DirectiveSerializer(asdict(d)).data for d in directives_of(activation_id)]
+        )
+
+    @extend_schema(
+        parameters=[ACTIVATION_ID],
+        request=s.DirectiveCreateSerializer,
+        responses={201: s.DirectiveSerializer},
+        operation_id="activations_directives_create",
+    )
+    def post(self, request: Request, activation_id: str) -> Response:
+        data = valid(s.DirectiveCreateSerializer(data=request.data))
+        result = issue_directive(
+            activation_id, data["type"], data["params"], **self.context(request)
+        )
+        return Response(s.DirectiveSerializer(asdict(result)).data, status=201)
+
+
+class LicenseDirectivesView(_Operator):
+    @extend_schema(
+        parameters=[LICENSE_ID],
+        request=s.DirectiveCreateSerializer,
+        responses={200: s.DirectivesQueuedSerializer},
+        operation_id="licenses_directives_create",
+    )
+    def post(self, request: Request, license_id: UUID) -> Response:
+        data = valid(s.DirectiveCreateSerializer(data=request.data))
+        queued = issue_license_directive(
+            license_id, data["type"], data["params"], **self.context(request)
+        )
+        return Response({"queued": queued})
 
 
 class ProductsView(_Reader):

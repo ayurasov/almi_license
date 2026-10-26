@@ -69,6 +69,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/activations/{activation_id}/directives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Directives of an activation (section 8 of document 2): sent with the next check. */
+        get: operations["activations_directives_list"];
+        put?: never;
+        /** @description Directives of an activation (section 8 of document 2): sent with the next check. */
+        post: operations["activations_directives_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/activations/{activation_id}/release": {
         parameters: {
             query?: never;
@@ -358,6 +376,22 @@ export interface paths {
         get: operations["licenses_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/licenses/{license_id}/directives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["licenses_directives_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -955,6 +989,40 @@ export interface components {
             external_id?: string;
             status?: string;
         };
+        Directive: {
+            id: string;
+            activation_id: string;
+            type: string;
+            params: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+            state: components["schemas"]["StateEnum"];
+            /** Format: date-time */
+            done_at: string | null;
+        };
+        DirectiveCreate: {
+            type: components["schemas"]["DirectiveCreateTypeEnum"];
+            params?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * @description * `refresh_now` - refresh_now
+         *     * `update_trust` - update_trust
+         *     * `set_check_interval` - set_check_interval
+         *     * `show_message` - show_message
+         *     * `rebind` - rebind
+         *     * `release` - release
+         *     * `set_server_url` - set_server_url
+         * @enum {string}
+         */
+        DirectiveCreateTypeEnum: "refresh_now" | "update_trust" | "set_check_interval" | "show_message" | "rebind" | "release" | "set_server_url";
+        DirectivesQueued: {
+            /** @description Active activations that got the directive */
+            queued: number;
+        };
         Edition: {
             /** Format: uuid */
             id: string;
@@ -1064,7 +1132,7 @@ export interface components {
             product_id: string;
             /** Format: uuid */
             edition_id: string | null;
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["LicenseTypeEnum"];
             status: components["schemas"]["LicenseStatusEnum"];
             limit: number;
             reserve_pct: number | null;
@@ -1081,6 +1149,8 @@ export interface components {
             rights_version: number;
             key_masks: string[];
             limits: components["schemas"]["Limits"];
+            /** @description Highest product version: 3 — every 3.x; empty — any */
+            max_product_version: string;
             /** @description Hourly state by PolicyEngine */
             state: string;
             /** Format: date-time */
@@ -1151,6 +1221,15 @@ export interface components {
          * @enum {string}
          */
         LicenseStatusEnum: "active" | "suspended" | "revoked";
+        /**
+         * @description * `subscription` - subscription
+         *     * `perpetual` - perpetual
+         *     * `trial` - trial
+         *     * `nfr` - nfr
+         *     * `free` - free
+         * @enum {string}
+         */
+        LicenseTypeEnum: "subscription" | "perpetual" | "trial" | "nfr" | "free";
         LiftBlock: {
             reason: string;
             /** Format: date-time */
@@ -1280,6 +1359,7 @@ export interface components {
             metric_id?: string;
             enforcement?: string;
             limits?: components["schemas"]["Limits"];
+            max_product_version?: string;
         };
         Product: {
             /** Format: uuid */
@@ -1383,6 +1463,13 @@ export interface components {
             status: components["schemas"]["LocalStatus"];
             request_file: components["schemas"]["AlkFile"] | null;
         };
+        /**
+         * @description * `queued` - queued
+         *     * `acked` - acked
+         *     * `unsupported` - unsupported
+         * @enum {string}
+         */
+        StateEnum: "queued" | "acked" | "unsupported";
         Stats: {
             licenses: number;
             limit: number;
@@ -1418,15 +1505,6 @@ export interface components {
             /** @default  */
             document: string;
         };
-        /**
-         * @description * `subscription` - subscription
-         *     * `perpetual` - perpetual
-         *     * `trial` - trial
-         *     * `nfr` - nfr
-         *     * `free` - free
-         * @enum {string}
-         */
-        TypeEnum: "subscription" | "perpetual" | "trial" | "nfr" | "free";
         Usage: {
             active: number;
             in_reserve: number;
@@ -1570,6 +1648,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActivationPage"];
+                };
+            };
+        };
+    };
+    activations_directives_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Directive"][];
+                };
+            };
+        };
+    };
+    activations_directives_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectiveCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["DirectiveCreate"];
+                "multipart/form-data": components["schemas"]["DirectiveCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Directive"];
                 };
             };
         };
@@ -2135,6 +2261,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["License"];
+                };
+            };
+        };
+    };
+    licenses_directives_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                license_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DirectiveCreate"];
+                "application/x-www-form-urlencoded": components["schemas"]["DirectiveCreate"];
+                "multipart/form-data": components["schemas"]["DirectiveCreate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectivesQueued"];
                 };
             };
         };

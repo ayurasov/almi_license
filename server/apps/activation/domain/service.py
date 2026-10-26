@@ -29,6 +29,7 @@ from apps.licensing.domain import (
     key_facts,
     key_hash,
     lock_license,
+    version_supported,
 )
 from apps.packages.domain import allocated_seats, package_terms
 from apps.policy.domain import (
@@ -139,7 +140,8 @@ def load_terms(license_: LicenseRecord, now: datetime) -> Terms:
 
 
 def _terms(license_: LicenseRecord, request: ActivationRequest, now: datetime) -> Terms:
-    """Checks of a new activation in the order of prompt I2-04: revoked, product, term."""
+    """Checks of a new activation in the order of prompt I2-04: revoked, product, term; then the
+    version of the product against the licence (422)."""
     if license_.status == "revoked":
         raise DomainError("license_revoked")
     terms = load_terms(license_, now)
@@ -149,6 +151,11 @@ def _terms(license_: LicenseRecord, request: ActivationRequest, now: datetime) -
         raise DomainError("product_mismatch")
     if not accepts_new_activations(terms.policy, license_.valid_until, now):
         raise DomainError("license_expired")
+    if not version_supported(request.product_version, license_.max_product_version):
+        raise DomainError(
+            "unsupported_product_version",
+            data={"max_product_version": license_.max_product_version},
+        )
     return terms
 
 

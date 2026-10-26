@@ -46,4 +46,26 @@ describe('useActivationsStore', () => {
       body: { reason: 'Списан компьютер' },
     })
   })
+
+  it('queues a directive for an activation', async () => {
+    const post = vi
+      .spyOn(api, 'POST')
+      .mockResolvedValue({ data: { id: 'dir_1', state: 'queued' }, response: new Response() })
+    const store = useActivationsStore()
+
+    const body = { type: 'set_server_url' as const, params: { url: 'https://license.corp.local', fallback_days: 14 } }
+    await store.sendDirective('act_1', body)
+
+    expect(post).toHaveBeenCalledWith('/api/admin/activations/{activation_id}/directives', {
+      params: { path: { activation_id: 'act_1' } },
+      body,
+    })
+  })
+
+  it('lists the directives of an activation', async () => {
+    vi.spyOn(api, 'GET').mockResolvedValue({ data: [{ id: 'dir_1', state: 'acked' }], response: new Response() })
+    const store = useActivationsStore()
+
+    expect(await store.directives('act_1')).toEqual([{ id: 'dir_1', state: 'acked' }])
+  })
 })

@@ -126,6 +126,11 @@ export const useLicensesStore = defineStore('licenses', () => {
     return required((await api.GET('/api/admin/licenses/{license_id}/usage', path(id))).data)
   }
 
+  async function sendDirective(id: string, body: Schemas['DirectiveCreate']): Promise<number> {
+    const { data } = await api.POST('/api/admin/licenses/{license_id}/directives', { ...path(id), body })
+    return required(data).queued
+  }
+
   async function history(id: string): Promise<HistoryEvent[]> {
     return required((await api.GET('/api/admin/licenses/{license_id}/history', path(id))).data)
   }
@@ -147,5 +152,6 @@ export const useLicensesStore = defineStore('licenses', () => {
     issueKey,
     usage,
     history,
+    sendDirective,
   }
 })

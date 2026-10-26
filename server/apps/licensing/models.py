@@ -111,6 +111,12 @@ class License(UUIDModel):
         blank=True,
         help_text="Лимиты пользователей: named_users, active_users, only_count_active",
     )
+    max_product_version = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Старшая версия продукта: 3 — все 3.x, 3.2 — все 3.2.x; пусто — любая",
+    )
     status = models.CharField(
         max_length=16, choices=LicenseStatus.choices, default=LicenseStatus.ACTIVE
     )

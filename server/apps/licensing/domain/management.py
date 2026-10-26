@@ -4,6 +4,7 @@ Every change runs in a transaction with SELECT … FOR UPDATE of the license row
 audit event (AGENTS.md, rules 6 and 7). Renewal and lifting a block raise rights_version.
 """
 
+import re
 import string
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -55,6 +56,7 @@ class LicenseData:
     limits: dict[str, Any] = field(default_factory=dict)
     state: str = ""
     state_at: datetime | None = None
+    max_product_version: str = ""
 
 
 @dataclass(frozen=True)
@@ -100,10 +102,12 @@ def _data(row: License) -> LicenseData:
         limits=dict(row.limits),
         state=row.state,
         state_at=row.state_at,
+        max_product_version=row.max_product_version,
     )
 
 
 USER_LIMITS = ("named_users", "active_users")
+_MAX_VERSION = re.compile(r"(\d+(\.\d+){0,2})?")
 
 
 def _check_limits(value: Any) -> tuple[dict[str, Any], dict[str, list[str]]]:
@@ -379,7 +383,7 @@ def update_settings(
 ) -> LicenseData:
     """E01-07: limit, reserve_pct, metric_id, enforcement (monitor / enforce / "" = profile);
     limits of users of a server product (E11-01)."""
-    allowed = {"limit", "reserve_pct", "metric_id", "enforcement", "limits"}
+    allowed = {"limit", "reserve_pct", "metric_id", "enforcement", "limits", "max_product_version"}
     changes = {key: value for key, value in values.items() if key in allowed}
     with transaction.atomic():
         row = _locked(license_id)
@@ -393,6 +397,12 @@ def update_settings(
         if "limits" in changes:
             changes["limits"], limit_errors = _check_limits(changes["limits"])
             errors |= limit_errors
+        if "max_product_version" in changes:
+            changes["max_product_version"] = str(changes["max_product_version"] or "").strip()
+            if not _MAX_VERSION.fullmatch(changes["max_product_version"]):
+                errors["max_product_version"] = [
+                    "Версия — до трёх чисел через точку, например 3 или 3.2."
+                ]
         if errors:
             raise _invalid(errors)
         for key, value in changes.items():

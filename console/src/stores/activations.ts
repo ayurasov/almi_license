@@ -7,6 +7,18 @@ import type { components } from '@/api/generated/admin'
 import { NetworkError } from '@/api/problem'
 
 export type Activation = components['schemas']['Activation']
+export type Directive = components['schemas']['Directive']
+export type DirectiveType = components['schemas']['DirectiveCreateTypeEnum']
+export type DirectiveBody = components['schemas']['DirectiveCreate']
+export const DIRECTIVE_TYPES: DirectiveType[] = [
+  'refresh_now',
+  'update_trust',
+  'set_check_interval',
+  'show_message',
+  'set_server_url',
+  'rebind',
+  'release',
+]
 
 export interface ActivationQuery {
   page: number
@@ -68,5 +80,21 @@ export const useActivationsStore = defineStore('activations', () => {
     return data
   }
 
-  return { items, total, loading, failed, list, release }
+  async function sendDirective(activationId: string, body: DirectiveBody): Promise<Directive> {
+    const { data } = await api.POST('/api/admin/activations/{activation_id}/directives', {
+      params: { path: { activation_id: activationId } },
+      body,
+    })
+    if (!data) throw new NetworkError('empty response')
+    return data
+  }
+
+  async function directives(activationId: string): Promise<Directive[]> {
+    const { data } = await api.GET('/api/admin/activations/{activation_id}/directives', {
+      params: { path: { activation_id: activationId } },
+    })
+    return data ?? []
+  }
+
+  return { items, total, loading, failed, list, release, sendDirective, directives }
 })

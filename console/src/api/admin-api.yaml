@@ -142,6 +142,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActivationPage'
           description: ''
+  /api/admin/activations/{activation_id}/directives:
+    get:
+      operationId: activations_directives_list
+      description: 'Directives of an activation (section 8 of document 2): sent with
+        the next check.'
+      parameters:
+      - in: path
+        name: activation_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - activations
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Directive'
+          description: ''
+    post:
+      operationId: activations_directives_create
+      description: 'Directives of an activation (section 8 of document 2): sent with
+        the next check.'
+      parameters:
+      - in: path
+        name: activation_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - activations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directive'
+          description: ''
   /api/admin/activations/{activation_id}/release:
     post:
       operationId: activations_release
@@ -851,6 +908,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/License'
+          description: ''
+  /api/admin/licenses/{license_id}/directives:
+    post:
+      operationId: licenses_directives_create
+      parameters:
+      - in: path
+        name: license_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - licenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+        required: true
+      security:
+      - consoleSession: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectivesQueued'
           description: ''
   /api/admin/licenses/{license_id}/history:
     get:
@@ -1938,6 +2027,71 @@ components:
         status:
           type: string
           maxLength: 16
+    Directive:
+      type: object
+      properties:
+        id:
+          type: string
+        activation_id:
+          type: string
+        type:
+          type: string
+        params:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - activation_id
+      - created_at
+      - done_at
+      - id
+      - params
+      - state
+      - type
+    DirectiveCreate:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/DirectiveCreateTypeEnum'
+        params:
+          type: object
+          additionalProperties: {}
+      required:
+      - type
+    DirectiveCreateTypeEnum:
+      enum:
+      - refresh_now
+      - update_trust
+      - set_check_interval
+      - show_message
+      - rebind
+      - release
+      - set_server_url
+      type: string
+      description: |-
+        * `refresh_now` - refresh_now
+        * `update_trust` - update_trust
+        * `set_check_interval` - set_check_interval
+        * `show_message` - show_message
+        * `rebind` - rebind
+        * `release` - release
+        * `set_server_url` - set_server_url
+    DirectivesQueued:
+      type: object
+      properties:
+        queued:
+          type: integer
+          description: Active activations that got the directive
+      required:
+      - queued
     Edition:
       type: object
       properties:
@@ -2175,7 +2329,7 @@ components:
           format: uuid
           nullable: true
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/LicenseTypeEnum'
         status:
           $ref: '#/components/schemas/LicenseStatusEnum'
         limit:
@@ -2210,6 +2364,9 @@ components:
             type: string
         limits:
           $ref: '#/components/schemas/Limits'
+        max_product_version:
+          type: string
+          description: 'Highest product version: 3 — every 3.x; empty — any'
         state:
           type: string
           description: Hourly state by PolicyEngine
@@ -2226,6 +2383,7 @@ components:
       - key_masks
       - limit
       - limits
+      - max_product_version
       - monitor_until
       - policy_profile_code
       - product_id
@@ -2386,6 +2544,20 @@ components:
         * `active` - active
         * `suspended` - suspended
         * `revoked` - revoked
+    LicenseTypeEnum:
+      enum:
+      - subscription
+      - perpetual
+      - trial
+      - nfr
+      - free
+      type: string
+      description: |-
+        * `subscription` - subscription
+        * `perpetual` - perpetual
+        * `trial` - trial
+        * `nfr` - nfr
+        * `free` - free
     LiftBlock:
       type: object
       properties:
@@ -2664,6 +2836,9 @@ components:
           type: string
         limits:
           $ref: '#/components/schemas/Limits'
+        max_product_version:
+          type: string
+          maxLength: 32
     Product:
       type: object
       properties:
@@ -2889,6 +3064,16 @@ components:
       required:
       - request_file
       - status
+    StateEnum:
+      enum:
+      - queued
+      - acked
+      - unsupported
+      type: string
+      description: |-
+        * `queued` - queued
+        * `acked` - acked
+        * `unsupported` - unsupported
     Stats:
       type: object
       properties:
@@ -2965,20 +3150,6 @@ components:
       required:
       - customer_id
       - reason
-    TypeEnum:
-      enum:
-      - subscription
-      - perpetual
-      - trial
-      - nfr
-      - free
-      type: string
-      description: |-
-        * `subscription` - subscription
-        * `perpetual` - perpetual
-        * `trial` - trial
-        * `nfr` - nfr
-        * `free` - free
     Usage:
       type: object
       properties:
