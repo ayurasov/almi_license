@@ -208,6 +208,10 @@ class VcpkgTest(unittest.TestCase):
             )
             self.assertEqual(deps["vcpkg:curl"], ["vcpkg:openssl", "vcpkg:zlib"])
             self.assertEqual(sbom.prop(module["metadata"]["component"], sbom.KIND), "linked")
+            self.assertEqual(
+                sbom.prop(module["metadata"]["component"], sbom.ARTIFACT),
+                "license_module (x64-linux)",
+            )
             self.assertEqual(module["metadata"]["timestamp"], TIME)
 
             notices = (root / "notices" / "dl.txt").read_text()
@@ -426,7 +430,7 @@ class FinalizeTest(unittest.TestCase):
                         "name": "libpq",
                         "version": "18.0.6",
                         "license": "PostgreSQL",
-                        "files": ["psycopg_binary.libs/libpq"],
+                        "files": ["psycopg_binary.libs/libpq", "psycopg_binary.libs/libpq5"],
                     },
                     {
                         "id": "openssl",
@@ -450,6 +454,9 @@ class FinalizeTest(unittest.TestCase):
         libpq = next(c for c in bom["components"] if c["name"] == "libpq")
         self.assertEqual(libpq["version"], "18.0.6")
         self.assertEqual(sbom.prop(libpq, "almi:vendored-in"), "psycopg-binary 1.0")
+        self.assertEqual(
+            sbom.prop(libpq, "almi:files"), "psycopg_binary.libs/libpq, psycopg_binary.libs/libpq5"
+        )
         self.assertEqual(sbom.component_kind(libpq, "application"), "application")
         self.assertIn(
             {

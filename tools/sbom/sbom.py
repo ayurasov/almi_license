@@ -266,6 +266,8 @@ def cmd_vcpkg(args: argparse.Namespace) -> int:
     module["metadata"]["component"]["description"] = (
         "Модуль лицензирования DL; зависимости собраны vcpkg и связаны статически"
     )
+    # One SBOM per platform: the report keeps them apart.
+    set_prop(module["metadata"]["component"], ARTIFACT, f"{args.name} ({args.triplet})")
     for name in linked:
         module["components"].append(
             vcpkg_component(installed, args.triplet, ports[name], "required")
@@ -370,9 +372,9 @@ def add_vendored(bom: Json, vendored: Json, image_libs: list[str] | None) -> lis
                 component["version"] = lib["version"]
             if lib.get("url"):
                 component["externalReferences"] = [{"type": "website", "url": lib["url"]}]
-            for f in lib.get("files", []):
-                seen_libs.add(f)
-                set_prop(component, "almi:file", f)
+            if lib.get("files"):
+                seen_libs.update(lib["files"])
+                set_prop(component, "almi:files", ", ".join(lib["files"]))
             bom["components"].append(component)
             children.append(ref)
         bom["dependencies"].append({"ref": parent["bom-ref"], "dependsOn": children})
