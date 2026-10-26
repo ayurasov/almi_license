@@ -182,7 +182,7 @@ class VcpkgTest(unittest.TestCase):
                 "--dev-out",
                 str(root / "tests.json"),
                 "--notices",
-                str(root / "notices.txt"),
+                str(root / "notices" / "dl.txt"),
             )
             self.assertEqual(code, 0, out)
             module = json.loads((root / "dl.json").read_text())
@@ -210,7 +210,7 @@ class VcpkgTest(unittest.TestCase):
             self.assertEqual(sbom.prop(module["metadata"]["component"], sbom.KIND), "linked")
             self.assertEqual(module["metadata"]["timestamp"], TIME)
 
-            notices = (root / "notices.txt").read_text()
+            notices = (root / "notices" / "dl.txt").read_text()
             self.assertIn("openssl 3.6.5 — Apache-2.0", notices)
             self.assertIn("Copyright (c) the openssl authors", notices)
             self.assertNotIn("gtest", notices)

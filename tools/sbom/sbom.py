@@ -304,7 +304,9 @@ def cmd_vcpkg(args: argparse.Namespace) -> int:
                 (meta["copyright"] or "(файл copyright не найден)").rstrip(),
                 "",
             ]
-        Path(args.notices).write_text("\n".join(lines), encoding="utf-8")
+        notices = Path(args.notices)
+        notices.parent.mkdir(parents=True, exist_ok=True)
+        notices.write_text("\n".join(lines), encoding="utf-8")
     print(f"ok   {args.out}: {len(linked)} linked, {len(tests)} test-only ({args.triplet})")
     return 0
 
