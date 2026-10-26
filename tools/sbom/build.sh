@@ -17,7 +17,9 @@ version="${VERSION:?VERSION is required: the tag of the images}"
 out=$(mkdir -p "${1:-$root/dist/sbom}" && cd "${1:-$root/dist/sbom}" && pwd)
 parts="${PARTS:-images keytool dl dev}"
 syft="${SYFT:-$("$here/install-syft.sh")}"
-work=$(mktemp -d)
+# A fixed place, not mktemp: Syft derives the ids of packages from the path of an environment.
+work="$root/.tools/sbom-work"
+rm -rf "$work" && mkdir -p "$work"
 trap 'rm -rf "$work"' EXIT
 export SYFT_CONFIG="$here/syft.yaml"
 # The time of the build is the time of the commit: the same commit gives the same files.
