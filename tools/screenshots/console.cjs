@@ -55,6 +55,11 @@ async function openLicense(page, text) {
 }
 
 async function central(page) {
+  await step('01a-overview', async () => {
+    await page.goto(`${base}/overview`)
+    await page.getByTestId('overview-tiles').waitFor()
+    await shot(page, '01a-overview')
+  })
   await step('02-customers', async () => {
     await page.goto(`${base}/customers`)
     await page.getByTestId('customers-table').locator('tbody tr').first().waitFor()

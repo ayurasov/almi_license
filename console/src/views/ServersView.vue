@@ -62,7 +62,9 @@ async function openCreate(): Promise<void> {
   const { data } = await api.GET('/api/admin/customers', { params: { query: { page_size: 100, status: 'active' } } })
   customers.value = data?.results ?? []
   const products = await api.GET('/api/admin/products')
-  productCodes.value = Object.fromEntries((products.data ?? []).map((product) => [product.id, product.code]))
+  productCodes.value = Object.fromEntries(
+    (products.data ?? []).map((product) => [product.id, product.name.ru ?? product.code]),
+  )
 }
 
 async function pickCustomer(id: string): Promise<void> {
