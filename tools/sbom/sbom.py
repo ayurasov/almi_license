@@ -238,6 +238,8 @@ def vcpkg_component(installed: Path, triplet: str, port: Port, scope: str) -> Js
             {"name": "almi:vcpkg:features", "value": ",".join(sorted(port.features))},
             {"name": "almi:vcpkg:triplet", "value": triplet},
             {"name": "almi:linkage", "value": "static"},
+            # Linked into the products (the module) or used by its tests only.
+            {"name": KIND, "value": "linked" if scope == "required" else "dev"},
         ],
     }
     refs = []
@@ -639,9 +641,9 @@ class Policy:
             return self.category_of_id(expression)
         return parse_or()
 
-    def judge(self, component: Json) -> tuple[str, str]:
+    def judge(self, component: Json, default_kind: str = "application") -> tuple[str, str]:
         licences = licences_of(component)
-        kind = prop(component, KIND) or "application"
+        kind = prop(component, KIND) or default_kind
         # Several licences of one package apply together. A Debian copyright file names many,
         # including its own short names for notices of single files: for the packages of the
         # base images the recognised ones decide, the package is "unknown" only without any.
@@ -673,10 +675,12 @@ def collect(paths: list[Path], policy: Policy) -> tuple[list[Json], list[Row]]:
         boms.append({"path": path, "bom": bom})
         root = bom.get("metadata", {}).get("component", {})
         artifact = prop(root, ARTIFACT) or root.get("name", path.stem)
+        # A component without its own kind takes the kind of the artifact.
+        default_kind = prop(root, KIND) or "application"
         for c in bom.get("components", []):
             if c.get("type") == "operating-system":  # the distribution: its packages are listed
                 continue
-            category, verdict = policy.judge(c)
+            category, verdict = policy.judge(c, default_kind)
             rows.append(
                 Row(
                     artifact=artifact,
@@ -687,7 +691,7 @@ def collect(paths: list[Path], policy: Policy) -> tuple[list[Json], list[Row]]:
                     licences="; ".join(licences_of(c)),
                     category=category,
                     verdict=verdict,
-                    kind=prop(c, KIND) or "",
+                    kind=prop(c, KIND) or default_kind,
                     purl=c.get("purl", ""),
                 )
             )
