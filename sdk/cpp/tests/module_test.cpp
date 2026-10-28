@@ -133,7 +133,15 @@ class Issuer {
            {"severity", "info"},
            {"placement", "banner"},
            {"repeat", "daily"},
-           {"text", {{"ru", "Лицензия действует до {valid_until}. Осталось {days_left}."}}}}}},
+           {"text", {{"ru", "Лицензия действует до {valid_until}. Осталось {days_left}."}}}},
+          {{"id", "grace.banner"},
+           {"state", "GRACE"},
+           {"severity", "warning"},
+           {"placement", "banner"},
+           {"repeat", "each_start"},
+           {"text",
+            {{"ru",
+              "Срок лицензии истёк {valid_until}. Продукт работает без ограничений ещё {days_left}."}}}}}},
         {"limits", json::object()}};
     return Sign("alm-lease+jws", claims);
   }
@@ -290,7 +298,7 @@ TEST_F(ModuleTest, TrialWithoutLeaseThenOnlineActivation) {
   EXPECT_EQ(status.trial_days_left, 30);
   EXPECT_FALSE(status.capabilities.count("support") > 0);
   ASSERT_EQ(module->Messages().size(), 1U);
-  EXPECT_EQ(module->Messages()[0].text, "Пробный период: осталось 30.");
+  EXPECT_EQ(module->Messages()[0].text, "Пробный период: осталось 30 дней.");
 
   ASSERT_EQ(module->Activate(kLicense), LM_OK) << module->LastError();
   status = module->GetStatus();
@@ -367,6 +375,23 @@ TEST_F(ModuleTest, ClockRollbackDoesNotMoveTheLicenseBack) {
   EXPECT_EQ(module->GetStatus().state, State::kNotice);
   clock_.now = kNow + 10 * kDay;  // moved far back
   EXPECT_EQ(module->GetStatus().state, State::kNotice);
+}
+
+TEST_F(ModuleTest, DaysLeftOfTheMessagesAreDeclinedAndCountTheGraceInGrace) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  const std::int64_t until = *lm::util::ParseRfc3339("2027-10-31T20:59:59Z");
+  clock_.now = until - 21 * kDay;  // NOTICE; the check renews the lease
+  ASSERT_EQ(module->CheckNow(), LM_OK) << module->LastError();
+  ASSERT_EQ(module->GetStatus().state, State::kNotice);
+  EXPECT_EQ(module->Messages().at(0).text, "Лицензия действует до 31.10.2027. Осталось 21 день.");
+  // GRACE of 14 days, one day past the term: 13 left, not the 1 past (dev-issuer-1 ends 02.11.2027).
+  clock_.now = until + kDay;
+  ASSERT_EQ(module->CheckNow(), LM_OK) << module->LastError();
+  ASSERT_EQ(module->GetStatus().state, State::kGrace);
+  EXPECT_EQ(module->Messages().at(0).text,
+            "Срок лицензии истёк 31.10.2027. Продукт работает без ограничений ещё 13 дней.");
 }
 
 TEST_F(ModuleTest, QueuedEventsAreSentOnceAfterACheck) {

@@ -12,7 +12,7 @@ cp previous/{docker-compose.yml,gateway.conf.template,install.sh,upgrade.sh,chec
 rm -rf ops && cp -r previous/ops ops
 # The database goes back to the copy taken before the migrations of the new version.
 docker compose up -d --wait db
-docker compose run --rm --entrypoint /ops/restore.sh backup "/var/backups/almi/$(basename "$backup")"
+docker compose run --rm -e RESTORE_RESET_SCHEMA=1 --entrypoint /ops/restore.sh backup "/var/backups/almi/$(basename "$backup")"
 docker compose run --rm migrate
 docker compose up -d --wait
 ./check.sh

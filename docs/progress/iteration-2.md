@@ -14,7 +14,7 @@ Product API работает на стенде: активация, провер
 | DO | E15-01, E15-02 (`test-central`) | — (нужна ВМ) |
 
 ## Критерии выхода
-- [ ] Все методы Product API, кроме офлайн-файлов, отвечают по контракту — частично: `activate` и `check` проверяются контрактными тестами по OpenAPI и `lease.schema.json`; `discover`, `release`, `getTrust`, `postEvents`, `seats:*` не реализованы (истории вне готовых промптов I2, перенос); сверка `make contract-check` с drf-spectacular для Product API не сделана (перенос)
+- [x] Все методы Product API, кроме офлайн-файлов, отвечают по контракту — закрыто позже: `discover`, `release`, `getTrust`, `postEvents` — I3–v0.4.2; `seats:*` — этап 2 по контракту; сверка маршрутов `make contract-check` — v0.6.0 (`docs/progress/gaps-i1-i5.md`). Было: частично: `activate` и `check` проверяются контрактными тестами по OpenAPI и `lease.schema.json`; `discover`, `release`, `getTrust`, `postEvents`, `seats:*` не реализованы (истории вне готовых промптов I2, перенос); сверка `make contract-check` с drf-spectacular для Product API не сделана (перенос)
 - [x] Все policy-векторы проходят на сервере (39/39, I2-02)
 - [x] CI зелёный (подтверждено прогонами 2db9d47 и 32350e5)
 - [ ] Стенд `test-central` обновляется автоматически — перенос (E15-01, E15-02: нужна ВМ, вопрос 28)

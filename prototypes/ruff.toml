@@ -1,0 +1,6 @@
+# Prototypes of the products are not the server: wall-clock time and urllib are theirs to use.
+line-length = 140
+target-version = "py312"
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "S"]
+ignore = ["S310"]  # the URL is the support.backend set by the administrator, https only in practice
