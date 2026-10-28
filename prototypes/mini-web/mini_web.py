@@ -20,6 +20,7 @@ answer) is a JSON file; the subscription key is kept there as in Nextcloud confi
 import argparse
 import html
 import json
+import os
 import secrets
 import ssl
 import string
@@ -62,8 +63,30 @@ class State:
             self.save()
 
     def save(self) -> None:
-        self.path.write_text(json.dumps(self.data, ensure_ascii=False, indent=2), encoding="utf-8")
-        self.path.chmod(0o600)  # the subscription key is a secret of the customer
+        # The subscription key is a secret of the customer: the file is 0600 from its creation.
+        text = json.dumps(self.data, ensure_ascii=False, indent=2)
+        descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            file.write(text)
+        self.path.chmod(0o600)
+
+
+def valid_answer(answer: Any) -> bool:
+    """The fields evaluate() relies on (fixtures E00-09); anything else is not stored."""
+    if not isinstance(answer, dict):
+        return False
+    end = answer.get("endDate")
+    try:
+        if end is not None:
+            date.fromisoformat(str(end))
+    except ValueError:
+        return False
+    limit = answer.get("amountOfUsers")
+    return (
+        isinstance(answer.get("onlyCountActiveUsers"), bool)
+        and isinstance(answer.get("extendedSupport"), bool)
+        and (limit is None or (isinstance(limit, int) and not isinstance(limit, bool)))
+    )
 
 
 def check_subscription(state: State, cafile: str | None) -> None:
@@ -71,6 +94,10 @@ def check_subscription(state: State, cafile: str | None) -> None:
     data = state.data
     if not data["backend"] or not data["key"]:
         data["error"] = "Не задан адрес сервера или ключ подписки."
+        state.save()
+        return
+    if not data["backend"].startswith("https://"):
+        data["error"] = "Адрес сервера должен начинаться с https://: ключ передаётся только по TLS."
         state.save()
         return
     users = data["users"]
@@ -91,8 +118,12 @@ def check_subscription(state: State, cafile: str | None) -> None:
     context = ssl.create_default_context(cafile=cafile)
     try:
         with urllib.request.urlopen(request, timeout=15, context=context) as reply:
-            data["subscription"] = json.loads(reply.read(64 * 1024))
-            data["error"] = None
+            answer = json.loads(reply.read(64 * 1024))
+        if valid_answer(answer):
+            data["subscription"], data["error"] = answer, None
+        else:
+            # A broken answer does not replace the last good one.
+            data["error"] = "Сервер прислал ответ неверного формата."
     except urllib.error.HTTPError as error:
         # 404: the key is unknown or revoked; the app shows "no subscription" (fixtures E00-09).
         messages = {404: "Подписка не найдена.", 429: "Слишком много запросов, повторите позже."}
@@ -208,6 +239,11 @@ def make_handler(state: State, cafile: str | None, enforce: bool) -> type[BaseHT
             self._page(render(state, enforce))
 
         def do_POST(self) -> None:
+            # A page of another site in the administrator's browser must not change the settings
+            # (and send the key to its own backend): only forms of this page are accepted.
+            if self.headers.get("Origin") not in (None, f"http://{self.headers.get('Host')}"):
+                self.send_error(403)
+                return
             length = min(int(self.headers.get("Content-Length") or 0), 16 * 1024)
             form = {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode()).items()}
             users = state.data["users"]
