@@ -14,7 +14,8 @@ x-server: &server
     DATABASE_POOL_MAX_SIZE: ${DATABASE_POOL_MAX_SIZE:-10}
     DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret
     DJANGO_ALLOWED_HOSTS: ${SERVER_NAME}
-    DJANGO_CSRF_TRUSTED_ORIGINS: https://${SERVER_NAME}
+    # The browser sends the port in Origin unless it is 443: both forms are trusted.
+    DJANGO_CSRF_TRUSTED_ORIGINS: https://${SERVER_NAME},https://${SERVER_NAME}:${HTTPS_PORT:-443}
     LEASE_ISSUER: https://${SERVER_NAME}
     SIGNING_KEY_FILE: /run/secrets/issuer_key
     SIGNING_CERT_FILE: /run/secrets/issuer_cert

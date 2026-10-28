@@ -23,7 +23,12 @@ def public_b64(key: Ed25519PrivateKey) -> str:
 
 
 def signed_post(
-    client: Client, path: str, document: dict[str, Any], key: Ed25519PrivateKey, keyid: str
+    client: Client,
+    path: str,
+    document: dict[str, Any],
+    key: Ed25519PrivateKey,
+    keyid: str,
+    headers: dict[str, str] | None = None,
 ) -> Any:
     body = json.dumps(document, ensure_ascii=False).encode("utf-8")
     created = int(current_clock().now().timestamp())
@@ -31,5 +36,10 @@ def signed_post(
     sig = b64url_encode(key.sign(signing_string("POST", path, created, nonce, body)))
     header = f'keyid="{keyid}", alg="ed25519", created={created}, nonce="{nonce}", sig="{sig}"'
     return client.generic(
-        "POST", path, body, content_type="application/json", HTTP_ALMI_SIGNATURE=header
+        "POST",
+        path,
+        body,
+        content_type="application/json",
+        HTTP_ALMI_SIGNATURE=header,
+        headers=headers or {},
     )

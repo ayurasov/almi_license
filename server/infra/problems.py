@@ -128,7 +128,11 @@ class Problem(exceptions.APIException):
         self.problem_code = code
         self.title = title
         if user_message is None and code in USER_MESSAGES:
-            values = data or {}
+            values = dict(data or {})
+            if code == "seats_exhausted" and isinstance(values.get("reserve"), int):
+                # The user sees every seat that can be taken: the limit and the reserve together
+                # ("3 из 3", not "3 из 2" when the reserve is in use).
+                values["limit"] = values.get("limit", 0) + values["reserve"]
             user_message = {
                 lang: text.format(**values) if "{" in text else text
                 for lang, text in USER_MESSAGES[code].items()

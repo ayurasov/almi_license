@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Система лицензирования АЛМИ — Product API v1, Sync API, Integration API, адаптеры совместимости
-  version: 1.1.0
+  version: 1.2.0
   description: |
     Контракт взаимодействия сервера лицензирования с продуктами, локальными серверами и личным кабинетом.
     Подробные правила — в документе «Спецификация взаимодействия сервера лицензирования с продуктами».
@@ -147,6 +147,11 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/TrustBundle'}
+        '503':
+          description: Пакет доверия не задан или не проходит проверку (`maintenance`, `Retry-After`); продукт работает по встроенным корням (с 1.2.0)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
 
   /api/v1/events:
     post:
@@ -313,6 +318,8 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/NextcloudSubscriptionResponse'}
+        '400':
+          description: 'В теле нет `instanceId` или оно не JSON-объект — `{"message": "Bad request"}` (формат приложения support, с 1.2.0)'
         '404': {description: Ключ не найден}
         '429': {description: Превышена частота}
 
@@ -329,6 +336,35 @@ paths:
       responses: &legacyResponses
         '200':
           description: Результат в формате текущей реализации ЛК (HTML по умолчанию, JSON при format=json)
+          content:
+            text/html:
+              schema: {type: string}
+            application/json:
+              schema: {$ref: '#/components/schemas/LegacyActivateResponse'}
+        # Отказы — в том же формате, что 200: HTML или LegacyActivateResponse с success = false (с 1.2.0).
+        '400':
+          description: Неверные параметры запроса
+          content:
+            text/html:
+              schema: {type: string}
+            application/json:
+              schema: {$ref: '#/components/schemas/LegacyActivateResponse'}
+        '403':
+          description: Срок действия лицензии истёк
+          content:
+            text/html:
+              schema: {type: string}
+            application/json:
+              schema: {$ref: '#/components/schemas/LegacyActivateResponse'}
+        '404':
+          description: Лицензия не найдена или недействительна
+          content:
+            text/html:
+              schema: {type: string}
+            application/json:
+              schema: {$ref: '#/components/schemas/LegacyActivateResponse'}
+        '409':
+          description: Превышено количество активаций
           content:
             text/html:
               schema: {type: string}

@@ -375,9 +375,19 @@ jobs:
           cd deploy/central
           cp .env.example .env
           sed -i 's/^SERVER_NAME=.*/SERVER_NAME=localhost/; s/^HTTPS_PORT=.*/HTTPS_PORT=8443/' .env
-          # The password is random and not kept.
-          CONSOLE_PASSWORD="$(openssl rand -base64 18)" DEV_ISSUER=1 ADMIN_USER=admin ./install.sh
+          # The password is random and kept only for the sign-in below.
+          export CONSOLE_PASSWORD="$(openssl rand -base64 18)"
+          DEV_ISSUER=1 ADMIN_USER=admin ./install.sh
           curl -fsSk https://localhost:8443/.well-known/almi-license
+          # The console signs in through the gateway on a port other than 443 (CSRF origin).
+          jar="$RUNNER_TEMP/cookies"
+          curl -sk -c "$jar" https://localhost:8443/api/admin/session > /dev/null
+          token="$(awk '$6 == "csrftoken" {print $7}' "$jar")"
+          python3 -c 'import json, os; print(json.dumps({"username": "admin", "password": os.environ["CONSOLE_PASSWORD"]}))' \
+            | curl -fsSk -o /dev/null -b "$jar" -H "X-CSRFToken: $token" -H "Origin: https://localhost:8443" \
+                -H "Referer: https://localhost:8443/login" -H "Content-Type: application/json" --data @- \
+                https://localhost:8443/api/admin/session
+          unset CONSOLE_PASSWORD
           ./backup.sh && CHECK_DISK_WARN=90 CHECK_DISK_FAIL=99 ./check.sh
       - name: Upgrade and roll back
         run: |

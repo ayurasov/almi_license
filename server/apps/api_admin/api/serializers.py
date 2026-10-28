@@ -83,6 +83,9 @@ class LicenseSerializer(serializers.Serializer[dict[str, Any]]):
     rights_version = serializers.IntegerField()
     key_masks = serializers.ListField(child=serializers.CharField())
     limits = LimitsSerializer()
+    max_product_version = serializers.CharField(
+        allow_blank=True, help_text="Highest product version: 3 — every 3.x; empty — any"
+    )
     state = serializers.CharField(allow_blank=True, help_text="Hourly state by PolicyEngine")
     state_at = serializers.DateTimeField(allow_null=True)
 
@@ -138,6 +141,7 @@ class SettingsSerializer(serializers.Serializer[dict[str, Any]]):
     metric_id = serializers.UUIDField(required=False)
     enforcement = serializers.CharField(required=False, allow_blank=True)
     limits = LimitsSerializer(required=False)
+    max_product_version = serializers.CharField(required=False, allow_blank=True, max_length=32)
 
 
 class TransferSerializer(ReasonSerializer):
@@ -171,6 +175,36 @@ class HistoryEventSerializer(serializers.Serializer[dict[str, Any]]):
             "action": serializers.CharField(),
             "data": serializers.DictField(),
         }
+
+
+DIRECTIVE_TYPES = [
+    "refresh_now",
+    "update_trust",
+    "set_check_interval",
+    "show_message",
+    "rebind",
+    "release",
+    "set_server_url",
+]
+
+
+class DirectiveCreateSerializer(serializers.Serializer[dict[str, Any]]):
+    type = serializers.ChoiceField(DIRECTIVE_TYPES)
+    params = serializers.DictField(required=False, default=dict)
+
+
+class DirectiveSerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.CharField()
+    activation_id = serializers.CharField()
+    type = serializers.CharField()
+    params = serializers.DictField()
+    created_at = serializers.DateTimeField()
+    state = serializers.ChoiceField(["queued", "acked", "unsupported"])
+    done_at = serializers.DateTimeField(allow_null=True)
+
+
+class DirectivesQueuedSerializer(serializers.Serializer[dict[str, Any]]):
+    queued = serializers.IntegerField(help_text="Active activations that got the directive")
 
 
 class ActivationSerializer(serializers.Serializer[dict[str, Any]]):

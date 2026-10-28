@@ -19,6 +19,13 @@ else
   bad "API is not ready (docker compose logs api)"
 fi
 
+# The first-run wizard writes the key of the server there, as the user of the API.
+if docker compose exec -T api test -w /var/lib/almi; then
+  ok "directory of the server key is writable"
+else
+  bad "the API cannot write /var/lib/almi (volume server-key): the first-run wizard will fail"
+fi
+
 # Registration, package term and usage reports, printed by the server itself.
 if ! docker compose exec -T api almi-entrypoint manage local_status --check; then
   bad "the local server needs attention (see above)"

@@ -1,6 +1,15 @@
 # Изменения
 
 ## Unreleased
+- Контракт 1.2.0 (добавляющее изменение): коды ответов адаптеров `/api/activate/` (400/403/404/409), подписки Nextcloud (400) и `getTrust` (503).
+- `ALMI-Protocol`: модуль DL отправляет `1`; сервер отвечает `426 upgrade_required` на другую версию, запрос без заголовка принимает и считает (`almi_product_requests_without_protocol_total`).
+- Поле лицензии «Версии продукта до» (`max_product_version`); активация более новой версии — `422 unsupported_product_version`.
+- Команды продуктам из консоли: активации и всем активациям лицензии (`refresh_now`, `set_check_interval`, `show_message`, `set_server_url`, `update_trust`, `release`, `rebind`). DL выполняет все директивы v1, каждую один раз; `set_server_url` возвращается на прежний адрес, если новый молчит 14 дней.
+- DL: тексты отказов сервера (`user_message` — объект по языкам) показываются пользователю; `release` больше не зависает в обработчике событий продукта; `update_trust` не повторяет 503; `refresh_now` будит фоновую проверку.
+- Сообщение о нехватке мест показывает лимит с резервом.
+- Комплекты: вход в консоль на нестандартном порту (CSRF); каталог ключа локального сервера принадлежит `app`, `check.sh` проверяет запись; `install.sh` с `ALMI_SKIP_BUILD=1` берёт загруженные образы.
+- Набор соответствия продукта (раздел 18 документа 2) с mini-office на стенде: `tests/e2e/test_conformance.py`, `tools/conformance/README.md`.
+- Руководства оператора и администратора переписаны полностью, со снимками экранов (`docs/images`, `make screenshots`); `make guides` собирает их в DOCX и PDF.
 - Центральный сервер на одном хосте: `deploy/central` (установка из репозитория, ключ выпуска создаётся на хосте, пробный режим `DEV_ISSUER=1`, проверка, копии, обновление и откат); руководства `docs/deployment.md` (Ubuntu 24.04) и `docs/user-guide.md`.
 - Прототипы продуктов для ручных тестов и переноса: `prototypes/mini-office` (C ABI), `prototypes/mini-web` (Nextcloud), `prototypes/mini-os` (`registration.sh`); `make prototypes`, сценарий E2E 12.
 - `manage.py seed_minimal --trial` — тестовый набор из 10 лицензий; `tools/anonymize-lk.py` — обезличенная выгрузка ЛК.

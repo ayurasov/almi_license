@@ -16,6 +16,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+import DirectiveDialog from '@/components/DirectiveDialog.vue'
 import LicenseActionDialog from '@/components/LicenseActionDialog.vue'
 import { canChange } from '@/lib/roles'
 import { type Activation, DEFAULT_ACTIVATION_QUERY, useActivationsStore } from '@/stores/activations'
@@ -41,6 +42,7 @@ const action = ref<LicenseAction | null>(null)
 const actionOpen = ref(false)
 const issuedKey = ref('')
 const keyOpen = ref(false)
+const directiveTarget = ref<{ kind: 'license'; id: string } | null>(null)
 
 const id = computed(() => (typeof route.params.id === 'string' ? route.params.id : ''))
 const productName = computed(() => {
@@ -130,6 +132,14 @@ function closeKey(): void {
         :data-testid="`action-${item}`"
         @click="start(item)"
       />
+      <Button
+        v-if="actions.length > 0"
+        :label="t('licenses.actions.directive')"
+        icon="pi pi-send"
+        severity="secondary"
+        data-testid="action-directive"
+        @click="directiveTarget = { kind: 'license', id: license.id }"
+      />
     </div>
 
     <Tabs value="params">
@@ -160,6 +170,10 @@ function closeKey(): void {
             <dt>{{ t('licenses.fields.userLimit') }}</dt>
             <dd data-testid="user-limit">
               {{ userLimit }}
+            </dd>
+            <dt>{{ t('licenses.fields.maxVersion') }}</dt>
+            <dd data-testid="max-version">
+              {{ license.max_product_version || t('licenses.anyVersion') }}
             </dd>
             <dt>{{ t('licenses.fields.reservePct') }}</dt>
             <dd>{{ license.reserve_pct ?? t('licenses.fromProfile') }}</dd>
@@ -279,6 +293,11 @@ function closeKey(): void {
       </TabPanels>
     </Tabs>
 
+    <DirectiveDialog
+      :target="directiveTarget"
+      @close="directiveTarget = null"
+      @sent="directiveTarget = null"
+    />
     <LicenseActionDialog
       v-model:visible="actionOpen"
       :license="license"

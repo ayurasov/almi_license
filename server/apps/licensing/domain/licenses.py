@@ -1,5 +1,6 @@
 """License lookup and locking for seat accounting (AGENTS.md, rule 6)."""
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -30,6 +31,7 @@ class LicenseRecord:
     updated_at: datetime | None = None
     limits: dict[str, Any] = field(default_factory=dict)
     state: str = ""
+    max_product_version: str = ""
 
 
 def _record(row: License) -> LicenseRecord:
@@ -53,6 +55,7 @@ def _record(row: License) -> LicenseRecord:
         metric_id=row.metric_id,
         updated_at=row.updated_at,
         limits=dict(row.limits),
+        max_product_version=row.max_product_version,
         state=row.state,
     )
 
@@ -106,6 +109,24 @@ def lock_license(license_id: UUID) -> LicenseRecord:
         .get(id=license_id)
     )
     return _record(row)
+
+
+_VERSION = re.compile(r"(\d+)(?:\.(\d+))?(?:\.(\d+))?")
+
+
+def version_supported(version: str, limit: str) -> bool:
+    """The product version is within max_product_version of the licence (422, section 16):
+    "3" covers every 3.x, "3.2" every 3.2.x; an empty limit covers every version. A version
+    that does not start with digits is refused only when there is a limit."""
+    if not limit:
+        return True
+    top = _VERSION.fullmatch(limit)
+    found = _VERSION.match(version.strip())
+    if top is None or found is None:
+        return False
+    parts = [int(p) for p in top.groups() if p is not None]
+    given = [int(p or 0) for p in found.groups()][: len(parts)]
+    return given <= parts
 
 
 def counts_active_only(limits: dict[str, Any]) -> bool:

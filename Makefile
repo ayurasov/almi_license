@@ -28,7 +28,7 @@ endef
 
 PHONY_OPS = backup-drill
 .PHONY: $(PHONY_OPS) help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
-	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand prototypes load-smoke load bundle-airgap
+	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand prototypes screenshots guides load-smoke load bundle-airgap
 
 help: ## Show available targets
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -153,6 +153,13 @@ prototypes: ## Prototypes of the products (prototypes/README.md): mini-office ov
 	server/.venv/bin/ruff check --config prototypes/ruff.toml prototypes/mini-web
 	server/.venv/bin/ruff format --config prototypes/ruff.toml --check prototypes/mini-web
 	shellcheck prototypes/mini-os/*.sh
+
+screenshots: ## Screenshots of the guides (docs/images) from installed servers: CONSOLE_PASSWORD, CENTRAL_PASSWORD, LOCAL_PASSWORD
+	node tools/screenshots/console.cjs docs/images/console
+	node tools/screenshots/local-flow.cjs docs/images/console
+
+guides: ## User and administrator guides as DOCX and PDF in dist/guides (pandoc, libreoffice)
+	tools/build_guides.sh $(BUNDLE_DIR)/guides
 
 load-smoke: ## Load scenarios (E16-05) at a small scale on this host: seed-load, k6 in docker, race; needs DATABASE_URL, psql
 	SMOKE=1 tests/load/stand.sh $(CURDIR)/.load

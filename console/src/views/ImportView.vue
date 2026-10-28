@@ -135,21 +135,22 @@ function restart(): void {
       {{ text }}
     </Message>
 
+    <!-- Steps are numbered 1…5: PrimeVue shows the value of a step in its circle. -->
     <Stepper
-      :value="step"
+      :value="STEPS.indexOf(step) + 1"
       linear
     >
       <StepList>
         <Step
-          v-for="name in STEPS"
+          v-for="(name, index) in STEPS"
           :key="name"
-          :value="name"
+          :value="index + 1"
         >
           {{ t(`imports.steps.${name}`) }}
         </Step>
       </StepList>
       <StepPanels>
-        <StepPanel value="upload">
+        <StepPanel :value="1">
           <p class="hint">
             {{ t('imports.hint') }}
           </p>
@@ -173,7 +174,7 @@ function restart(): void {
           </div>
         </StepPanel>
 
-        <StepPanel value="preview">
+        <StepPanel :value="2">
           <div
             v-if="store.preview"
             class="summary"
@@ -265,7 +266,7 @@ function restart(): void {
           </div>
         </StepPanel>
 
-        <StepPanel value="mapping">
+        <StepPanel :value="3">
           <p>{{ t('imports.mapping.intro') }}</p>
           <div
             v-for="aa in store.unmapped"
@@ -328,7 +329,7 @@ function restart(): void {
           </div>
         </StepPanel>
 
-        <StepPanel value="confirm">
+        <StepPanel :value="4">
           <p
             v-if="store.preview"
             data-testid="import-confirm-text"
@@ -351,7 +352,7 @@ function restart(): void {
           </div>
         </StepPanel>
 
-        <StepPanel value="report">
+        <StepPanel :value="5">
           <dl
             v-if="store.report"
             class="report"

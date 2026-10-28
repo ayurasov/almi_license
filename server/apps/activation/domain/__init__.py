@@ -2,7 +2,13 @@
 
 from apps.activation.domain.autorelease import release_stale_activations
 from apps.activation.domain.check import CheckRequest, check
-from apps.activation.domain.directives import queue_directive
+from apps.activation.domain.directives import (
+    DirectiveData,
+    directives_of,
+    issue_directive,
+    issue_license_directive,
+    queue_directive,
+)
 from apps.activation.domain.events import ProductEventIn, accept_events
 from apps.activation.domain.keys import device_public_key
 from apps.activation.domain.offline import MAX_FILE_BYTES, OfflineRequest, answer, open_request
@@ -62,4 +68,8 @@ __all__ = [
     "check",
     "device_public_key",
     "queue_directive",
+    "DirectiveData",
+    "directives_of",
+    "issue_directive",
+    "issue_license_directive",
 ]

@@ -16,6 +16,7 @@ import { useI18n } from 'vue-i18n'
 import { type LocationQuery, useRoute, useRouter } from 'vue-router'
 
 import { ApiError } from '@/api/problem'
+import DirectiveDialog from '@/components/DirectiveDialog.vue'
 import {
   type Activation,
   type ActivationQuery,
@@ -31,6 +32,7 @@ const store = useActivationsStore()
 const releasing = ref<Activation | null>(null)
 const reason = ref('')
 const releaseErrors = ref<string[]>([])
+const directiveTarget = ref<{ kind: 'activation'; id: string } | null>(null)
 
 function text(value: unknown, fallback: string): string {
   return typeof value === 'string' ? value : fallback
@@ -228,10 +230,22 @@ async function release(): Promise<void> {
             data-testid="activation-release"
             @click="startRelease(data as Activation)"
           />
+          <Button
+            v-if="(data as Activation).status === 'active'"
+            :label="t('activations.directive')"
+            text
+            data-testid="activation-directive"
+            @click="directiveTarget = { kind: 'activation', id: (data as Activation).activation_id }"
+          />
         </template>
       </Column>
     </DataTable>
 
+    <DirectiveDialog
+      :target="directiveTarget"
+      @close="directiveTarget = null"
+      @sent="directiveTarget = null"
+    />
     <Dialog
       :visible="releasing !== null"
       modal

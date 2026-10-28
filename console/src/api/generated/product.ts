@@ -1027,6 +1027,15 @@ export interface operations {
                     "application/json": components["schemas"]["TrustBundle"];
                 };
             };
+            /** @description Пакет доверия не задан или не проходит проверку (`maintenance`, `Retry-After`); продукт работает по встроенным корням (с 1.2.0) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     postEvents: {
@@ -1246,6 +1255,13 @@ export interface operations {
                     "application/json": components["schemas"]["NextcloudSubscriptionResponse"];
                 };
             };
+            /** @description В теле нет `instanceId` или оно не JSON-объект — `{"message": "Bad request"}` (формат приложения support, с 1.2.0) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Ключ не найден */
             404: {
                 headers: {
@@ -1287,6 +1303,46 @@ export interface operations {
                     "application/json": components["schemas"]["LegacyActivateResponse"];
                 };
             };
+            /** @description Неверные параметры запроса */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Срок действия лицензии истёк */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Лицензия не найдена или недействительна */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Превышено количество активаций */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
             /** @description Превышена частота */
             429: {
                 headers: {
@@ -1313,6 +1369,46 @@ export interface operations {
         responses: {
             /** @description Результат в формате текущей реализации ЛК (HTML по умолчанию, JSON при format=json) */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Неверные параметры запроса */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Срок действия лицензии истёк */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Лицензия не найдена или недействительна */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                    "application/json": components["schemas"]["LegacyActivateResponse"];
+                };
+            };
+            /** @description Превышено количество активаций */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

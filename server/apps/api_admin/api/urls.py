@@ -38,6 +38,8 @@ urlpatterns = [
     path("licenses/<uuid:license_id>/history", lic.LicenseHistoryView.as_view()),
     path("activations", lic.ActivationsView.as_view()),
     path("activations/<str:activation_id>/release", lic.ActivationReleaseView.as_view()),
+    path("activations/<str:activation_id>/directives", lic.ActivationDirectivesView.as_view()),
+    path("licenses/<uuid:license_id>/directives", lic.LicenseDirectivesView.as_view()),
     path("products", lic.ProductsView.as_view()),
     path("catalog/metrics", central_only(cat.MetricsView.as_view())),
     path("catalog/products", central_only(cat.CatalogProductsView.as_view())),

@@ -5,6 +5,8 @@
 #   DEV_ISSUER=1 ./install.sh    a trial server with the public dev keys of the repository
 #   ADMIN_USER=name ./install.sh also the first administrator; the password is asked without echo
 #                                (or taken from CONSOLE_PASSWORD), never an argument
+#   ALMI_SKIP_BUILD=1 ./install.sh  images almi-license:$ALMI_VERSION are already there
+#                                (built on another host and loaded with docker load)
 # Builds the images, creates secrets and a TLS certificate if absent, starts, loads the catalogue.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -28,10 +30,16 @@ new_secret django_secret
 new_secret backup_passphrase
 [[ -s secrets/db_url ]] || printf 'postgres://almi:%s@db:5432/almi_license\n' "$(< secrets/db_password)" > secrets/db_url
 
-say "building images $ALMI_VERSION"
-docker build -q -f "$repo/deploy/Dockerfile" --target runtime --build-arg APP_VERSION="$ALMI_VERSION" \
-  -t "almi-license:$ALMI_VERSION" "$repo" > /dev/null
-docker build -q -f "$repo/deploy/console/Dockerfile" -t "almi-license-console:$ALMI_VERSION" "$repo" > /dev/null
+if [[ "${ALMI_SKIP_BUILD:-0}" == "1" ]]; then
+  for image in "almi-license:$ALMI_VERSION" "almi-license-console:$ALMI_VERSION"; do
+    docker image inspect "$image" > /dev/null 2>&1 || fail "ALMI_SKIP_BUILD=1, but there is no image $image"
+  done
+else
+  say "building images $ALMI_VERSION"
+  docker build -q -f "$repo/deploy/Dockerfile" --target runtime --build-arg APP_VERSION="$ALMI_VERSION" \
+    -t "almi-license:$ALMI_VERSION" "$repo" > /dev/null
+  docker build -q -f "$repo/deploy/console/Dockerfile" -t "almi-license-console:$ALMI_VERSION" "$repo" > /dev/null
+fi
 
 if [[ ! -s keys/issuer.key && "${DEV_ISSUER:-0}" == "1" ]]; then
   say "DEV_ISSUER=1: the public dev issuer of the repository — a TRIAL server only"
@@ -73,4 +81,6 @@ if [[ -n "${ADMIN_USER:-}" ]]; then
     --username "$ADMIN_USER" --role admin
 fi
 ./check.sh
-say "done: open https://$SERVER_NAME/ (first administrator: docs/deployment.md, step 7)"
+port=""
+[[ "${HTTPS_PORT:-443}" == "443" ]] || port=":$HTTPS_PORT"
+say "done: open https://$SERVER_NAME$port/ (first administrator: docs/deployment.md, step 7)"

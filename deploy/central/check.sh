@@ -22,7 +22,7 @@ if curl -fsSk --max-time 5 "https://localhost:${HTTPS_PORT:-443}/.well-known/alm
 else
   bad "the gateway does not answer (docker compose logs gateway)"
 fi
-if curl -fsSk --max-time 5 "https://localhost:${HTTPS_PORT:-443}/api/v1/trust" > /dev/null; then
+if curl -fsSk --max-time 5 "https://localhost:${HTTPS_PORT:-443}/api/v1/trust" > /dev/null 2>&1; then
   ok "trust bundle served"
 else
   warn "no trust bundle: put trust.json of almi-keytool export-trust into ./trust (docs/deployment.md)"

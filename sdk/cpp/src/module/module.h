@@ -103,6 +103,8 @@ class Module {
   LM_Result ActivateFromFile(const std::filesystem::path& input);
   LM_Result ReportUsage(std::int64_t documents_opened, const std::string& extra_json);
   LM_Result SetServerUrl(const std::string& url);
+  // GET /api/v1/trust (directive update_trust): revoked kids of a newer bundle signed by a root.
+  LM_Result UpdateTrust();
   void SetCallback(LM_EventCallback callback, void* context);
   [[nodiscard]] std::string InstanceId();
   [[nodiscard]] std::string LastError();
@@ -110,6 +112,12 @@ class Module {
  private:
   struct Reply;
   struct Evaluated;
+  // What the directives of a check leave to do after the lease is stored.
+  struct Directives {
+    bool update_trust = false;
+    bool release = false;
+    bool rebind = false;
+  };
 
   // Under state_mutex_.
   void LoadLocked();
@@ -121,12 +129,16 @@ class Module {
   [[nodiscard]] std::string ServerUrlLocked() const;
   [[nodiscard]] state::TrialTracker Tracker() const;
   void SetErrorLocked(const std::string& text);
+  [[nodiscard]] std::vector<std::string> RevokedKidsLocked() const;
 
   // Network: serialized by operation_mutex_, the state lock is taken only around reads and writes.
   Reply Post(const std::string& path, const nlohmann::json& body, const std::string& keyid);
   LM_Result ActivateWith(const std::string& key);
   LM_Result CheckOnce(bool allow_reactivate);
   void SendEvents(const std::string& activation_id);  // POST /api/v1/events after a check
+  Directives RunDirectives(const std::vector<nlohmann::json>& directives);
+  void FallBackServerUrl();  // set_server_url: back to the previous address after fallback_days
+
   LM_Result AcceptLease(const std::string& lease, const nlohmann::json& response,
                         const std::string& activation_id);
   LM_Result Failed(const Reply& reply, LM_Result fallback);
@@ -136,6 +148,7 @@ class Module {
 
   void Notify(const std::vector<LM_EventType>& events);
   void BackgroundLoop();
+  void WakeBackground();  // the next check may be sooner: a new lease, refresh_now, set_server_url
 
   Settings settings_;
   state::SystemClock system_clock_;
@@ -157,6 +170,7 @@ class Module {
   std::mutex wake_mutex_;
   std::condition_variable wake_;
   bool stopping_ = false;
+  bool wake_requested_ = false;
   std::thread background_;
 };
 

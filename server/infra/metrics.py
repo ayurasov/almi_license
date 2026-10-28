@@ -34,7 +34,13 @@ WITHOUT_IDEMPOTENCY_KEY = Counter(
     ["operation"],
     registry=REGISTRY,
 )
-_ALL = (REQUESTS, ERRORS, DURATION, WITHOUT_IDEMPOTENCY_KEY)
+WITHOUT_PROTOCOL = Counter(
+    "almi_product_requests_without_protocol",
+    "Product API requests that came without ALMI-Protocol, by operation (section 4 of document 2)",
+    ["operation"],
+    registry=REGISTRY,
+)
+_ALL = (REQUESTS, ERRORS, DURATION, WITHOUT_IDEMPOTENCY_KEY, WITHOUT_PROTOCOL)
 
 
 def _number(value: float) -> str:

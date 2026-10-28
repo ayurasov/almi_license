@@ -36,6 +36,7 @@ const form = reactive({
   enforcement: '',
   userLimit: null as number | null,
   onlyActive: false,
+  maxVersion: '',
   customerId: '',
   document: '',
 })
@@ -68,6 +69,7 @@ watch(visible, (open) => {
     enforcement: props.license.enforcement,
     userLimit: props.license.limits.named_users ?? props.license.limits.active_users ?? null,
     onlyActive: props.license.limits.only_count_active,
+    maxVersion: props.license.max_product_version,
     customerId: '',
     document: '',
   })
@@ -100,6 +102,7 @@ async function run(): Promise<License> {
         reserve_pct: form.reservePct,
         enforcement: form.enforcement,
         limits: userLimits(),
+        max_product_version: form.maxVersion.trim(),
       })
     case 'transfer':
       return store.transfer(id, { customer_id: form.customerId, reason: form.reason, document: form.document })
@@ -208,6 +211,13 @@ async function confirm(): Promise<void> {
           />
           <label for="action-only-active">{{ t('licenses.dialog.onlyActive') }}</label>
         </div>
+        <label for="action-max-version">{{ t('licenses.dialog.maxVersion') }}</label>
+        <InputText
+          id="action-max-version"
+          v-model="form.maxVersion"
+          :placeholder="t('licenses.dialog.maxVersionHint')"
+          data-testid="action-max-version"
+        />
       </template>
 
       <template v-if="action === 'liftBlock'">

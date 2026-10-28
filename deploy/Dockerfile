@@ -44,6 +44,9 @@ COPY --from=base /opt/venv /opt/venv
 WORKDIR /app/server
 COPY server/ ./
 COPY --chmod=0755 deploy/entrypoint.sh /usr/local/bin/almi-entrypoint
+# The key of a local server (LOCAL_SERVER_KEY_FILE) lives in a named volume here: an empty volume
+# takes the owner of this directory, so the first-run wizard can write the key as app.
+RUN install -d -o app -g app -m 0700 /var/lib/almi
 ARG APP_VERSION=0.1.0
 ENV APP_VERSION=${APP_VERSION}
 LABEL org.opencontainers.image.title="almi-license" \

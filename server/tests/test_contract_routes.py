@@ -88,3 +88,19 @@ def test_every_public_route_is_in_the_contract() -> None:
     contract = contract_operations()
     extra = [path for path in served_routes() if path.startswith(PUBLIC) and path not in contract]
     assert extra == []
+
+
+def test_status_codes_of_the_adapters_and_trust_are_in_the_contract() -> None:
+    """Codes the server can answer outside the problem catalogue (release check I6-02)."""
+    from apps.compat.api.views import LEGACY_STATUS
+
+    operations = contract_operations()
+    legacy = operations["/api/activate/"]
+    for method in ("get", "post"):
+        declared = {int(code) for code in legacy[method]["responses"]}
+        assert set(LEGACY_STATUS.values()) | {429} <= declared
+    nextcloud = operations[
+        _shape("/apps/zammad_organisation_management/api/query/subscription/{k}")
+    ]
+    assert {200, 400, 404, 429} <= {int(code) for code in nextcloud["post"]["responses"]}
+    assert 503 in {int(code) for code in operations["/api/v1/trust"]["get"]["responses"]}
