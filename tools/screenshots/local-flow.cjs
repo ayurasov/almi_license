@@ -54,8 +54,8 @@ async function main() {
   await centralPage.getByTestId('server-customer').click()
   await centralPage.getByRole('option', { name: /Тестовый заказчик 2/ }).click()
   await centralPage.getByTestId('server-name').fill('Филиал «Бета», ЦОД')
-  // The licence of 5 seats (the one of 2 seats is past its term): 3 of them go to the server.
-  await centralPage.getByTestId('server-seats').nth(1).locator('input').fill('3')
+  // The licence of 5 seats (the one of 2 seats is past its term): one of them goes to the server.
+  await centralPage.getByTestId('server-seats').nth(1).locator('input').fill('1')
   await shot(centralPage, '34-server-new-filled')
   await centralPage.getByTestId('server-save').click()
   const codeNode = centralPage.getByTestId('registration-code')
@@ -116,5 +116,6 @@ async function main() {
 
 main().catch((error) => {
   console.error(error)
-  process.exitCode = 1
+  // The browser of a failed run would keep the process alive.
+  process.exit(1)
 })

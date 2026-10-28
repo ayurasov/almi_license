@@ -260,6 +260,45 @@ class VcpkgTest(unittest.TestCase):
             self.assertEqual(code, 1)
             self.assertIn("zlib", err)
 
+    def test_a_copyleft_port_in_the_module_is_a_violation_and_in_the_tests_is_not(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            installed = vcpkg_tree(
+                root, {**LICENCES, "zlib": "LGPL-2.1-or-later", "gtest": "GPL-3.0-only"}
+            )
+            run(
+                "--timestamp",
+                TIME,
+                "vcpkg",
+                "--installed",
+                str(installed),
+                "--triplet",
+                "x64-linux",
+                "--version",
+                "1.0.0",
+                "--out",
+                str(root / "dl.json"),
+                "--dev-out",
+                str(root / "t.json"),
+            )
+            module = json.loads((root / "dl.json").read_text())
+            self.assertEqual({sbom.prop(c, sbom.KIND) for c in module["components"]}, {"linked"})
+            code, _, err = run("report", str(root / "dl.json"), "--out", str(root / "r.md"))
+            self.assertEqual(code, 1)
+            self.assertIn("zlib", err)
+            code, _, _ = run("report", str(root / "t.json"), "--out", str(root / "t.md"))
+            self.assertEqual(code, 0)
+
+    def test_a_component_without_a_kind_takes_the_kind_of_its_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bom = sbom.new_bom("license_module", "1.0.0", "linked")
+            bom["components"] = [component("libfoo", "LGPL-2.1-or-later")]
+            (root / "m.json").write_text(json.dumps(bom))
+            code, _, err = run("report", str(root / "m.json"), "--out", str(root / "r.md"))
+            self.assertEqual(code, 1)
+            self.assertIn("libfoo", err)
+
     def test_a_missing_root_is_an_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

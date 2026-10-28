@@ -70,6 +70,13 @@ function applyFilters(): void {
   navigate({ ...filters.value, page: 1 })
 }
 
+const filtered = computed(() => Boolean(query.value.name || query.value.inn || query.value.status))
+
+function resetFilters(): void {
+  filters.value = { name: '', inn: '', status: '' }
+  navigate({ name: '', inn: '', status: '', page: 1 })
+}
+
 function onPage(event: DataTablePageEvent): void {
   navigate({ page: event.page + 1, pageSize: event.rows })
 }
@@ -105,111 +112,123 @@ function openEdit(customer: Customer): void {
       />
     </div>
 
-    <form
-      class="filters"
-      @submit.prevent="applyFilters"
-    >
-      <InputText
-        v-model="filters.name"
-        :placeholder="t('customers.filters.name')"
-        data-testid="filter-name"
-      />
-      <InputText
-        v-model="filters.inn"
-        :placeholder="t('customers.filters.inn')"
-        data-testid="filter-inn"
-      />
-      <Select
-        v-model="filters.status"
-        :options="statuses"
-        option-label="label"
-        option-value="value"
-        :placeholder="t('customers.filters.status')"
-      />
-      <Button
-        type="submit"
-        icon="pi pi-search"
-        :aria-label="t('customers.filters.name')"
-        data-testid="filter-apply"
-      />
-    </form>
-
-    <Message
-      v-if="store.failed === 'network'"
-      severity="error"
-    >
-      {{ t('errors.network') }}
-      <Button
-        :label="t('errors.retry')"
-        text
-        @click="store.list(query)"
-      />
-    </Message>
-
-    <DataTable
-      :value="store.items"
-      lazy
-      paginator
-      data-key="id"
-      :loading="store.loading"
-      :rows="query.pageSize"
-      :first="(query.page - 1) * query.pageSize"
-      :total-records="store.total"
-      :rows-per-page-options="[10, 20, 50, 100]"
-      :sort-field="sortField"
-      :sort-order="sortOrder"
-      data-testid="customers-table"
-      @page="onPage"
-      @sort="onSort"
-    >
-      <template #empty>
-        {{ t('customers.empty') }}
-      </template>
-      <Column
-        field="name"
-        :header="t('customers.columns.name')"
-        sortable
-      />
-      <Column
-        field="inn"
-        :header="t('customers.columns.inn')"
-        sortable
-      />
-      <Column
-        field="external_id"
-        :header="t('customers.columns.externalId')"
-      />
-      <Column
-        field="status"
-        :header="t('customers.columns.status')"
+    <div class="panel">
+      <form
+        class="filters"
+        @submit.prevent="applyFilters"
       >
-        <template #body="{ data }">
-          <Tag
-            :value="t(`customers.status.${(data as Customer).status}`)"
-            :severity="(data as Customer).status === 'active' ? 'success' : 'secondary'"
-          />
-        </template>
-      </Column>
-      <Column
-        field="created_at"
-        :header="t('customers.columns.createdAt')"
-        sortable
+        <InputText
+          v-model="filters.name"
+          :placeholder="t('customers.filters.name')"
+          data-testid="filter-name"
+        />
+        <InputText
+          v-model="filters.inn"
+          :placeholder="t('customers.filters.inn')"
+          data-testid="filter-inn"
+        />
+        <Select
+          v-model="filters.status"
+          :options="statuses"
+          option-label="label"
+          option-value="value"
+          :placeholder="t('customers.filters.status')"
+        />
+        <Button
+          type="submit"
+          icon="pi pi-search"
+          :label="t('common.find')"
+          :aria-label="t('customers.filters.name')"
+          data-testid="filter-apply"
+        />
+        <Button
+          v-if="filtered"
+          :label="t('common.reset')"
+          icon="pi pi-filter-slash"
+          text
+          severity="secondary"
+          data-testid="filter-reset"
+          @click="resetFilters"
+        />
+      </form>
+
+      <Message
+        v-if="store.failed === 'network'"
+        severity="error"
       >
-        <template #body="{ data }">
-          {{ d(new Date((data as Customer).created_at)) }}
+        {{ t('errors.network') }}
+        <Button
+          :label="t('errors.retry')"
+          text
+          @click="store.list(query)"
+        />
+      </Message>
+
+      <DataTable
+        :value="store.items"
+        lazy
+        paginator
+        data-key="id"
+        :loading="store.loading"
+        :rows="query.pageSize"
+        :first="(query.page - 1) * query.pageSize"
+        :total-records="store.total"
+        :rows-per-page-options="[10, 20, 50, 100]"
+        :sort-field="sortField"
+        :sort-order="sortOrder"
+        data-testid="customers-table"
+        @page="onPage"
+        @sort="onSort"
+      >
+        <template #empty>
+          {{ t('customers.empty') }}
         </template>
-      </Column>
-      <Column>
-        <template #body="{ data }">
-          <Button
-            icon="pi pi-pencil"
-            text
-            :aria-label="t('customers.edit')"
-            @click="openEdit(data as Customer)"
-          />
-        </template>
-      </Column>
-    </DataTable>
+        <Column
+          field="name"
+          :header="t('customers.columns.name')"
+          sortable
+        />
+        <Column
+          field="inn"
+          :header="t('customers.columns.inn')"
+          sortable
+        />
+        <Column
+          field="external_id"
+          :header="t('customers.columns.externalId')"
+        />
+        <Column
+          field="status"
+          :header="t('customers.columns.status')"
+        >
+          <template #body="{ data }">
+            <Tag
+              :value="t(`customers.status.${(data as Customer).status}`)"
+              :severity="(data as Customer).status === 'active' ? 'success' : 'secondary'"
+            />
+          </template>
+        </Column>
+        <Column
+          field="created_at"
+          :header="t('customers.columns.createdAt')"
+          sortable
+        >
+          <template #body="{ data }">
+            {{ d(new Date((data as Customer).created_at)) }}
+          </template>
+        </Column>
+        <Column>
+          <template #body="{ data }">
+            <Button
+              icon="pi pi-pencil"
+              text
+              :aria-label="t('customers.edit')"
+              @click="openEdit(data as Customer)"
+            />
+          </template>
+        </Column>
+      </DataTable>
+    </div>
 
     <CustomerDialog
       v-model:visible="dialogOpen"

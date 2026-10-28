@@ -67,99 +67,101 @@ async function exportCsv(): Promise<void> {
         @click="exportCsv"
       />
     </div>
-    <form
-      class="filters"
-      @submit.prevent="search"
-    >
-      <Select
-        v-model="filter.objectType"
-        :options="objectTypes"
-        option-label="label"
-        option-value="value"
-        :aria-label="t('audit.object')"
-        data-testid="audit-object-type"
-      />
-      <InputText
-        v-model="filter.objectId"
-        :placeholder="t('audit.objectId')"
-        :aria-label="t('audit.objectId')"
-      />
-      <InputText
-        v-model="filter.actor"
-        :placeholder="t('audit.actor')"
-        :aria-label="t('audit.actor')"
-        data-testid="audit-actor"
-      />
-      <InputText
-        v-model="filter.action"
-        :placeholder="t('audit.action')"
-        :aria-label="t('audit.action')"
-        data-testid="audit-action"
-      />
-      <DatePicker
-        v-model="filter.since"
-        :placeholder="t('audit.since')"
-        :aria-label="t('audit.since')"
-        show-time
-      />
-      <DatePicker
-        v-model="filter.until"
-        :placeholder="t('audit.until')"
-        :aria-label="t('audit.until')"
-        show-time
-      />
-      <Button
-        type="submit"
-        :label="t('audit.search')"
-        icon="pi pi-search"
-        data-testid="audit-search"
-      />
-    </form>
-    <Message
-      v-if="store.failed === 'network'"
-      severity="error"
-    >
-      {{ t('errors.network') }}
-    </Message>
-    <DataTable
-      :value="store.items"
-      :loading="store.loading"
-      lazy
-      paginator
-      :rows="PAGE_SIZE"
-      :total-records="store.count"
-      :first="(page - 1) * PAGE_SIZE"
-      data-key="seq"
-      data-testid="audit-table"
-      @page="onPage"
-    >
-      <template #empty>
-        {{ t('audit.empty') }}
-      </template>
-      <Column :header="t('audit.columns.at')">
-        <template #body="{ data }">
-          {{ d(new Date((data as AuditEvent).at), 'long') }}
+    <div class="panel">
+      <form
+        class="filters"
+        @submit.prevent="search"
+      >
+        <Select
+          v-model="filter.objectType"
+          :options="objectTypes"
+          option-label="label"
+          option-value="value"
+          :aria-label="t('audit.object')"
+          data-testid="audit-object-type"
+        />
+        <InputText
+          v-model="filter.objectId"
+          :placeholder="t('audit.objectId')"
+          :aria-label="t('audit.objectId')"
+        />
+        <InputText
+          v-model="filter.actor"
+          :placeholder="t('audit.actor')"
+          :aria-label="t('audit.actor')"
+          data-testid="audit-actor"
+        />
+        <InputText
+          v-model="filter.action"
+          :placeholder="t('audit.action')"
+          :aria-label="t('audit.action')"
+          data-testid="audit-action"
+        />
+        <DatePicker
+          v-model="filter.since"
+          :placeholder="t('audit.since')"
+          :aria-label="t('audit.since')"
+          show-time
+        />
+        <DatePicker
+          v-model="filter.until"
+          :placeholder="t('audit.until')"
+          :aria-label="t('audit.until')"
+          show-time
+        />
+        <Button
+          type="submit"
+          :label="t('audit.search')"
+          icon="pi pi-search"
+          data-testid="audit-search"
+        />
+      </form>
+      <Message
+        v-if="store.failed === 'network'"
+        severity="error"
+      >
+        {{ t('errors.network') }}
+      </Message>
+      <DataTable
+        :value="store.items"
+        :loading="store.loading"
+        lazy
+        paginator
+        :rows="PAGE_SIZE"
+        :total-records="store.count"
+        :first="(page - 1) * PAGE_SIZE"
+        data-key="seq"
+        data-testid="audit-table"
+        @page="onPage"
+      >
+        <template #empty>
+          {{ t('audit.empty') }}
         </template>
-      </Column>
-      <Column
-        field="actor"
-        :header="t('audit.columns.actor')"
-      />
-      <Column
-        field="action"
-        :header="t('audit.columns.action')"
-      />
-      <Column :header="t('audit.columns.object')">
-        <template #body="{ data }">
-          {{ (data as AuditEvent).object_type }} <code>{{ (data as AuditEvent).object_id }}</code>
-        </template>
-      </Column>
-      <Column :header="t('audit.columns.details')">
-        <template #body="{ data }">
-          <code class="details">{{ details(data as AuditEvent) }}</code>
-        </template>
-      </Column>
-    </DataTable>
+        <Column :header="t('audit.columns.at')">
+          <template #body="{ data }">
+            {{ d(new Date((data as AuditEvent).at), 'long') }}
+          </template>
+        </Column>
+        <Column
+          field="actor"
+          :header="t('audit.columns.actor')"
+        />
+        <Column
+          field="action"
+          :header="t('audit.columns.action')"
+        />
+        <Column :header="t('audit.columns.object')">
+          <template #body="{ data }">
+            {{ (data as AuditEvent).object_type }} <code>{{ (data as AuditEvent).object_id }}</code>
+          </template>
+        </Column>
+        <Column :header="t('audit.columns.details')">
+          <template #body="{ data }">
+            <code class="details">{{ details(data as AuditEvent) }}</code>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
   </section>
 </template>
 

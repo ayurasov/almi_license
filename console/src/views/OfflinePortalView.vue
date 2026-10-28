@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { ApiError, userMessage } from '@/api/problem'
 import { download } from '@/stores/servers'
 import { useOfflineStore } from '@/stores/offline'
+import BrandLogo from '@/components/BrandLogo.vue'
 
 // Public page without sign-in (E08-02): the file is signed by the device key, the server limits
 // the files per address (section 4.7 of document 2).
@@ -53,6 +54,7 @@ function again(): void {
 
 <template>
   <div class="portal">
+    <BrandLogo class="portal-logo" />
     <Card class="portal-card">
       <template #title>
         <h1 class="portal-title">
@@ -63,13 +65,17 @@ function again(): void {
         <div class="portal-body">
           <p>{{ t('offline.intro') }}</p>
           <label
-            class="p-button"
+            class="dropzone portal-drop"
             :class="{ 'p-disabled': busy }"
             for="offline-file"
-          >{{ t('offline.choose') }}</label>
+          >
+            <i class="pi pi-file-import" />
+            <strong>{{ t('offline.choose') }}</strong>
+            <span class="muted">{{ t('offline.fileHint') }}</span>
+          </label>
           <input
             id="offline-file"
-            class="hidden"
+            class="visually-hidden"
             type="file"
             accept=".alk-req,application/json"
             data-testid="offline-file"
@@ -149,12 +155,21 @@ function again(): void {
 <style scoped>
 .portal {
   display: grid;
-  place-items: center;
+  place-content: center;
+  justify-items: center;
+  gap: 1.5rem;
   min-height: 100vh;
   padding: 1rem;
+  box-sizing: border-box;
+  background: var(--app-shell);
 }
 .portal-card {
   max-width: 36rem;
+  border: 1px solid var(--app-border);
+  box-shadow: none;
+}
+.portal-drop {
+  justify-self: stretch;
 }
 .portal-title {
   margin: 0;

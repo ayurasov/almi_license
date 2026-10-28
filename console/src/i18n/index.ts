@@ -8,9 +8,9 @@ export const i18n = createI18n({
   locale: 'ru',
   fallbackLocale: 'ru',
   messages: { ru, en },
-  // 'long': date and time to the second (journal, E10-04)
+  // 'long': date and time to the second (journal, E10-04); 'short': the date only
   datetimeFormats: {
-    ru: { long: { dateStyle: 'short', timeStyle: 'medium' } },
-    en: { long: { dateStyle: 'short', timeStyle: 'medium' } },
+    ru: { long: { dateStyle: 'short', timeStyle: 'medium' }, short: { dateStyle: 'short' } },
+    en: { long: { dateStyle: 'short', timeStyle: 'medium' }, short: { dateStyle: 'short' } },
   },
 })

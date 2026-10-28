@@ -11,6 +11,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { type LocationQuery, useRoute, useRouter } from 'vue-router'
 
+import { stateSeverity } from '@/lib/states'
 import { DEFAULT_QUERY, useCustomersStore } from '@/stores/customers'
 import { DEFAULT_LICENSE_QUERY, type License, type LicenseQuery, useLicensesStore } from '@/stores/licenses'
 
@@ -93,6 +94,15 @@ function applyFilters(): void {
   navigate({ ...rest, expiresBefore: expiresBefore ? expiresBefore.toISOString() : '', page: 1 })
 }
 
+const filtered = computed(() =>
+  Boolean(query.value.productId || query.value.customerId || query.value.status || query.value.expiresBefore),
+)
+
+function resetFilters(): void {
+  filters.value = { productId: '', customerId: '', status: '', expiresBefore: null }
+  navigate({ productId: '', customerId: '', status: '', expiresBefore: '', page: 1 })
+}
+
 function onPage(event: DataTablePageEvent): void {
   navigate({ page: event.page + 1, pageSize: event.rows })
 }
@@ -109,156 +119,164 @@ function open(license: License): void {
   void router.push({ name: 'license', params: { id: license.id } })
 }
 
-// Hourly state of the licence (E12-03): green while it works fully, red when restricted or worse.
-function stateSeverity(state: string): 'success' | 'warn' | 'danger' | 'secondary' {
-  if (state === 'ACTIVE' || state === 'TRIAL') return 'success'
-  if (state === 'NOTICE' || state === 'GRACE') return 'warn'
-  if (state === 'RESTRICTED' || state === 'BLOCKED' || state === 'REVOKED') return 'danger'
-  return 'secondary'
-}
 </script>
 
 <template>
   <section>
     <h1>{{ t('licenses.title') }}</h1>
 
-    <form
-      class="filters"
-      @submit.prevent="applyFilters"
-    >
-      <Select
-        v-model="filters.productId"
-        :options="productOptions"
-        option-label="label"
-        option-value="value"
-        :placeholder="t('licenses.filters.product')"
-      />
-      <Select
-        v-model="filters.customerId"
-        :options="customerOptions"
-        option-label="label"
-        option-value="value"
-        filter
-        :placeholder="t('licenses.filters.customer')"
-      />
-      <Select
-        v-model="filters.status"
-        :options="statusOptions"
-        option-label="label"
-        option-value="value"
-        :placeholder="t('licenses.filters.status')"
-        data-testid="filter-status"
-      />
-      <DatePicker
-        v-model="filters.expiresBefore"
-        :placeholder="t('licenses.filters.expiresBefore')"
-        show-button-bar
-      />
-      <Button
-        type="submit"
-        icon="pi pi-search"
-        :aria-label="t('licenses.filters.status')"
-        data-testid="filter-apply"
-      />
-    </form>
-
-    <Message
-      v-if="store.failed === 'network'"
-      severity="error"
-    >
-      {{ t('errors.network') }}
-      <Button
-        :label="t('errors.retry')"
-        text
-        @click="store.list(query)"
-      />
-    </Message>
-
-    <DataTable
-      :value="store.items"
-      lazy
-      paginator
-      data-key="id"
-      :loading="store.loading"
-      :rows="query.pageSize"
-      :first="(query.page - 1) * query.pageSize"
-      :total-records="store.total"
-      :rows-per-page-options="[10, 20, 50, 100]"
-      :sort-field="sortField"
-      :sort-order="sortOrder"
-      data-testid="licenses-table"
-      @page="onPage"
-      @sort="onSort"
-    >
-      <template #empty>
-        {{ t('licenses.empty') }}
-      </template>
-      <Column
-        field="customer_name"
-        :header="t('licenses.columns.customer')"
-      />
-      <Column :header="t('licenses.columns.product')">
-        <template #body="{ data }">
-          {{ productName((data as License).product_id) }}
-        </template>
-      </Column>
-      <Column :header="t('licenses.columns.type')">
-        <template #body="{ data }">
-          {{ t(`licenses.type.${(data as License).type}`) }}
-        </template>
-      </Column>
-      <Column
-        field="status"
-        :header="t('licenses.columns.status')"
-        sortable
+    <div class="panel">
+      <form
+        class="filters"
+        @submit.prevent="applyFilters"
       >
-        <template #body="{ data }">
-          <Tag
-            :value="t(`licenses.status.${(data as License).status}`)"
-            :severity="(data as License).status === 'active' ? 'success' : 'warn'"
-          />
-        </template>
-      </Column>
-      <Column
-        field="limit"
-        :header="t('licenses.columns.limit')"
-      />
-      <Column
-        field="valid_until"
-        :header="t('licenses.columns.validUntil')"
-        sortable
+        <Select
+          v-model="filters.productId"
+          :options="productOptions"
+          option-label="label"
+          option-value="value"
+          :placeholder="t('licenses.filters.product')"
+        />
+        <Select
+          v-model="filters.customerId"
+          :options="customerOptions"
+          option-label="label"
+          option-value="value"
+          filter
+          :placeholder="t('licenses.filters.customer')"
+        />
+        <Select
+          v-model="filters.status"
+          :options="statusOptions"
+          option-label="label"
+          option-value="value"
+          :placeholder="t('licenses.filters.status')"
+          data-testid="filter-status"
+        />
+        <DatePicker
+          v-model="filters.expiresBefore"
+          :placeholder="t('licenses.filters.expiresBefore')"
+          show-button-bar
+        />
+        <Button
+          type="submit"
+          icon="pi pi-search"
+          :label="t('common.find')"
+          :aria-label="t('licenses.filters.status')"
+          data-testid="filter-apply"
+        />
+        <Button
+          v-if="filtered"
+          :label="t('common.reset')"
+          icon="pi pi-filter-slash"
+          text
+          severity="secondary"
+          data-testid="filter-reset"
+          @click="resetFilters"
+        />
+      </form>
+
+      <Message
+        v-if="store.failed === 'network'"
+        severity="error"
       >
-        <template #body="{ data }">
-          {{ (data as License).valid_until ? d(new Date((data as License).valid_until ?? '')) : t('licenses.perpetual') }}
+        {{ t('errors.network') }}
+        <Button
+          :label="t('errors.retry')"
+          text
+          @click="store.list(query)"
+        />
+      </Message>
+
+      <DataTable
+        :value="store.items"
+        lazy
+        paginator
+        data-key="id"
+        :loading="store.loading"
+        :rows="query.pageSize"
+        :first="(query.page - 1) * query.pageSize"
+        :total-records="store.total"
+        :rows-per-page-options="[10, 20, 50, 100]"
+        :sort-field="sortField"
+        :sort-order="sortOrder"
+        data-testid="licenses-table"
+        row-hover
+        class="row-link"
+        @row-click="open($event.data as License)"
+        @page="onPage"
+        @sort="onSort"
+      >
+        <template #empty>
+          {{ t('licenses.empty') }}
         </template>
-      </Column>
-      <Column :header="t('licenses.columns.state')">
-        <template #body="{ data }">
-          <Tag
-            v-if="(data as License).state"
-            :value="t(`licenses.state.${(data as License).state}`)"
-            :severity="stateSeverity((data as License).state)"
-            data-testid="license-state"
-          />
-        </template>
-      </Column>
-      <Column :header="t('licenses.columns.enforcement')">
-        <template #body="{ data }">
-          {{ t(`licenses.enforcement.${(data as License).enforcement || 'profile'}`) }}
-        </template>
-      </Column>
-      <Column>
-        <template #body="{ data }">
-          <Button
-            icon="pi pi-arrow-right"
-            text
-            :aria-label="t('licenses.open')"
-            data-testid="license-open"
-            @click="open(data as License)"
-          />
-        </template>
-      </Column>
-    </DataTable>
+        <Column
+          field="customer_name"
+          :header="t('licenses.columns.customer')"
+        />
+        <Column :header="t('licenses.columns.product')">
+          <template #body="{ data }">
+            {{ productName((data as License).product_id) }}
+          </template>
+        </Column>
+        <Column :header="t('licenses.columns.type')">
+          <template #body="{ data }">
+            {{ t(`licenses.type.${(data as License).type}`) }}
+          </template>
+        </Column>
+        <Column
+          field="status"
+          :header="t('licenses.columns.status')"
+          sortable
+        >
+          <template #body="{ data }">
+            <Tag
+              :value="t(`licenses.status.${(data as License).status}`)"
+              :severity="(data as License).status === 'active' ? 'success' : 'warn'"
+            />
+          </template>
+        </Column>
+        <Column
+          field="limit"
+          :header="t('licenses.columns.limit')"
+        />
+        <Column
+          field="valid_until"
+          :header="t('licenses.columns.validUntil')"
+          sortable
+        >
+          <template #body="{ data }">
+            {{ (data as License).valid_until ? d(new Date((data as License).valid_until ?? '')) : t('licenses.perpetual') }}
+          </template>
+        </Column>
+        <Column :header="t('licenses.columns.state')">
+          <template #body="{ data }">
+            <Tag
+              v-if="(data as License).state"
+              :value="t(`licenses.state.${(data as License).state}`)"
+              :severity="stateSeverity((data as License).state)"
+              data-testid="license-state"
+            />
+          </template>
+        </Column>
+        <Column :header="t('licenses.columns.enforcement')">
+          <template #body="{ data }">
+            {{ t(`licenses.enforcement.${(data as License).enforcement || 'profile'}`) }}
+          </template>
+        </Column>
+        <Column>
+          <template #body="{ data }">
+            <Button
+              icon="pi pi-arrow-right"
+              text
+              :aria-label="t('licenses.open')"
+              data-testid="license-open"
+              @click="open(data as License)"
+            />
+          </template>
+        </Column>
+      </DataTable>
+    </div>
   </section>
 </template>
 

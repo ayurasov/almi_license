@@ -25,7 +25,7 @@ test('an administrator creates a user, blocks and resets the password', async ({
   await other.getByRole('button', { name: 'Войти' }).click()
   await setOwnPassword(other, first)
   await expect(other.getByTestId('current-user')).toHaveText(username)
-  await expect(other.getByRole('menuitem', { name: 'Пользователи' })).toHaveCount(0)
+  await expect(other.getByTestId('main-menu').getByRole('link', { name: 'Пользователи' })).toHaveCount(0)
 
   const row = page.getByTestId('users-table').locator('tbody tr', { hasText: username })
   await row.getByTestId('user-block').click()

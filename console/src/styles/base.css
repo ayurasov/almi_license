@@ -1,0 +1,181 @@
+/* Layout and typography of the console after the interfaces of АльтерОфис and АЭксперт:
+   white pages on a light grey shell, a red accent, compact tables with grey uppercase headers.
+   Colours come from the PrimeVue theme (src/theme/preset.ts) through its CSS variables. */
+:root {
+  --app-shell: var(--p-surface-50);
+  --app-border: var(--p-surface-200);
+  --app-radius: 10px;
+  --app-sidebar-width: 15rem;
+  font-size: 14px;
+}
+.app-dark {
+  --app-shell: var(--p-surface-950);
+  --app-border: var(--p-surface-800);
+}
+
+body {
+  margin: 0;
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  /* The system sans-serif of every OS; without it a browser falls back to a serif face. */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Liberation Sans', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+/* Page header of every section: the title on the left, the main actions on the right. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.toolbar > div,
+.toolbar > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+section > h1 {
+  margin-bottom: 1.25rem;
+}
+
+/* The content of a section sits on a white panel, as the lists of АЭксперт. */
+.panel {
+  background: var(--p-content-background);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  padding: 1.25rem;
+}
+.panel + .panel {
+  margin-top: 1rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.filters > .p-inputtext,
+.filters > .p-select,
+.filters > .p-datepicker,
+.filters > .p-multiselect {
+  min-width: 12rem;
+}
+
+/* Tables: grey uppercase headers, a light hover; the whole row opens its object where it can. */
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--p-surface-50);
+  color: var(--p-text-muted-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-color: var(--app-border);
+}
+.app-dark .p-datatable .p-datatable-thead > tr > th {
+  background: var(--p-surface-900);
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: var(--app-border);
+}
+.p-datatable .p-datatable-tbody > tr:hover > td {
+  background: var(--p-surface-50);
+}
+.app-dark .p-datatable .p-datatable-tbody > tr:hover > td {
+  background: var(--p-surface-900);
+}
+.p-datatable-table-container {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+}
+.p-datatable .p-paginator,
+.p-datatable .p-datatable-paginator-bottom {
+  border: 0;
+  padding-top: 0.75rem;
+}
+.row-link {
+  cursor: pointer;
+}
+
+/* Tags as the status pills of АЭксперт: rounded, with a dot. */
+.p-tag {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-weight: 600;
+}
+.p-tag-success::before,
+.p-tag-danger::before,
+.p-tag-warn::before,
+.p-tag-info::before,
+.p-tag-secondary::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+/* Secondary buttons outlined in the brand red, as «Просмотр / Редактирование» of АЭксперт. */
+.p-button-outlined {
+  background: var(--p-content-background);
+}
+
+.p-tablist-tab-list {
+  background: transparent;
+}
+
+.muted {
+  color: var(--p-text-muted-color);
+}
+
+/* Actions of a row: small outlined buttons side by side. */
+.row-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+}
+
+/* A file is chosen by a drop zone; the input stays in the page for forms and tests. */
+.dropzone {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 2rem 1rem;
+  border: 2px dashed var(--p-surface-300);
+  border-radius: var(--app-radius);
+  background: var(--p-surface-50);
+  cursor: pointer;
+  text-align: center;
+}
+.dropzone:hover {
+  border-color: var(--p-primary-color);
+}
+.dropzone .pi {
+  font-size: 1.8rem;
+  color: var(--p-primary-color);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,5 +1,5 @@
 // What a role sees in the console; the server checks the same rights (E07-08, E07-09).
-const VIEWER_SCREENS = new Set(['licenses', 'license', 'stats', 'audit'])
+const VIEWER_SCREENS = new Set(['overview', 'licenses', 'license', 'stats', 'audit'])
 
 export type Role = 'operator' | 'admin' | 'customer_viewer'
 

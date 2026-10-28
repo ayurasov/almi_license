@@ -68,3 +68,4 @@ sdk/cpp: LeaseVerifier, Transport, SecureStore, StateEvaluator, RollbackGuard, T
   Итерация — минорная версия, исправления и доработки внутри неё — патч.
 - Следующая ветка создаётся от предыдущей, если та ещё не слита; запрос на слияние — в main.
 - Ветка сливается только с зелёным CI. Теги контракта — contract-vX.Y.Z.
+- Коммиты, запросы на слияние и комментарии — от имени Alexander Yurasov <ayurasov@gmail.com>, без подписей ИИ-ассистентов: никаких трейлеров Co-Authored-By, ссылок на сессии и «Generated with …».
