@@ -95,6 +95,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "almi_license.middleware.RequestMetrics",
+    "almi_license.middleware.ProtocolHeaders",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -173,6 +174,9 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {"json": {"()": "infra.logs.JsonFormatter"}},
-    "handlers": {"stdout": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "filters": {"keys": {"()": "infra.logs.RedactKeys"}},
+    "handlers": {
+        "stdout": {"class": "logging.StreamHandler", "formatter": "json", "filters": ["keys"]}
+    },
     "root": {"handlers": ["stdout"], "level": env.str("LOG_LEVEL", default="INFO")},
 }
