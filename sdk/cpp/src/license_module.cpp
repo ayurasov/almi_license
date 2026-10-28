@@ -65,7 +65,8 @@ LM_Result Start(lm::module::Settings settings) {
   const std::scoped_lock lock(State().mutex);
   if (State().module) return LM_OK;  // one initialization per process
   State().module = std::make_shared<lm::module::Module>(std::move(settings));
-  return LM_OK;
+  // The module works from a new store; the product learns that the activation was lost.
+  return State().module->StoreWasCorrupted() ? LM_ERR_STORE_CORRUPTED : LM_OK;
 }
 
 }  // namespace

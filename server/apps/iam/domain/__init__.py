@@ -160,7 +160,7 @@ def _locked_account(username: str, actor: str) -> Account:
         .first()
     )
     if account is None:
-        raise DomainError("invalid_request", "account not found")
+        raise DomainError("not_found", "account not found")
     if actor == f"user:{username}":
         raise _invalid(
             "username", "Свою учётную запись изменить нельзя: попросите другого администратора."

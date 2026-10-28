@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 #include "license_module.h"
@@ -132,5 +133,36 @@ TEST(Abi, InitializeExGivesATrialWithoutAServer) {
 
   LM_Shutdown();
   EXPECT_EQ(LM_GetStatus(&status), LM_ERR_NOT_INITIALIZED);
+  std::filesystem::remove_all(directory);
+}
+
+TEST(Abi, CorruptedStoreIsReportedOnceAndReset) {
+  const auto directory = std::filesystem::temp_directory_path() / "lm-abi-corrupted";
+  std::filesystem::remove_all(directory);
+  const std::string data_dir = directory.string();
+  LM_Config config{};
+  config.struct_size = sizeof(config);
+  config.product_code = "alteroffice-desktop";
+  config.app_version = "3.2.0";
+  config.data_dir = data_dir.c_str();
+  config.flags = 1;  // LM_FLAG_NO_BACKGROUND_CHECK
+  ASSERT_EQ(LM_InitializeEx(&config), LM_OK);
+  LM_Shutdown();
+
+  int damaged = 0;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(directory)) {
+    if (entry.path().filename() != "store.bin") continue;
+    std::ofstream(entry.path(), std::ios::binary | std::ios::trunc) << "not a sealed store";
+    ++damaged;
+  }
+  ASSERT_EQ(damaged, 1);
+
+  // The module starts anyway, from an empty store, and says so to the product.
+  EXPECT_EQ(LM_InitializeEx(&config), LM_ERR_STORE_CORRUPTED);
+  LM_LicenseStatus status{};
+  EXPECT_EQ(LM_GetStatus(&status), LM_OK);
+  LM_Shutdown();
+  EXPECT_EQ(LM_InitializeEx(&config), LM_OK);  // the store was written again
+  LM_Shutdown();
   std::filesystem::remove_all(directory);
 }

@@ -198,7 +198,7 @@ def create_server(
 def _locked(server_uuid: UUID) -> LocalServer:
     row = LocalServer.objects.select_for_update().filter(id=server_uuid).first()
     if row is None:
-        raise DomainError("invalid_request", "local server not found")
+        raise DomainError("not_found", "local server not found")
     return row
 
 

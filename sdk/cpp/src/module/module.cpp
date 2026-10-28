@@ -254,6 +254,7 @@ void Module::LoadLocked() {
   const auto loaded = store_->Load();
   entries_ = loaded.status == store::LoadStatus::kOk ? loaded.entries : store::Entries{};
   if (loaded.status == store::LoadStatus::kCorrupted) {
+    store_corrupted_ = true;
     json events = JsonEntry(entries_, kEvents, json::array());
     events.push_back({{"type", "store_corrupted"}});
     entries_[kEvents] = events.dump();

@@ -54,7 +54,7 @@ def test_create_block_role_and_reset(admin: Console) -> None:
     }
     session = password_sign_in("ivanova", first)
     assert session.get("/api/admin/customers").status_code == 200
-    assert session.get("/api/admin/accounts").status_code == 400  # no right (question 23)
+    assert session.get("/api/admin/accounts").status_code == 403
 
     blocked = admin.patch("/api/admin/accounts/ivanova", {"active": False})
     assert blocked.json()["active"] is False
@@ -118,12 +118,12 @@ def test_admin_cannot_change_themselves(admin: Console) -> None:
     assert response.status_code == 400
     assert "username" in response.json()["data"]["fields"]
     assert admin.post("/api/admin/accounts/user-admin/password").status_code == 400
-    assert admin.patch("/api/admin/accounts/nobody", {"active": False}).status_code == 400
+    assert admin.patch("/api/admin/accounts/nobody", {"active": False}).status_code == 404
 
 
 def test_operator_has_no_access(clock: FrozenClock) -> None:
     operator = sign_in("operator", clock)
-    assert operator.get("/api/admin/accounts").status_code == 400
+    assert operator.get("/api/admin/accounts").status_code == 403
     assert (
-        operator.post("/api/admin/accounts", {"username": "x1", "role": "admin"}).status_code == 400
+        operator.post("/api/admin/accounts", {"username": "x1", "role": "admin"}).status_code == 403
     )

@@ -108,7 +108,7 @@ def test_field_errors(
 
     assert response.status_code == 400
     problem = response.json()
-    assert problem["code"] == "invalid_request"
+    assert problem["code"] == "validation_failed"
     assert problem["data"]["fields"][field] == [message]
 
 
@@ -155,30 +155,30 @@ def test_list_pagination_sorting_and_filters(operator: tuple[Client, str]) -> No
 def test_bad_list_parameters(operator: tuple[Client, str], query: dict[str, str | int]) -> None:
     client, _ = operator
     response = client.get(URL, query)
-    assert response.status_code == 400 and response.json()["code"] == "invalid_request"
+    assert response.status_code == 400 and response.json()["code"] == "validation_failed"
 
 
 def test_requires_a_session() -> None:
     response = Client().get(URL)
-    assert response.status_code == 401
+    assert response.status_code == 401 and response.json()["code"] == "not_authenticated"
 
 
 def test_customer_viewer_cannot_manage_customers(clock: FrozenClock) -> None:
     client, _ = signed_in("customer_viewer", clock)
-    assert client.get(URL).status_code == 400  # 403 has no own catalog code (question 23)
+    response = client.get(URL)
+    assert response.status_code == 403 and response.json()["code"] == "forbidden"
 
 
 def test_writes_need_the_csrf_token(operator: tuple[Client, str]) -> None:
     client, _ = operator
     response = client.post(URL, {"name": "А"}, content_type="application/json")
-    # DRF answers "CSRF Failed" with 403, which has no catalog code (question 23)
-    assert response.status_code == 400 and "CSRF" in response.json()["detail"]
+    assert response.status_code == 403 and "CSRF" in response.json()["detail"]
 
 
 def test_unknown_customer(operator: tuple[Client, str]) -> None:
     client, _ = operator
     response = client.get(f"{URL}/00000000-0000-4000-8000-000000000000")
-    assert response.status_code == 400 and response.json()["code"] == "invalid_request"
+    assert response.status_code == 404 and response.json()["code"] == "not_found"
 
 
 def test_admin_schema_describes_customers(operator: tuple[Client, str]) -> None:

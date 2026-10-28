@@ -789,6 +789,10 @@ export interface components {
              * @example rate_limited
              * @example internal_error
              * @example maintenance
+             * @example validation_failed
+             * @example not_authenticated
+             * @example forbidden
+             * @example not_found
              */
             code: string;
             detail?: string;
@@ -936,6 +940,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+            /** @description license_revoked; data.lease — аренда с состоянием REVOKED (раздел 16 документа 2) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             404: components["responses"]["Problem"];
             410: components["responses"]["Problem"];
             412: components["responses"]["Problem"];

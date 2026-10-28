@@ -179,7 +179,7 @@ def release_by_operator(
         .first()
     )
     if license_id is None:
-        raise DomainError("invalid_request", "activation not found")
+        raise DomainError("not_found", "activation not found")
     with transaction.atomic():
         lock_license(license_id)
         row = Activation.objects.select_for_update().get(external_id=activation_id)

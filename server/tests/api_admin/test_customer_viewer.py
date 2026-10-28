@@ -74,7 +74,9 @@ def test_sees_only_its_licences(licensed: Any, other: Any, clock: FrozenClock) -
     assert console.get(f"/api/admin/licenses/{licensed.id}/usage").status_code == 200
     assert console.get(f"/api/admin/licenses/{licensed.id}/history").status_code == 200
     for path in ("", "/usage", "/history"):
-        assert console.get(f"/api/admin/licenses/{other.id}{path}").status_code == 400
+        # Another customer's licence is not disclosed: as if it did not exist.
+        foreign = console.get(f"/api/admin/licenses/{other.id}{path}")
+        assert (foreign.status_code, foreign.json()["code"]) == (404, "not_found")
 
     stats = console.get("/api/admin/stats", {"customer_id": str(other.customer_id)}).json()
     assert [row["license_id"] for row in stats["rows"]] == [str(licensed.id)]
@@ -83,7 +85,7 @@ def test_sees_only_its_licences(licensed: Any, other: Any, clock: FrozenClock) -
     activations = console.get("/api/admin/activations", {"license_id": str(licensed.id)})
     assert activations.status_code == 200
     assert console.get("/api/admin/activations").status_code == 400
-    assert console.get("/api/admin/activations", {"license_id": str(other.id)}).status_code == 400
+    assert console.get("/api/admin/activations", {"license_id": str(other.id)}).status_code == 404
     assert console.get("/api/admin/products").status_code == 200
 
 
@@ -97,10 +99,9 @@ def test_changes_nothing(licensed: Any, clock: FrozenClock) -> None:
         console.post("/api/admin/licenses", {}),
         console.post("/api/admin/customers", {"name": "x"}),
     ]
-    # No 403 code in the catalogue: a denied permission is 400 invalid_request (question 23).
-    assert {r.status_code for r in refused} == {400}
+    assert {(r.status_code, r.json()["code"]) for r in refused} == {(403, "forbidden")}
     for path in ("/api/admin/customers", "/api/admin/accounts", "/api/admin/local-servers"):
-        assert console.get(path).status_code == 400, path
+        assert console.get(path).status_code == 403, path
     licensed.refresh_from_db()
     assert licensed.status == "active"
 

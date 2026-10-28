@@ -134,7 +134,7 @@ def _locked(license_id: UUID) -> License:
         .first()
     )
     if row is None:
-        raise DomainError("invalid_request", "license not found")
+        raise DomainError("not_found", "license not found")
     return row
 
 
@@ -210,7 +210,7 @@ def get_license(license_id: UUID, *, customer_id: UUID | None = None) -> License
         rows = rows.filter(customer_id=customer_id)
     row = rows.first()
     if row is None:
-        raise DomainError("invalid_request", "license not found")
+        raise DomainError("not_found", "license not found")
     return _data(row)
 
 

@@ -47,7 +47,7 @@ def _names(value: Any) -> dict[str, str]:
 def _locked_product(product_id: UUID) -> Product:
     product = Product.objects.select_for_update().filter(id=product_id).first()
     if product is None:
-        raise DomainError("invalid_request", "product not found")
+        raise DomainError("not_found", "product not found")
     return product
 
 
@@ -58,7 +58,7 @@ def product_details(product_id: UUID) -> dict[str, Any]:
         .first()
     )
     if product is None:
-        raise DomainError("invalid_request", "product not found")
+        raise DomainError("not_found", "product not found")
     return {
         "id": product.id,
         "code": product.code,
@@ -198,7 +198,7 @@ def update_capability(
             Capability.objects.select_for_update().filter(product_id=product_id, code=code).first()
         )
         if row is None:
-            raise DomainError("invalid_request", "capability not found")
+            raise DomainError("not_found", "capability not found")
         if "name" in values:
             row.name = values["name"]
         if "status" in values:
@@ -269,7 +269,7 @@ def list_profiles() -> list[dict[str, Any]]:
 def profile_versions(code: str) -> list[dict[str, Any]]:
     rows = PolicyProfile.objects.filter(code=code).order_by("-version")
     if not rows.exists():
-        raise DomainError("invalid_request", "profile not found")
+        raise DomainError("not_found", "profile not found")
     return [_profile(row) for row in rows]
 
 

@@ -86,6 +86,8 @@ class Module {
   Module& operator=(Module&&) = delete;
   ~Module();
 
+  // The store could not be opened at start and was created again (LM_ERR_STORE_CORRUPTED).
+  [[nodiscard]] bool StoreWasCorrupted() const { return store_corrupted_; }
   [[nodiscard]] Status GetStatus();
   [[nodiscard]] bool HasFeature(const std::string& feature);
   [[nodiscard]] std::vector<Message> Messages();
@@ -142,6 +144,7 @@ class Module {
   std::mutex operation_mutex_;
   store::Entries entries_;
   std::set<std::string> shown_this_start_;
+  bool store_corrupted_ = false;
   std::string last_error_;
   std::int64_t clock_offset_ = 0;  // server time minus trusted time, from clock_skew
   LM_EventCallback callback_ = nullptr;
