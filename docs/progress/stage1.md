@@ -16,14 +16,14 @@
 - Реализовано: каталоги по разделу 14 документа 1 (+ `deploy/dev`); `.editorconfig`, `.gitignore`, `.pre-commit-config.yaml` (ruff, ruff-format, eslint, clang-format, gitleaks); `Makefile` с целями раздела 5 документа 7; `README.md`; запись в `CHANGELOG.md`. `AGENTS.md` и `CODEOWNERS` уже совпадали с разделами 3 и 6 документа 6 — оставлены без изменений.
 - Ограничения: все цели `Makefile` — заглушки `not implemented` (код 0); их наполняют I0-02 (`test-server`, `lint`), I0-03 (`up`, `down`, `seed`, `contract-check`), I0-04 (`test-dl`), E00-04 (`vectors`). Хук eslint начнёт работать после появления `console/package.json` (I2-07).
 - Разблокировано: I0-02, I0-03, I0-04.
-- Запрос на слияние: ветка `claude/happy-feynman-mea6mb`, запрос не создан.
+- Запрос на слияние: рабочая ветка I1–I4, слита в `main` (PR #1).
 
 ### I0-02 — Каркас сервера (FS1) — закрыта 23.10.2026
 - Реализовано: Django 5.2 в `server/` (uv, `pyproject.toml` с точными версиями, `uv.lock`); настройки `base`/`dev`/`ci`/`prod` только из окружения; проверка `DEPLOYMENT_MODE` при старте; 14 пустых модулей `apps/` (`domain/`, `models.py`, `api/`, `tests/`, `migrations/`); `infra.clock` (`Clock`, `SystemClock`, `FrozenClock`); протокол `infra.crypto.CryptoProvider`; `/health`, `/ready`; ruff, mypy, import-linter (4 контракта); `docs/dependencies.md`. 20 тестов.
 - Ограничения: журналы пока не JSON (E15-05); `prod` не включает `SECURE_SSL_REDIRECT` — TLS завершается на Nginx (решить в E15-01/E15-07); конфигурация coverage для запуска из корня (`pytest server --cov`) не задана — в отчёт попадают тесты (I0-03, вместе с `tools/coverage_gate.py`).
 - Передано в I0-03: задачам CI `lint-server` и `test-server` нужны `DEPLOYMENT_MODE` и `DATABASE_URL` (для `lint-server` достаточно `make lint-server`, он подставляет адрес-заглушку); mypy и import-linter читают конфигурацию из `server/`, поэтому CI вызывает их из `server/` или через `make lint-server`; исключение для тестовых ключей — в `.gitleaks.toml` (решение по вопросу 4).
 - Разблокировано: I0-03, I1-03 (модель данных), E02-02 (`Ed25519Provider`).
-- Запрос на слияние: ветка `claude/happy-feynman-mea6mb`, запрос не создан.
+- Запрос на слияние: рабочая ветка I1–I4, слита в `main` (PR #1).
 
 ### I0-03 — Локальное окружение (E00-07) и каркас CI (E00-06) — закрыта 23.10.2026
 - Реализовано: `deploy/Dockerfile` (`base`/`dev`/`runtime`, UID 10001, в `runtime` нет компиляторов и uv, 284 МБ); `deploy/dev/docker-compose.yml` и `nginx.conf`; `make up` / `up-local` / `down` / `seed` — холодный `make up` за 38 с; `.github/workflows/ci.yml` (8 задач); `.gitleaks.toml` (исключение `contracts/vectors/keys/`), `.gitleaksignore` (5 проверенных ложных срабатываний в примерах `docs/specs`); coverage без тестов и миграций.
@@ -31,7 +31,7 @@
 - Не проверено: прогон CI на GitHub — workflow запускается на `pull_request` и `push` в `stage1`/`main`, а ветки `stage1` и запроса на слияние ещё нет (вопрос 7).
 - Ограничения: `signing_key` до E00-04 подставляется как `/dev/null`; `worker` в профиле `worker` до E12-01; контейнер консоли простаивает до I2-07; `seed-minimal` — после модели данных (I1-03); в `runtime` нет Gunicorn и точек входа (E15-01); `contract` проверяет только валидность YAML, сверка с drf-spectacular — с появлением Product API; пороги покрытия по модулям (`tools/coverage_gate.py`), `deps` (pip-audit, npm audit, osv-scanner), `vectors`, `compat`, `image` — в следующих историях E00-06 / E00-04 / E15-01.
 - Разблокировано: I0-04 (задача `test-dl` включится сама с появлением `sdk/cpp/CMakeLists.txt`), I1-02, все истории сервера (CI).
-- Запрос на слияние: ветка `claude/happy-feynman-mea6mb`, запрос не создан.
+- Запрос на слияние: рабочая ветка I1–I4, слита в `main` (PR #1).
 
 ### I0-04 — Каркас модуля DL (E13-01) — готова к ревью 23.10.2026
 - Реализовано: `sdk/cpp` — CMake (C++17), цели `license_module` (shared), `lm_tests` (GoogleTest), `lm-demo`; зависимости из vcpkg (`vcpkg.json`, `builtin-baseline`), статически; `include/license_module.h` байт в байт из раздела 15.1 документа 2; все `LM_*` возвращают `LM_ERR_NOT_INITIALIZED` (`LM_HasFeature`, `LM_GetMessageCount` → 0; `LM_GetAbiVersion` → `LM_ABI_VERSION`; `LM_GetVersion` — версия из CMake без инициализации); по решениям 8 и 9 в заголовок и раздел 15.1 документа 2 добавлены `LM_BUILDING_DLL` (экспорт на Windows) и `LM_GetVersion`; `src/platform/{win,linux}`; `LM_TRUST_ROOTS`; `LM_SANITIZE`; `.clang-format`, `.clang-tidy`; `make test-dl`, `make lint-dl`; задачи CI `test-dl` (Linux GCC, Windows MSVC, ASan/UBSan, артефакты) и `lint-dl`.
@@ -280,7 +280,7 @@ v0.6.1: исправления по I6-02 (контракт 1.2.0, `ALMI-Protoco
 - E00-09, E14-01…E14-07 (вопрос 16);
 - стенды `test-central`, `test-local`, `test-airgap`, `staging` (вопрос 28).
 
-Тег `contract-v1.0.0` поставлен руководителем проекта на `874b3f1`; `psycopg-pool` согласован (25.10.2026).
+Тег `contract-v1.0.0` поставлен руководителем проекта на слиянии PR #2 в `main`; `psycopg-pool` согласован (25.10.2026).
 
 ## Открытые вопросы
 
@@ -297,7 +297,7 @@ v0.6.1: исправления по I6-02 (контракт 1.2.0, `ALMI-Protoco
 7. ~~Защита веток~~ — ветки с именем версии `vX.Y.Z`, запрос на слияние в `main` (раздел «Ветки и версии» `AGENTS.md`, v0.4.1).
 8–13. Решены ранее.
 14, 17, 19, 20, 22, 24, 27. ~~Ревью P7~~ — не обязательно; пометки «ждёт ревью P7» сняты.
-15. ~~Тег `contract-v1.0.0`~~ — ставит ассистент; тег создан на слиянии #1 (`77f0359`), отправить из этой сессии не удалось (прокси запрещает отправку тегов) — нужно `git push origin contract-v1.0.0` или тег в интерфейсе GitHub.
+15. ~~Тег `contract-v1.0.0`~~ — ставит Юрасов А.В.; тег поставлен на слиянии PR #2 в `main`.
 18. ~~Ревью P7 «Политика»~~ — ответа нет; по общему правилу ответов 14–27 считаю не обязательным.
 21. ~~403 у `check`~~ — добавлен в контракт (1.1.0, v0.4.1).
 23. ~~Коды Admin API~~ — `validation_failed`, `not_authenticated`, `forbidden`, `not_found` в каталоге раздела 16 и на сервере (v0.4.1).
