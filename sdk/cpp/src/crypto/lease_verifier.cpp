@@ -99,7 +99,8 @@ struct RingKey {
 using KeyRing = std::vector<RingKey>;
 
 const RingKey* FindKey(const KeyRing& keys, const std::string& kid) {
-  const auto found = std::find_if(keys.begin(), keys.end(), [&kid](const RingKey& item) { return item.kid == kid; });
+  const auto found =
+      std::find_if(keys.begin(), keys.end(), [&kid](const RingKey& item) { return item.kid == kid; });
   return found == keys.end() ? nullptr : &*found;
 }
 
@@ -119,7 +120,8 @@ Certificate ParseCertificate(std::string_view token, KeyRing& keys) {
   }
   const RingKey* signer = FindKey(keys, StringOr(*header, "kid"));
   const auto signature = DecodeSignature(parts->signature);
-  if (signer == nullptr || !signature || !SignatureValid(signer->public_key, parts->signing_input, *signature)) {
+  if (signer == nullptr || !signature ||
+      !SignatureValid(signer->public_key, parts->signing_input, *signature)) {
     Reject(VerifyError::kChainInvalid);
   }
   const std::string signer_role = signer->role;

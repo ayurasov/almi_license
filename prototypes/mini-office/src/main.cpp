@@ -128,9 +128,11 @@ void ShowMessages(const std::string& placement) {
   }
   for (const auto& message : shown) {
     if (placement == "banner") {
-      std::cout << "| " << (message.severity == "critical" ? "!! " : "") << message.text << message.action << '\n';
+      std::cout << "| " << (message.severity == "critical" ? "!! " : "") << message.text << message.action
+                << '\n';
     } else if (placement == "dialog") {
-      std::cout << "+--- окно (" << message.severity << ") ---\n| " << message.text << message.action << "\n+---\n";
+      std::cout << "+--- окно (" << message.severity << ") ---\n| " << message.text << message.action
+                << "\n+---\n";
     } else {
       std::cout << "  " << message.text << message.action << '\n';
     }
