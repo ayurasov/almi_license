@@ -6,6 +6,7 @@ audit event (AGENTS.md, rules 6 and 7). Renewal and lifting a block raise rights
 
 import re
 import string
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -418,25 +419,27 @@ def transfer_license(
     *,
     reason: str,
     document: str,
-    allocated: bool,
+    allocated: Callable[[UUID], bool],
     actor: str,
     now: datetime,
     ip: str | None = None,
 ) -> LicenseData:
-    """E01-08: keys, activations and terms stay; refused while seats are with a local server."""
+    """E01-08: keys, activations and terms stay; refused while seats are with a local server.
+
+    allocated(license_id) is asked under the row lock: quotas are given under the same lock."""
     text = _reason(reason)
-    if allocated:
-        raise DomainError(
-            "invalid_request",
-            "seats are allocated to a local server",
-            data={
-                "fields": {
-                    "customer_id": ["Места выделены локальному серверу: сначала верните квоту."]
-                }
-            },
-        )
     with transaction.atomic():
         row = _locked(license_id)
+        if allocated(license_id):
+            raise DomainError(
+                "invalid_request",
+                "seats are allocated to a local server",
+                data={
+                    "fields": {
+                        "customer_id": ["Места выделены локальному серверу: сначала верните квоту."]
+                    }
+                },
+            )
         target = Customer.objects.filter(id=customer_id).first()
         if target is None or target.id == row.customer_id:
             raise _invalid({"customer_id": ["Выберите другого заказчика."]})

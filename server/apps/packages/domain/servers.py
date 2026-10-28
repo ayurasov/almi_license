@@ -8,6 +8,7 @@ server's rights; its seq grows only when the snapshot changes.
 """
 
 import hashlib
+import json
 import re
 import string
 from dataclasses import dataclass
@@ -19,7 +20,7 @@ from django.db import transaction
 
 from apps.audit.domain import record
 from apps.catalog.domain import edition_code, metric_code, product_info
-from apps.licensing.domain import get_customer, keys_of, license_records
+from apps.licensing.domain import get_customer, keys_of, license_records, lock_license
 from apps.packages.models import Allocation, LocalServer, Package, ServerStatus
 from apps.policy.domain import lease_policy
 from apps.signing.domain import canonical_json, issue_certificate, issue_jws, issuer_chain
@@ -33,6 +34,7 @@ CODE_TTL = timedelta(days=7)
 PACKAGE_DAYS = timedelta(days=365)
 PACKAGE_WARNING = timedelta(days=30)
 CERTIFICATE_DAYS = timedelta(days=730)
+RENEW_MARGIN = timedelta(days=30)  # the certificate outlives every package by this much
 PACKAGE_TYP = "alm-package+jws"
 CODE_ALPHABET = "".join(c for c in string.ascii_uppercase + string.digits if c not in "0O1I")
 CODE_GROUPS, CODE_GROUP = 4, 5
@@ -131,7 +133,10 @@ def _check_allocations(
     from apps.activation.domain import license_usage  # activation uses allocated_seats
 
     wanted = {UUID(str(k)): int(v) for k, v in allocations.items()}
-    records = {r.id: r for r in license_records(list(wanted))}
+    # Rule 6: the seats of a licence are counted under its row lock, as activation counts them;
+    # rows are locked in id order so two operators never wait on each other.
+    known = {r.id for r in license_records(list(wanted))}
+    records = {lid: lock_license(lid) for lid in sorted(known)}
     errors: list[str] = []
     for license_id, seats in wanted.items():
         license_ = records.get(license_id)
@@ -245,24 +250,51 @@ def set_allocations(
     return _data(row)
 
 
-def _certificate(row: LocalServer, now: datetime) -> str:
+def _scope(row: LocalServer) -> dict[str, Any]:
     seats = {str(a.license_id): a.seats for a in row.allocations.all()}
     products = sorted(
         {product_info(r.product_id).code for r in license_records([UUID(k) for k in seats])}
     )
+    return {
+        "server_id": row.external_id,
+        "customer_id": str(row.customer_id),
+        "products": products,
+        "quotas": seats,
+    }
+
+
+def _certificate(row: LocalServer, now: datetime) -> str:
     return issue_certificate(
         kid=row.external_id,
         public_key=row.public_key,
         role="local_server",
         not_before=now,
         expires=now + CERTIFICATE_DAYS,
-        scope={
-            "server_id": row.external_id,
-            "customer_id": str(row.customer_id),
-            "products": products,
-            "quotas": seats,
-        },
+        scope=_scope(row),
     )
+
+
+def _renew_certificate(row: LocalServer, now: datetime) -> bool:
+    """Section 13.3 of document 2: the package carries an up-to-date server certificate. A new one
+    when the scope changed (products, quotas) or it would expire before the package does."""
+    try:
+        claims = json.loads(b64url_decode(row.certificate.split(".")[1]))
+        current, expires = claims.get("scope"), int(claims["exp"])
+    except (IndexError, KeyError, TypeError, ValueError):
+        current, expires = None, 0
+    if current == _scope(row) and expires > int((now + PACKAGE_DAYS + RENEW_MARGIN).timestamp()):
+        return False
+    row.certificate = _certificate(row, now)
+    row.save(update_fields=["certificate"])
+    record(
+        "system",
+        "local_server.certificate_renewed",
+        "local_server",
+        str(row.id),
+        at=now,
+        data={"server_id": row.external_id},
+    )
+    return True
 
 
 def _snapshot(row: LocalServer, now: datetime) -> dict[str, Any]:
@@ -330,10 +362,17 @@ def _rfc3339(moment: datetime | None) -> str | None:
 
 def _package(row: LocalServer, now: datetime) -> Package:
     """The latest package, or a new one with the next seq when the snapshot changed."""
+    renewed = _renew_certificate(row, now)
     snapshot = _snapshot(row, now)
     digest = hashlib.sha256(canonical_json(snapshot)).hexdigest()
     latest = Package.objects.filter(local_server=row).order_by("-seq").first()
-    if latest is not None and latest.hash == digest and latest.token and now < latest.valid_until:
+    if (
+        not renewed
+        and latest is not None
+        and latest.hash == digest
+        and latest.token
+        and now < latest.valid_until
+    ):
         return latest
     seq = row.last_package_seq + 1
     valid_until = now + PACKAGE_DAYS
