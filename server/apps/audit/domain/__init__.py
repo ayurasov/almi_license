@@ -54,6 +54,8 @@ def record(
     """Append an event; data must not contain secrets (AGENTS.md, rules 8 and 9)."""
     if at.utcoffset() is None:
         raise ValueError("audit time must carry a timezone")
+    # The hash covers the address as stored: an IPv6 address is kept in its canonical form.
+    ip = AuditEvent._meta.get_field("ip").to_python(ip)
     with transaction.atomic():
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock(%s)", [_CHAIN_LOCK])
