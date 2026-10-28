@@ -13,6 +13,7 @@ from typing import Any
 from uuid import UUID
 
 from openpyxl import Workbook
+from openpyxl.cell import WriteOnlyCell
 
 from apps.catalog.domain import product_info
 from apps.licensing.domain import counts_active_only, find_licenses
@@ -138,9 +139,16 @@ def _users(limits: dict[str, Any], counters: list[dict[str, Any]]) -> tuple[int 
     return (sum(reported) if reported else None), limit
 
 
-def _cell(value: Any) -> Any:
+def _cell(sheet: Any, value: Any) -> Any:
     # Excel has no time zones: dates are written in UTC without the offset.
-    return value.replace(tzinfo=None) if isinstance(value, datetime) else value
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=None)
+    if isinstance(value, str) and value:
+        # Always text: a name like "=HYPERLINK(...)" must not become a formula (E16-06).
+        cell = WriteOnlyCell(sheet, value=value)
+        cell.data_type = "s"
+        return cell
+    return value
 
 
 def stats_workbook(*, customer_id: UUID | None = None, product_id: UUID | None = None) -> bytes:
@@ -171,7 +179,7 @@ def stats_workbook(*, customer_id: UUID | None = None, product_id: UUID | None =
     for row in summary.rows:
         sheet.append(
             [
-                _cell(v)
+                _cell(sheet, v)
                 for v in (
                     row.customer_name,
                     row.product,
@@ -206,7 +214,7 @@ def stats_workbook(*, customer_id: UUID | None = None, product_id: UUID | None =
             summary.released_auto,
             summary.conflicts,
             "",
-            _cell(summary.last_seen_at),
+            _cell(sheet, summary.last_seen_at),
         ]
     )
     activations = book.create_sheet("Активации")
@@ -229,7 +237,7 @@ def stats_workbook(*, customer_id: UUID | None = None, product_id: UUID | None =
         os = f"{item.os.get('name', '')} {item.os.get('version', '')}".strip()
         activations.append(
             [
-                _cell(v)
+                _cell(activations, v)
                 for v in (
                     str(item.license_id),
                     item.activation_id,

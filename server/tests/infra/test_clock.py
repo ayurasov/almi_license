@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 
@@ -52,3 +53,35 @@ def test_frozen_clock_rejects_naive_datetime(method: str) -> None:
             FrozenClock(naive)
         else:
             FrozenClock(datetime(2026, 1, 1, tzinfo=UTC)).set(naive)
+
+
+def test_stand_clock_follows_the_offset_file(tmp_path: Path) -> None:
+    """E16-04: a test stand moves its time by the seconds of a file, re-read when it changes."""
+    import os
+
+    from infra.clock import StandClock
+
+    offset = tmp_path / "offset"
+    clock = StandClock(str(offset))
+    assert clock.offset() == timedelta()  # no file: system time
+    offset.write_text("86400", encoding="ascii")
+    assert clock.offset() == timedelta(days=1)
+    assert clock.now() - SystemClock().now() > timedelta(hours=23)
+    offset.write_text("not a number", encoding="ascii")
+    os.utime(offset, (1, 1))  # a new modification time
+    assert clock.offset() == timedelta()
+
+
+def test_prod_refuses_a_stand_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    import importlib
+    import sys
+
+    from django.core.exceptions import ImproperlyConfigured
+
+    monkeypatch.setenv("DJANGO_SECRET_KEY", "x" * 50)
+    monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "localhost")
+    monkeypatch.setenv("CLOCK_OFFSET_FILE", "/tmp/offset")  # noqa: S108
+    sys.modules.pop("almi_license.settings.prod", None)
+    with pytest.raises(ImproperlyConfigured):
+        importlib.import_module("almi_license.settings.prod")
+    sys.modules.pop("almi_license.settings.prod", None)

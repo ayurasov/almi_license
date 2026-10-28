@@ -1,6 +1,11 @@
 # Изменения
 
 ## Unreleased
+- Нагрузочные сценарии k6 (`tests/load`, `make load-smoke` в CI, `make load` на стенде) и `manage.py seed_load` (E16-05).
+- Пул соединений psycopg (`DATABASE_POOL_MAX_SIZE`): под ASGI одновременные запросы больше не исчерпывают `max_connections`.
+- Негативные тесты (`tests/security/README.md`); экспорт статистики пишет строки текстом; ответы на перебор ключей не различаются по времени.
+- Сквозные сценарии этапа 1 с настоящим модулем DL (`make e2e-stand`, E16-04).
+- DL: `Content-Type` отправляется один раз (онлайн-запросы к серверу за Gunicorn/uvicorn были 400); метка триала не зависит от `data_dir`.
 - Контракт 1.1.0: 403 `license_revoked` у `check`; коды Admin API `validation_failed`, `not_authenticated`, `forbidden`, `not_found`; `LM_ERR_STORE_CORRUPTED` (−17) у `LM_Initialize[Ex]`.
 - `AGENTS.md`: «Критичные модули» вместо обязательного ревью ТЛ; ветки по версиям.
 - Публичная страница консоли `/offline` — портал офлайн-активации: `.alk-req` → `.alk-lic` без входа (E08-02).

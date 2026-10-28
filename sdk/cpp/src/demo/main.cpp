@@ -138,7 +138,13 @@ int main(int argc, char** argv) {
   config.data_dir = data.empty() ? nullptr : data.c_str();
   config.locale = locale.c_str();
   config.flags = 1;  // LM_FLAG_NO_BACKGROUND_CHECK: one command, then exit
-  if (const LM_Result started = LM_InitializeEx(&config); started != LM_OK) return Report(started);
+  const LM_Result started = LM_InitializeEx(&config);
+  if (started == LM_ERR_STORE_CORRUPTED) {
+    // The module works from a new store: the activation was lost (section 15.1 of document 2).
+    std::cout << "warning: the store was damaged and created again\n";
+  } else if (started != LM_OK) {
+    return Report(started);
+  }
 
   int code = 0;
   if (command == "status") {

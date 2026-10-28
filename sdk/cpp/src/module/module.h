@@ -48,6 +48,7 @@ struct Settings {
   std::function<void(std::chrono::milliseconds)> sleep;
   std::function<identity::Fingerprint()> fingerprint;
   std::function<platform::OsInfo()> os;
+  std::filesystem::path mark_dir;  // empty: the system or user directory of trial marks
 };
 
 struct Message {

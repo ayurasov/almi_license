@@ -23,7 +23,7 @@ enum class Failure {
   kNone,
   kNetwork,  // no connection, DNS, timeout, reset: retried
   kTls,      // certificate or handshake: never retried, never bypassed
-  kRefused,  // the URL is not https (plain http only in test builds for loopback)
+  kRefused,  // the URL is not https (plain http only in test builds for loopback), or the answer is too large
 };
 
 struct Response {

@@ -256,17 +256,21 @@ class ModuleTest : public testing::Test {
   }
   void TearDown() override { fs::remove_all(directory_); }
 
-  [[nodiscard]] std::unique_ptr<Module> Open(const std::string& url) const {
+  [[nodiscard]] std::unique_ptr<Module> Open(const std::string& url,
+                                             const std::vector<lm::crypto::TrustRoot>& roots = {}) const {
     Settings settings;
     settings.product_code = "alteroffice-desktop";
     settings.app_version = "3.2.0";
     settings.server_url = url;
     settings.data_dir = directory_;
+    settings.mark_dir = directory_ / "marks";
     settings.background_check = false;
     settings.sealer = TestSealer();
     settings.clock = &clock_;
-    settings.trust_roots =
-        lm::crypto::ParseTrustRoots(ReadText(fs::path(LM_VECTORS_DIR) / "keys" / "dev-root.pub"), "dev-root");
+    settings.trust_roots = roots.empty()
+                               ? lm::crypto::ParseTrustRoots(
+                                     ReadText(fs::path(LM_VECTORS_DIR) / "keys" / "dev-root.pub"), "dev-root")
+                               : roots;
     settings.allow_plain_http_loopback = true;
     settings.sleep = [](std::chrono::milliseconds) {};
     settings.fingerprint = [] { return lm::identity::Fingerprint{"d", "b", "c", "m"}; };
@@ -440,6 +444,55 @@ TEST(ModuleHelpers, ModesAndFeatures) {
   EXPECT_EQ(lm::module::ModeOf(State::kRestricted), LM_MODE_LIMITED);
   EXPECT_EQ(lm::module::FeaturesJson({"edit", "view"}, 256), R"(["edit","view"])");
   EXPECT_EQ(lm::module::FeaturesJson({"edit", "view"}, 10), R"(["edit"])");
+}
+
+// E16-06: negative cases of the module (criterion 12, section 13 of document 1).
+
+TEST_F(ModuleTest, LeaseOfTheDevRootIsRefusedByAProductionBuild) {
+  // A build with other trust roots (prod) does not accept a lease signed up to dev-root.
+  FakeServer server(clock_);
+  const lm::crypto::DeviceKey other_root = lm::crypto::DeviceKey::Generate();
+  auto module =
+      Open(server.Url(), lm::crypto::ParseTrustRoots(other_root.PublicKeyBase64Url(), "prod-root-1"));
+  EXPECT_EQ(module->Activate(kLicense), LM_ERR_INVALID_SIGNATURE);
+  EXPECT_EQ(module->GetStatus().state, State::kTrial);
+}
+
+TEST_F(ModuleTest, AnswerFileOfAnotherDeviceOrAnOldLeaseIsRefused) {
+  FakeServer server(clock_);
+  auto module = Open(server.Url());
+  ASSERT_EQ(module->Activate(kLicense), LM_OK);
+  ASSERT_EQ(module->CheckNow(), LM_OK);  // seq 2
+  const fs::path request = directory_ / "renew.alk-req";
+  ASSERT_EQ(module->GenerateRenewRequest(request), LM_OK);
+  const std::string payload = json::parse(ReadText(request)).at("payload").get<std::string>();
+  const auto dot = payload.find('.');
+  const auto bytes = lm::crypto::Base64UrlDecode(payload.substr(dot + 1, payload.rfind('.') - dot - 1));
+  const json claims = json::parse(bytes->begin(), bytes->end());
+  const std::string nonce = claims.at("nonce").get<std::string>();
+  const auto answer = [&](const std::string& lease) {
+    return json{{"format", "alk-lic"},
+                {"version", 1},
+                {"payload", server.issuer.Sign("alm-lic+jws", {{"request_nonce", nonce},
+                                                               {"activation_id", server.activation_id},
+                                                               {"lease", lease},
+                                                               {"issued_at", "2026-11-02T08:00:00Z"},
+                                                               {"respond_before", "2026-12-02T08:00:00Z"}})}};
+  };
+  // A lease for another computer (its instance and device key), with the right nonce.
+  const lm::crypto::DeviceKey stranger = lm::crypto::DeviceKey::Generate();
+  const std::string foreign = server.issuer.Lease(
+      server.activation_id, 9, "00000000-0000-4000-8000-000000000009", stranger.PublicKeyBase64Url(), kNow);
+  const fs::path file = directory_ / "foreign.alk-lic";
+  std::ofstream(file) << answer(foreign).dump();
+  EXPECT_NE(module->ActivateFromFile(file), LM_OK);
+  // The lease of seq 1 again (a replay of an old lease).
+  const std::string old =
+      server.issuer.Lease(server.activation_id, 1, server.instance_id, server.device_pubkey, kNow);
+  const fs::path replay = directory_ / "old.alk-lic";
+  std::ofstream(replay) << answer(old).dump();
+  EXPECT_NE(module->ActivateFromFile(replay), LM_OK);
+  EXPECT_EQ(module->GetStatus().state, State::kActive);  // the current lease stays
 }
 
 }  // namespace

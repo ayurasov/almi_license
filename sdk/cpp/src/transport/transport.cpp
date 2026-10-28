@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <memory>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -14,6 +15,13 @@ namespace lm::transport {
 
 namespace {
 
+bool IsContentType(const std::string& name) {
+  constexpr std::string_view kName = "content-type";
+  return name.size() == kName.size() &&
+         std::equal(name.begin(), name.end(), kName.begin(),
+                    [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == b; });
+}
+
 struct CurlDeleter {
   void operator()(CURL* handle) const noexcept { curl_easy_cleanup(handle); }
 };
@@ -21,8 +29,14 @@ struct ListDeleter {
   void operator()(curl_slist* list) const noexcept { curl_slist_free_all(list); }
 };
 
+// Answers of the server are small (a lease, a trust bundle): a larger body is cut off, so a
+// hostile server or proxy cannot exhaust the memory of the product (E16-07).
+constexpr std::size_t kMaxResponseBytes = std::size_t{2} * 1024 * 1024;
+
 std::size_t WriteBody(char* data, std::size_t size, std::size_t count, void* user) {
-  static_cast<std::string*>(user)->append(data, size * count);
+  auto* body = static_cast<std::string*>(user);
+  if (body->size() + size * count > kMaxResponseBytes) return 0;  // CURLE_WRITE_ERROR
+  body->append(data, size * count);
   return size * count;
 }
 
@@ -69,6 +83,8 @@ Failure FailureOf(CURLcode code) {
     case CURLE_SSL_INVALIDCERTSTATUS:
     case CURLE_UNSUPPORTED_PROTOCOL:
       return Failure::kTls;
+    case CURLE_WRITE_ERROR:
+      return Failure::kRefused;  // the answer is larger than kMaxResponseBytes
     default:
       return Failure::kNetwork;
   }
@@ -125,10 +141,14 @@ Response Transport::Attempt(const Request& request, const std::optional<Signer>&
     response.failure = Failure::kNetwork;
     return response;
   }
-  curl_slist* raw_headers = curl_slist_append(nullptr, "Content-Type: application/json");
-  raw_headers = curl_slist_append(raw_headers, "Accept: application/json, application/problem+json");
-  for (const auto& [name, value] : request.headers)
+  curl_slist* raw_headers = curl_slist_append(nullptr, "Accept: application/json, application/problem+json");
+  bool typed = false;
+  for (const auto& [name, value] : request.headers) {
+    typed = typed || IsContentType(name);
     raw_headers = curl_slist_append(raw_headers, (name + ": " + value).c_str());
+  }
+  // One Content-Type only: two are joined by the server into an unknown media type.
+  if (!typed) raw_headers = curl_slist_append(raw_headers, "Content-Type: application/json");
   if (signer && signer->key != nullptr) {
     const crypto::SignatureInput input{request.method, request.path, request.body, options_.now(),
                                        crypto::NewNonce()};

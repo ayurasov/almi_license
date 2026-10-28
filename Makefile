@@ -28,7 +28,7 @@ endef
 
 PHONY_OPS = backup-drill
 .PHONY: $(PHONY_OPS) help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
-	contract-check vectors cross-verify offline-e2e admin-schema e2e bundle-airgap
+	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand load-smoke load bundle-airgap
 
 help: ## Show available targets
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -98,8 +98,8 @@ admin-schema: ## Admin API schema -> console/src/api/admin-api.yaml and generate
 # placeholder DATABASE_URL is enough when none is set.
 lint-server: ## Server linters: ruff, mypy, import-linter
 	cd server && export DATABASE_URL="$${DATABASE_URL:-postgres://localhost/lint}" && \
-		uv run ruff check . && \
-		uv run ruff format --check . && \
+		uv run ruff check . ../tests/e2e ../tests/load && \
+		uv run ruff format --check . ../tests/e2e ../tests/load && \
 		uv run mypy . && \
 		uv run lint-imports
 
@@ -128,6 +128,22 @@ offline-e2e: ## lm-demo (dev trust root) and the server: .alk-req -> .alk-lic ->
 	cmake --build $(DL_BUILD)-dev --parallel --target lm-demo
 	cd server && LM_DEMO=$(abspath $(DL_BUILD)-dev)/bin/lm-demo uv run pytest -q -p no:cacheprovider \
 		tests/api_product/test_lm_demo_offline.py
+
+E2E_TLS_DIR ?= $(CURDIR)/.e2e-tls
+E2E_DATABASE_URL ?= $(patsubst %/almi_license,%/almi_e2e,$(DATABASE_URL))
+e2e-stand: ## End-to-end scenarios (E16-04): HTTPS stand, lm-demo (dev root), faketime; needs DATABASE_URL, sudo for the CA
+	cmake -S sdk/cpp -B $(DL_BUILD)-dev -DCMAKE_BUILD_TYPE=Release -DLM_TRUST_ROOTS=dev -DLM_BUILD_TESTS=OFF $(DL_CMAKE_ARGS)
+	cmake --build $(DL_BUILD)-dev --parallel --target lm-demo
+	tests/e2e/prepare-tls.sh $(E2E_TLS_DIR)
+	E2E_DATABASE_URL="$(E2E_DATABASE_URL)" E2E_TLS_DIR=$(E2E_TLS_DIR) \
+		LM_DEMO=$(abspath $(DL_BUILD)-dev)/bin/lm-demo E2E_REPORT=$(CURDIR)/e2e-report.html \
+		server/.venv/bin/pytest -c tests/e2e/pytest.ini tests/e2e -v
+
+load-smoke: ## Load scenarios (E16-05) at a small scale on this host: seed-load, k6 in docker, race; needs DATABASE_URL, psql
+	SMOKE=1 tests/load/stand.sh $(CURDIR)/.load
+
+load: ## Load scenarios at full scale (20 000 licences, 500 000 activations, 15 min check): a load stand only
+	tests/load/stand.sh $(CURDIR)/.load
 
 cross-verify: ## Server-issued JWS pass almi-keytool and the DL LeaseVerifier (E02-03); needs make test-dl and DATABASE_URL
 	rm -rf $(ISSUED_VECTORS) && mkdir -p $(ISSUED_VECTORS)

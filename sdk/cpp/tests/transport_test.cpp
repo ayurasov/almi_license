@@ -50,6 +50,9 @@ class TestServer {
       response.status = 409;
       response.set_content(R"({"code":"seats_exhausted"})", "application/problem+json");
     });
+    server_.Post("/huge", [](const httplib::Request&, httplib::Response& response) {
+      response.set_content(std::string(std::size_t{3} * 1024 * 1024, ' '), "application/json");
+    });
     server_.Post("/slow", [](const httplib::Request&, httplib::Response& response) {
       std::this_thread::sleep_for(1500ms);
       response.set_content("{}", "application/json");
@@ -75,6 +78,7 @@ class TestServer {
   void Remember(const httplib::Request& request) {
     const std::lock_guard<std::mutex> lock(mutex_);
     signatures_.push_back(request.get_header_value("ALMI-Signature"));
+    content_types_ = request.get_header_value_count("Content-Type");
   }
 
   httplib::Server server_;
@@ -83,6 +87,9 @@ class TestServer {
   std::atomic<int> busy_calls_{0};
   std::mutex mutex_;
   std::vector<std::string> signatures_;
+
+ public:
+  std::size_t content_types_ = 0;
 };
 
 struct Recorder {
@@ -120,6 +127,30 @@ TEST(Transport, OkResponseIsReturnedAtOnce) {
   EXPECT_EQ(response.attempts, 1);
   EXPECT_EQ(response.headers.at("content-type"), "application/json");
   EXPECT_TRUE(recorder.waits.empty());
+}
+
+TEST(Transport, ContentTypeIsSentOnceEvenWhenTheCallerSetsIt) {
+  // Found by the end-to-end stand (E16-04): two headers reached the server as
+  // "application/json,application/json" and every online request was 400.
+  TestServer server;
+  Recorder recorder;
+  const Transport transport(TestOptions(server.Url(), recorder));
+  Request request = Post("/ok");
+  request.headers["content-type"] = "application/json";
+  ASSERT_EQ(transport.Send(request, std::nullopt).status, 200);
+  EXPECT_EQ(server.content_types_, 1U);
+  ASSERT_EQ(transport.Send(Post("/ok"), std::nullopt).status, 200);
+  EXPECT_EQ(server.content_types_, 1U);
+}
+
+TEST(Transport, HugeAnswerIsRefusedAndNotRetried) {
+  TestServer server;
+  Recorder recorder;
+  const Transport transport(TestOptions(server.Url(), recorder));
+  const auto response = transport.Send(Post("/huge"), std::nullopt);
+  EXPECT_EQ(response.failure, Failure::kRefused);
+  EXPECT_EQ(response.attempts, 1);
+  EXPECT_LE(response.body.size(), std::size_t{2} * 1024 * 1024);
 }
 
 TEST(Transport, TooManyRequestsHonoursRetryAfter) {

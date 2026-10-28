@@ -69,3 +69,7 @@ Thumbs.db
 !.env.example
 deploy/**/secrets/
 .drill/
+.e2e-tls/
+e2e-report.html
+tests/e2e/report.html
+.load/

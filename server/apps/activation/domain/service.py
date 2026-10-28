@@ -16,12 +16,18 @@ from apps.activation.domain.fingerprint import within_tolerance
 from apps.activation.domain.leases import device_key_thumbprint, lease_claims, sign_lease
 from apps.activation.models import Activation, ActivationStatus, Lease
 from apps.audit.domain import record
-from apps.catalog.domain import capabilities, edition_code, latest_profile, product_info
+from apps.catalog.domain import (
+    capabilities,
+    edition_code,
+    latest_profile,
+    product_id_by_code,
+    product_info,
+)
 from apps.licensing.domain import (
     InvalidKeyFormat,
     LicenseRecord,
+    key_facts,
     key_hash,
-    license_id_by_key_hash,
     lock_license,
 )
 from apps.packages.domain import allocated_seats, package_terms
@@ -81,15 +87,25 @@ class Terms:
     reserve_pct: int
 
 
-def _find_license(raw_key: str) -> UUID:
+def _find_license(request: ActivationRequest) -> UUID:
+    """The licence of the key; an unknown key, a revoked licence and a key of another product are
+    refused after the same two queries, so the time of the answer does not tell which keys exist
+    (E16-06). The checks are repeated under the lock of the licence (_terms)."""
     try:
-        digest = key_hash(raw_key)
+        digest = key_hash(request.license_key)
     except InvalidKeyFormat:
         raise DomainError("invalid_key_format") from None
-    license_id = license_id_by_key_hash(digest)
-    if license_id is None:
+    wanted = product_id_by_code(request.product_code)
+    facts = key_facts(digest)
+    if facts is None:
         raise DomainError("key_not_found")
-    return license_id
+    if facts.status == "revoked":
+        raise DomainError("license_revoked")
+    if facts.product_id != wanted or (
+        request.edition is not None and request.edition != edition_code(facts.edition_id)
+    ):
+        raise DomainError("product_mismatch")
+    return facts.license_id
 
 
 def load_terms(license_: LicenseRecord, now: datetime) -> Terms:
@@ -214,7 +230,7 @@ def issue_lease(
 
 
 def activate(request: ActivationRequest, *, now: datetime, issuer: str) -> ActivationResult:
-    license_id = _find_license(request.license_key)
+    license_id = _find_license(request)
     with transaction.atomic():
         result = _activate_locked(request, license_id, now, issuer)
     if result is None:

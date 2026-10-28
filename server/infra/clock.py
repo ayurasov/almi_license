@@ -4,6 +4,7 @@ Code receives a Clock and calls clock.now(); datetime.now() and time.time()
 are forbidden everywhere else. Tests use FrozenClock.
 """
 
+import os
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -37,6 +38,41 @@ class FrozenClock:
 
     def set(self, at: datetime) -> None:
         self._now = _as_utc(at)
+
+
+class StandClock:
+    """System time moved by the seconds written in a file: time shifts of test stands (E16-04).
+
+    The file is read again when it changes, so a test moves the time of a running API and worker.
+    Never in production (settings/prod.py refuses CLOCK_OFFSET_FILE).
+    """
+
+    def __init__(self, offset_file: str) -> None:
+        self._path = offset_file
+        self._seen: tuple[float, timedelta] = (-1.0, timedelta())
+
+    def offset(self) -> timedelta:
+        try:
+            stamp = os.stat(self._path).st_mtime
+        except OSError:
+            return timedelta()
+        if stamp != self._seen[0]:
+            try:
+                with open(self._path, encoding="ascii") as file:
+                    seconds = float(file.read().strip() or 0)
+            except (OSError, ValueError):
+                seconds = 0.0
+            self._seen = (stamp, timedelta(seconds=seconds))
+        return self._seen[1]
+
+    def now(self) -> datetime:
+        return datetime.now(UTC) + self.offset()
+
+
+def install_clock(clock: Clock) -> None:
+    """The clock of the whole process from its start (settings of a test stand)."""
+    global _current
+    _current = clock
 
 
 def _as_utc(value: datetime) -> datetime:

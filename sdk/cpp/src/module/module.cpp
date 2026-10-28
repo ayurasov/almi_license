@@ -167,6 +167,9 @@ json ReadConfig(const fs::path& directory) {
   return value.is_object() ? value : json::object();
 }
 
+// LM_TEST_MARK_DIR: the trial marks of a test or a stand (builds with test roots only).
+fs::path TestMarkDir() { return platform::EnvironmentPath("LM_TEST_MARK_DIR"); }
+
 std::string JwsPart(const json& value) {
   const std::string text = value.dump();
   return crypto::Base64UrlEncode(std::vector<unsigned char>(text.begin(), text.end()));
@@ -396,8 +399,13 @@ Module::Evaluated Module::EvaluateLocked() {
 }
 
 state::TrialTracker Module::Tracker() const {
-  if (settings_.data_dir.empty()) return state::TrialTracker::ForProduct(settings_.product_code);
-  return {settings_.data_dir / "marks" / (settings_.product_code + ".mark"), settings_.product_code,
+  // The mark outlives the data of the product (its data_dir too): a reinstall does not renew the
+  // trial. Builds with test roots only may move it, so tests and stands do not share one.
+  fs::path directory = settings_.mark_dir;
+  const std::string_view roots = TrustRootsName();
+  if (directory.empty() && (roots == "dev" || roots == "ci" || roots == "test")) directory = TestMarkDir();
+  if (directory.empty()) return state::TrialTracker::ForProduct(settings_.product_code);
+  return {directory / (settings_.product_code + ".mark"), settings_.product_code,
           settings_.sealer ? *settings_.sealer : store::MachineSealer()};
 }
 
@@ -502,7 +510,6 @@ Module::Reply Module::Post(const std::string& path, const json& body, const std:
   const transport::Transport transport(options);
   transport::Request request;
   request.path = path;
-  request.headers["Content-Type"] = "application/json";
   // Activation and release are repeated safely under one key: the server returns its first answer
   // (E05-02). A new logical operation gets a new key (section 5.2 of document 2).
   if (path.size() >= kReleaseSuffix.size() &&

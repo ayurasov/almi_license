@@ -80,6 +80,24 @@ def license_id_by_key_hash(key_hash: str) -> UUID | None:
     return LicenseKey.objects.filter(key_hash=key_hash).values_list("license_id", flat=True).first()
 
 
+@dataclass(frozen=True)
+class KeyFacts:
+    license_id: UUID
+    product_id: UUID
+    edition_id: UUID | None
+    status: str
+
+
+def key_facts(key_hash: str) -> KeyFacts | None:
+    """The licence of a key in one query, whether or not the key exists (E16-06)."""
+    row = (
+        LicenseKey.objects.filter(key_hash=key_hash)
+        .values_list("license_id", "license__product_id", "license__edition_id", "license__status")
+        .first()
+    )
+    return None if row is None else KeyFacts(*row)
+
+
 def lock_license(license_id: UUID) -> LicenseRecord:
     """SELECT … FOR UPDATE of the license row; call inside transaction.atomic()."""
     row = (

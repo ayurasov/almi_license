@@ -29,7 +29,7 @@ docker save -o "$dir/images/almi-license-console-$version.tar" "almi-license-con
 docker save -o "$dir/images/postgres-17.tar" "$postgres"
 docker save -o "$dir/images/nginx-1.27.tar" "$nginx"
 
-cp deploy/local/{docker-compose.yml,gateway.conf.template,install.sh,upgrade.sh,check.sh,backup.sh,restore.sh} "$dir/"
+cp deploy/local/{docker-compose.yml,gateway.conf.template,install.sh,upgrade.sh,rollback.sh,check.sh,backup.sh,restore.sh} "$dir/"
 cp deploy/ops/{backup.sh,restore.sh} "$dir/ops/"
 cp docs/operations/airgap-install.md "$dir/docs/install.md"
 cp docs/operations/backup.md "$dir/docs/backup.md"
