@@ -161,6 +161,51 @@ TEST_F(LeaseVerifierCases, LocalServerIsLimitedToItsScope) {
   EXPECT_EQ(Code(verifier_, Issued(root_, issuer_, Lease(), other_product)), "scope_mismatch");
 }
 
+// Roles of the chain (section 6.3 of document 2; document 1, §12): the key of a local server is in
+// the customer's hands, so it must not certify an issuer (or any key) of its own.
+TEST_F(LeaseVerifierCases, LocalServerKeySignsNoCertificate) {
+  const Key server("srv-1");
+  const Key forged("evil-1");
+  const json server_role = {{"role", "local_server"},
+                            {"scope", {{"customer_id", "c1"}, {"products", json::array({"alteroffice-desktop"})}}}};
+  const std::string issuer_cert = Certificate(root_, issuer_);
+  const std::string server_cert = Certificate(issuer_, server, server_role);
+  for (const char* role : {"issuer", "local_server"}) {
+    json extra = server_role;
+    extra["role"] = role;
+    const json header = {{"alg", "EdDSA"},
+                         {"typ", "alm-lease+jws"},
+                         {"kid", forged.kid},
+                         {"chain", json::array({Certificate(server, forged, extra), server_cert, issuer_cert})}};
+    EXPECT_EQ(Code(verifier_, Sign(forged, header, Lease())), "chain_invalid") << role;
+  }
+  // The issuer certifies the local server: valid.
+  const json valid = {{"alg", "EdDSA"},
+                      {"typ", "alm-lease+jws"},
+                      {"kid", server.kid},
+                      {"chain", json::array({server_cert, issuer_cert})}};
+  EXPECT_TRUE(verifier_.Verify(Sign(server, valid, Lease()), Context(), kNow).Valid());
+}
+
+TEST_F(LeaseVerifierCases, IssuerSignsNoIssuerAndNoKnownKid) {
+  const Key forged("evil-1");
+  const std::string issuer_cert = Certificate(root_, issuer_);
+  const json issuer_by_issuer = {{"alg", "EdDSA"},
+                                 {"typ", "alm-lease+jws"},
+                                 {"kid", forged.kid},
+                                 {"chain", json::array({Certificate(issuer_, forged), issuer_cert})}};
+  EXPECT_EQ(Code(verifier_, Sign(forged, issuer_by_issuer, Lease())), "chain_invalid");
+  // A certificate named like the root would replace the root key for the rest of the chain.
+  const Key fake_root(root_.kid);
+  const json local_role = {{"role", "local_server"},
+                           {"scope", {{"customer_id", "c1"}, {"products", json::array({"alteroffice-desktop"})}}}};
+  const json shadow = {{"alg", "EdDSA"},
+                       {"typ", "alm-lease+jws"},
+                       {"kid", fake_root.kid},
+                       {"chain", json::array({Certificate(issuer_, fake_root, local_role), issuer_cert})}};
+  EXPECT_EQ(Code(verifier_, Sign(fake_root, shadow, Lease())), "chain_invalid");
+}
+
 TEST_F(LeaseVerifierCases, SubjectAndTime) {
   EXPECT_EQ(Code(verifier_, Issued(root_, issuer_, Lease({{"subject", {{"instance_id", "i2"}}}}))),
             "subject_mismatch");

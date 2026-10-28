@@ -107,8 +107,14 @@ def _signature_valid(public_key: bytes, parts: list[str], signature: bytes) -> b
     return True
 
 
+# Role of the signer -> roles of the certificates it may sign (section 6.3 of document 2;
+# document 1, §12): a local_server key signs no certificate, an issuer no other issuer.
+_SIGNS = {"root": {"issuer", "local_server"}, "issuer": {"local_server"}}
+
+
 def _walk_chain(chain: list[str], keys: dict[str, bytes]) -> list[_Certificate]:
     """Verify certificates from the root side; return them leaf first."""
+    roles = dict.fromkeys(keys, "root")
     certificates: list[_Certificate] = []
     for token in reversed(chain):
         try:
@@ -132,7 +138,12 @@ def _walk_chain(chain: list[str], keys: dict[str, bytes]) -> list[_Certificate]:
             )
         except (KeyError, TypeError, ValueError) as error:
             raise _Rejected(CHAIN_INVALID) from error
+        if certificate.kid in keys or certificate.role not in _SIGNS.get(
+            roles.get(header["kid"], ""), set()
+        ):
+            raise _Rejected(CHAIN_INVALID)
         keys[certificate.kid] = certificate.public_key
+        roles[certificate.kid] = certificate.role
         certificates.insert(0, certificate)
     return certificates
 

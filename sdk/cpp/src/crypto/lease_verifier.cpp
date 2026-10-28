@@ -90,12 +90,24 @@ struct Certificate {
   json scope;
 };
 
-using KeyRing = std::vector<std::pair<std::string, std::array<unsigned char, kPublicKeyBytes>>>;
+// A known key: kid, public key and role ("root" for the embedded roots).
+struct RingKey {
+  std::string kid;
+  std::array<unsigned char, kPublicKeyBytes> public_key;
+  std::string role;
+};
+using KeyRing = std::vector<RingKey>;
 
-const std::array<unsigned char, kPublicKeyBytes>* FindKey(const KeyRing& keys, const std::string& kid) {
-  const auto found =
-      std::find_if(keys.begin(), keys.end(), [&kid](const auto& item) { return item.first == kid; });
-  return found == keys.end() ? nullptr : &found->second;
+const RingKey* FindKey(const KeyRing& keys, const std::string& kid) {
+  const auto found = std::find_if(keys.begin(), keys.end(), [&kid](const RingKey& item) { return item.kid == kid; });
+  return found == keys.end() ? nullptr : &*found;
+}
+
+// Roles of the chain (section 6.3 of document 2; document 1, §12): only a root or an issuer signs
+// certificates, an issuer signs local_server certificates only, a local_server key signs none.
+bool MaySign(const std::string& signer_role, const std::string& role) {
+  if (signer_role == "root") return role == "issuer" || role == "local_server";
+  return signer_role == "issuer" && role == "local_server";
 }
 
 Certificate ParseCertificate(std::string_view token, KeyRing& keys) {
@@ -105,11 +117,12 @@ Certificate ParseCertificate(std::string_view token, KeyRing& keys) {
   if (!header || StringOr(*header, "alg") != kAlg || StringOr(*header, "typ") != kCertTyp) {
     Reject(VerifyError::kChainInvalid);
   }
-  const auto* signer = FindKey(keys, StringOr(*header, "kid"));
+  const RingKey* signer = FindKey(keys, StringOr(*header, "kid"));
   const auto signature = DecodeSignature(parts->signature);
-  if (signer == nullptr || !signature || !SignatureValid(*signer, parts->signing_input, *signature)) {
+  if (signer == nullptr || !signature || !SignatureValid(signer->public_key, parts->signing_input, *signature)) {
     Reject(VerifyError::kChainInvalid);
   }
+  const std::string signer_role = signer->role;
   const auto claims = DecodeObject(parts->payload);
   if (!claims || !IsString(*claims, "kid") || !IsString(*claims, "pub") || !IsString(*claims, "role") ||
       !IsInteger(*claims, "nbf") || !IsInteger(*claims, "exp")) {
@@ -125,7 +138,11 @@ Certificate ParseCertificate(std::string_view token, KeyRing& keys) {
   certificate.exp = (*claims)["exp"].get<std::int64_t>();
   certificate.role = (*claims)["role"].get<std::string>();
   certificate.scope = claims->value("scope", json::object());
-  keys.emplace_back(certificate.kid, certificate.public_key);
+  // The role must be one the signer may certify; a certificate never replaces a known kid.
+  if (!MaySign(signer_role, certificate.role) || FindKey(keys, certificate.kid) != nullptr) {
+    Reject(VerifyError::kChainInvalid);
+  }
+  keys.push_back(RingKey{certificate.kid, certificate.public_key, certificate.role});
   return certificate;
 }
 
@@ -189,7 +206,7 @@ Checked CheckSigned(std::string_view token, const std::vector<TrustRoot>& roots,
     Reject(VerifyError::kMalformed);
   }
   KeyRing keys;
-  for (const auto& root : roots) keys.emplace_back(root.kid, root.public_key);
+  for (const auto& root : roots) keys.push_back(RingKey{root.kid, root.public_key, "root"});
   std::vector<Certificate> certificates;
   for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
     certificates.insert(certificates.begin(), ParseCertificate(it->get<std::string>(), keys));
@@ -216,8 +233,8 @@ Checked CheckSigned(std::string_view token, const std::vector<TrustRoot>& roots,
   }
 
   // 8. Signature with the leaf key — before the payload is parsed.
-  const auto* key = FindKey(keys, kid);
-  if (key == nullptr || !SignatureValid(*key, parts->signing_input, *signature)) {
+  const RingKey* key = FindKey(keys, kid);
+  if (key == nullptr || !SignatureValid(key->public_key, parts->signing_input, *signature)) {
     Reject(VerifyError::kSignatureInvalid);
   }
   auto claims = DecodeObject(parts->payload);
