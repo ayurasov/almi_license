@@ -28,7 +28,7 @@ endef
 
 PHONY_OPS = backup-drill
 .PHONY: $(PHONY_OPS) help up down up-local up-pair seed test test-server test-compat test-console test-dl coverage-dl test-keytool dl-configure lint lint-server lint-dl lint-keytool lint-console \
-	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand prototypes screenshots guides load-smoke load bundle-airgap
+	contract-check vectors cross-verify offline-e2e admin-schema e2e e2e-stand prototypes screenshots guides sbom test-sbom load-smoke load bundle-airgap
 
 help: ## Show available targets
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -52,7 +52,7 @@ seed: ## Apply migrations and load the initial catalog (fixtures/catalog-v1.json
 	$(COMPOSE) exec -T api python manage.py migrate --noinput
 	$(COMPOSE) exec -T api python manage.py loadcatalog
 
-test: test-server test-console test-dl test-keytool ## Run all tests
+test: test-server test-console test-dl test-keytool test-sbom ## Run all tests
 
 test-server: ## Server tests (pytest); policy coverage >= 95 % (prompt I2-02)
 	cd server && uv run pytest --cov --cov-report= && \
@@ -98,9 +98,10 @@ admin-schema: ## Admin API schema -> console/src/api/admin-api.yaml and generate
 # placeholder DATABASE_URL is enough when none is set.
 lint-server: ## Server linters: ruff, mypy, import-linter
 	cd server && export DATABASE_URL="$${DATABASE_URL:-postgres://localhost/lint}" && \
-		uv run ruff check . ../tests/e2e ../tests/load ../tools/anonymize-lk.py && \
-		uv run ruff format --check . ../tests/e2e ../tests/load ../tools/anonymize-lk.py && \
+		uv run ruff check . ../tests/e2e ../tests/load ../tools/anonymize-lk.py ../tools/sbom && \
+		uv run ruff format --check . ../tests/e2e ../tests/load ../tools/anonymize-lk.py ../tools/sbom && \
 		uv run mypy . && \
+		uv run mypy --strict ../tools/sbom/sbom.py && \
 		uv run lint-imports
 
 lint-dl: dl-configure ## DL linters: clang-format, clang-tidy (needs compile_commands.json)
@@ -157,6 +158,12 @@ prototypes: ## Prototypes of the products (prototypes/README.md): mini-office ov
 screenshots: ## Screenshots of the guides (docs/images) from installed servers: CONSOLE_PASSWORD, CENTRAL_PASSWORD, LOCAL_PASSWORD
 	node tools/screenshots/console.cjs docs/images/console
 	node tools/screenshots/local-flow.cjs docs/images/console
+
+sbom: ## SBOM of the deliverables with licences and notices (docs/sbom.md) in dist/sbom: VERSION=… (images built), docker, Syft
+	tools/sbom/build.sh $(BUNDLE_DIR)/sbom
+
+test-sbom: ## Tests of the SBOM tool (standard library only)
+	python3 -m unittest discover -s tools/sbom/tests
 
 guides: ## User and administrator guides as DOCX and PDF in dist/guides (pandoc, libreoffice)
 	tools/build_guides.sh $(BUNDLE_DIR)/guides

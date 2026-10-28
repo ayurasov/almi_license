@@ -320,7 +320,7 @@ DEV_ISSUER=1 ADMIN_USER=admin ./install.sh
 
 Подробная инструкция для заказчика лежит в комплекте и в `docs/operations/airgap-install.md`. Порядок:
 
-1. **Сборка комплекта в АЛМИ.** Команда `VERSION=1.0.0 TRUST_ROOTS=root-2026:<pub> tools/build_airgap_bundle.sh out/` создаёт архив с образами, compose, скриптами и `SHA256SUMS`.
+1. **Сборка комплекта в АЛМИ.** Команда `VERSION=1.0.0 TRUST_ROOTS=root-2026:<pub> tools/build_airgap_bundle.sh out/` создаёт архив с образами, compose, скриптами и `SHA256SUMS`. С `SBOM_DIR=dist/sbom` (после `make sbom VERSION=1.0.0`) комплект получает каталог `sbom/`: состав образов и лицензии (`docs/sbom.md`).
 2. **Docker на хосте заказчика** — раздел 3. Без интернета пакеты `.deb` Docker из `download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/` переносятся вместе с комплектом и ставятся командой `sudo apt install ./*.deb`.
 3. **Установка.** Распакуйте комплект в `/opt/almi`, задайте `SERVER_NAME` и `HTTPS_PORT` в `.env`, положите сертификат CA заказчика в `tls/` и выполните `./install.sh`.
 4. **Администратор.** `docker compose run --rm api manage create_account --username admin --role admin`.

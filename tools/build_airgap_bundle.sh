@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the bundle of a local server for a closed network (E15-04; document 7, section 9).
-#   VERSION=1.0.0 TRUST_ROOTS="kid:pub" [BUILD_IMAGES=0] tools/build_airgap_bundle.sh [out dir]
+#   VERSION=1.0.0 TRUST_ROOTS="kid:pub" [BUILD_IMAGES=0] [SBOM_DIR=dist/sbom] tools/build_airgap_bundle.sh [out dir]
 # Images: the server and the console built here, postgres:17 and nginx:1.27 as pinned in the
 # compose file; everything is saved with docker save. SHA256SUMS covers every file; its signature
 # (SHA256SUMS.sig) is made with the ALMI release key outside CI (question 44).
@@ -36,6 +36,13 @@ cp docs/operations/backup.md "$dir/docs/backup.md"
 sed -e "s/^ALMI_VERSION=.*/ALMI_VERSION=$version/" -e "s|^TRUST_ROOTS=.*|TRUST_ROOTS=$TRUST_ROOTS|" \
   deploy/local/.env.example > "$dir/.env.example"
 chmod +x "$dir"/*.sh "$dir"/ops/*.sh
+# SBOM of these images with licences and notices (docs/sbom.md): make sbom with the same VERSION.
+if [[ -n "${SBOM_DIR:-}" ]]; then
+  sbom_version=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["metadata"]["component"]["version"])' \
+    "$SBOM_DIR/almi-license.cdx.json")
+  [[ "$sbom_version" == "$version" ]] || { echo "SBOM of $sbom_version, bundle of $version" >&2; exit 1; }
+  mkdir -p "$dir/sbom" && cp -r "$SBOM_DIR"/. "$dir/sbom/"
+fi
 
 sums="$(mktemp)"
 (cd "$dir" && find . -type f -printf '%P\n' | sort | xargs sha256sum) > "$sums"
