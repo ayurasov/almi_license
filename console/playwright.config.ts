@@ -26,6 +26,8 @@ export default defineConfig({
         DEPLOYMENT_MODE: 'central',
         SIGNING_KEY_FILE: '../contracts/vectors/keys/dev-issuer.key',
         SIGNING_CERT_FILE: '../deploy/dev/dev-issuer-1.cert.jws',
+        // Runs of a long-lived dev database share one address: the captcha is tested on the server.
+        OFFLINE_CAPTCHA_AFTER: '0',
       },
       reuseExistingServer: false,
     },

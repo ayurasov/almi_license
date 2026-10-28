@@ -37,6 +37,7 @@ constexpr const char* kUsage = "usage";
 constexpr const char* kAcked = "acked_directives";
 constexpr const char* kUnsupported = "unsupported_directives";
 constexpr const char* kEvents = "events";
+constexpr const char* kRollbackReported = "rollback_reported";
 constexpr const char* kPendingPrefix = "pending:";
 constexpr const char* kShownPrefix = "shown:";
 
@@ -47,6 +48,8 @@ constexpr std::int64_t kRetryLater = kHour;
 constexpr std::size_t kMaxFileBytes = std::size_t{64} * 1024;
 constexpr long kHttpOk = 200;
 constexpr long kHttpCreated = 201;
+constexpr long kHttpAccepted = 202;
+constexpr std::size_t kMaxEvents = 100;  // maxItems of EventsRequest
 constexpr long kHttpUnauthorized = 401;
 constexpr long kHttpServerError = 500;
 constexpr long kHttpClientError = 400;
@@ -255,9 +258,7 @@ void Module::LoadLocked() {
   entries_ = loaded.status == store::LoadStatus::kOk ? loaded.entries : store::Entries{};
   if (loaded.status == store::LoadStatus::kCorrupted) {
     store_corrupted_ = true;
-    json events = JsonEntry(entries_, kEvents, json::array());
-    events.push_back({{"type", "store_corrupted"}});
-    entries_[kEvents] = events.dump();
+    QueueEventLocked("store_corrupted");
   }
   if (Get(entries_, kInstanceId).empty()) entries_[kInstanceId] = identity::NewInstanceId();
   std::optional<crypto::DeviceKey> key;
@@ -272,6 +273,44 @@ void Module::LoadLocked() {
 
 bool Module::SaveLocked() { return store_->Save(entries_); }
 
+void Module::QueueEventLocked(const std::string& type) {
+  json events = JsonEntry(entries_, kEvents, json::array());
+  events.push_back(
+      {{"id", identity::NewInstanceId()}, {"type", type}, {"at", util::FormatRfc3339(clock_->Now())}});
+  // The oldest go first when the server is out of reach for long.
+  while (events.size() > kMaxEvents) events.erase(events.begin());
+  entries_[kEvents] = events.dump();
+}
+
+void Module::SendEvents(const std::string& activation_id) {
+  json batch = json::array();
+  {
+    const std::scoped_lock lock(state_mutex_);
+    for (auto event : JsonEntry(entries_, kEvents, json::array())) {
+      if (!event.is_object()) continue;
+      // Events queued by an older module have no id or time.
+      if (StringOf(event, "id").empty()) event["id"] = identity::NewInstanceId();
+      if (StringOf(event, "at").empty()) event["at"] = util::FormatRfc3339(clock_->Now());
+      batch.push_back(event);
+    }
+    entries_[kEvents] = batch.dump();
+  }
+  if (batch.empty()) return;
+  const Reply reply =
+      Post("/api/v1/events", {{"activation_id", activation_id}, {"events", batch}}, activation_id);
+  if (reply.failure != transport::Failure::kNone || reply.status != kHttpAccepted) return;  // next check
+  const std::scoped_lock lock(state_mutex_);
+  json left = json::array();
+  for (const auto& event : JsonEntry(entries_, kEvents, json::array())) {
+    const bool sent = std::any_of(batch.begin(), batch.end(), [&](const json& item) {
+      return StringOf(item, "id") == StringOf(event, "id");
+    });
+    if (!sent) left.push_back(event);
+  }
+  entries_[kEvents] = left.dump();
+  (void)SaveLocked();
+}
+
 const crypto::DeviceKey& Module::Key() const {
   if (!device_key_) throw std::logic_error("device key is not loaded");
   return device_key_.value();
@@ -279,14 +318,15 @@ const crypto::DeviceKey& Module::Key() const {
 
 std::int64_t Module::TrustedNowLocked() {
   const auto trusted = state::RollbackGuard(*clock_).Observe(entries_);
-  if (trusted.rollback_detected) {
-    json events = JsonEntry(entries_, kEvents, json::array());
-    if (events.empty() || StringOf(events.back(), "type") != state::kRollbackEvent) {
-      events.push_back({{"type", state::kRollbackEvent}, {"at", util::FormatRfc3339(clock_->Now())}});
-      entries_[kEvents] = events.dump();
-    }
+  // One event per rollback: the clock stays behind until it catches up with the trusted time.
+  const bool reported = !Get(entries_, kRollbackReported).empty();
+  if (trusted.rollback_detected && !reported) {
+    QueueEventLocked(state::kRollbackEvent);
+    entries_[kRollbackReported] = "1";
+  } else if (!trusted.rollback_detected && reported) {
+    entries_.erase(kRollbackReported);
   }
-  if (trusted.store_changed || trusted.rollback_detected) (void)SaveLocked();
+  if (trusted.store_changed || trusted.rollback_detected != reported) (void)SaveLocked();
   return trusted.now;
 }
 
@@ -657,6 +697,7 @@ LM_Result Module::CheckOnce(bool allow_reactivate) {
     }
     const LM_Result accepted = AcceptLease(lease, ok ? reply.body : json::object(), activation_id);
     if (accepted != LM_OK) return accepted;
+    if (ok) SendEvents(activation_id);
     if (release) {
       (void)Post("/api/v1/activations/" + activation_id + "/release", {{"reason", "directive"}},
                  activation_id);

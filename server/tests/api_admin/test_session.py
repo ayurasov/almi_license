@@ -54,7 +54,12 @@ def test_login_session_and_logout(operator: Any) -> None:
     response = login(client, token)
 
     assert response.status_code == 200, response.content
-    assert response.json() == {"username": "operator", "role": "operator", "customer_id": None}
+    assert response.json() == {
+        "username": "operator",
+        "role": "operator",
+        "customer_id": None,
+        "must_change_password": False,
+    }
     session_cookie = response.cookies["sessionid"]
     assert session_cookie["httponly"] and session_cookie["samesite"] == "Lax"
     assert client.get("/api/admin/session").json()["username"] == "operator"

@@ -715,6 +715,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/session/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/admin/session/password: the user changes the own password (question 31). */
+        post: operations["session_change_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/setup": {
         parameters: {
             query?: never;
@@ -830,6 +847,8 @@ export interface components {
             last_seen_at: string;
             /** Format: date-time */
             released_at: string | null;
+            /** @description Последняя связь — файлом .alk-req */
+            offline: boolean;
         };
         ActivationPage: {
             count: number;
@@ -1224,6 +1243,10 @@ export interface components {
         ModeEnum: "central" | "local";
         /** @enum {unknown} */
         NullEnum: null;
+        PasswordChange: {
+            current_password: string;
+            new_password: string;
+        };
         PatchedAccountUpdate: {
             role?: components["schemas"]["RoleEnum"];
             /** Format: uuid */
@@ -1344,6 +1367,8 @@ export interface components {
             role: components["schemas"]["RoleEnum"];
             /** Format: uuid */
             customer_id?: string | null;
+            /** @description Временный пароль: консоль сначала просит его сменить */
+            must_change_password: boolean;
         };
         SessionRequest: {
             username: string;
@@ -2693,6 +2718,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    session_change_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChange"];
+                "application/x-www-form-urlencoded": components["schemas"]["PasswordChange"];
+                "multipart/form-data": components["schemas"]["PasswordChange"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
             };
         };
     };

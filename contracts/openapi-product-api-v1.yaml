@@ -161,8 +161,17 @@ paths:
           application/json:
             schema: {$ref: '#/components/schemas/EventsRequest'}
       responses:
-        '202': {description: Принято}
+        '202':
+          description: Принято; accepted — сколько событий новые (повтор id не сохраняется)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: {type: integer}
         '401': {$ref: '#/components/responses/Problem'}
+        '400': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
 
   /api/v1/offline/requests:
     post:
@@ -178,6 +187,8 @@ paths:
               required: [file]
               properties:
                 file: {type: string, format: binary, description: Файл .alk-req}
+                captcha_id: {type: string, description: 'Капча из getOfflineCaptcha; нужна после 5 файлов с адреса за час (ответ 400 captcha_required)'}
+                captcha_answer: {type: string, maxLength: 16}
       responses:
         '200':
           description: Файл .alk-lic
@@ -188,6 +199,25 @@ paths:
         '403': {$ref: '#/components/responses/Problem'}
         '404': {$ref: '#/components/responses/Problem'}
         '409': {$ref: '#/components/responses/Problem'}
+        '429': {$ref: '#/components/responses/Problem'}
+
+  /api/v1/offline/captcha:
+    get:
+      tags: [product]
+      operationId: getOfflineCaptcha
+      summary: Капча портала офлайн-активации (изображение PNG, одна попытка, 10 минут)
+      responses:
+        '200':
+          description: Новая капча
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [captcha_id, image, expires_at]
+                properties:
+                  captcha_id: {type: string}
+                  image: {type: string, description: 'data:image/png;base64,…'}
+                  expires_at: {type: string, format: date-time}
         '429': {$ref: '#/components/responses/Problem'}
 
   /api/v1/activations/{activation_id}/seats:acquire:
@@ -845,7 +875,7 @@ components:
             required: [id, type, at]
             properties:
               id: {type: string}
-              type: {type: string, examples: [clock_rollback_detected, lease_verification_failed, user_limit_exceeded, state_changed, feature_denied, unknown_state, unsupported_directive]}
+              type: {type: string, examples: [clock_rollback_detected, store_corrupted, lease_verification_failed, user_limit_exceeded, state_changed, feature_denied, unknown_state, unsupported_directive]}
               at: {type: string, format: date-time}
               data: {type: object, additionalProperties: true}
 
@@ -982,7 +1012,7 @@ components:
         code:
           type: string
           description: Клиент обязан обрабатывать неизвестные коды по классу HTTP-статуса
-          examples: [invalid_request, invalid_key_format, signature_invalid, clock_skew, license_revoked, license_expired, product_mismatch, key_not_found, activation_not_found, seats_exhausted, instance_conflict, idempotency_conflict, activation_released, rebind_required, payload_too_large, unsupported_product_version, upgrade_required, rate_limited, internal_error, maintenance, validation_failed, not_authenticated, forbidden, not_found]
+          examples: [invalid_request, invalid_key_format, signature_invalid, clock_skew, license_revoked, license_expired, product_mismatch, key_not_found, activation_not_found, seats_exhausted, instance_conflict, idempotency_conflict, activation_released, rebind_required, payload_too_large, unsupported_product_version, upgrade_required, rate_limited, internal_error, maintenance, captcha_required, validation_failed, not_authenticated, forbidden, not_found]
         detail: {type: string}
         request_id: {type: string}
         server_time: {type: string, format: date-time}

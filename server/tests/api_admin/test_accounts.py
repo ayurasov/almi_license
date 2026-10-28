@@ -33,6 +33,14 @@ def password_sign_in(username: str, password: str) -> Client:
         HTTP_X_CSRFTOKEN=token,
     )
     assert response.status_code == 200, response.content
+    # A generated password is temporary: the user changes it first (question 31).
+    changed = client.post(
+        "/api/admin/session/password",
+        {"current_password": password, "new_password": "Ветер-над-Волгой-2026"},
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+    )
+    assert changed.status_code == 200, changed.content
     return client
 
 
@@ -71,11 +79,13 @@ def test_create_block_role_and_reset(admin: Console) -> None:
     assert [e["action"] for e in reversed(events_for("user", "ivanova"))] == [
         "iam.account_created",
         "iam.login",
+        "iam.password_changed",
         "iam.blocked",
         "iam.role_changed",
         "iam.unblocked",
         "iam.password_reset",
         "iam.login",
+        "iam.password_changed",
     ]
     for event in events_for("user", "ivanova"):
         assert first not in str(event) and second not in str(event)

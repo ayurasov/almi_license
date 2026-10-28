@@ -113,6 +113,7 @@ class Module {
   // Under state_mutex_.
   void LoadLocked();
   bool SaveLocked();
+  void QueueEventLocked(const std::string& type);
   Evaluated EvaluateLocked();
   std::int64_t TrustedNowLocked();
   [[nodiscard]] std::string ServerUrlLocked() const;
@@ -123,6 +124,7 @@ class Module {
   Reply Post(const std::string& path, const nlohmann::json& body, const std::string& keyid);
   LM_Result ActivateWith(const std::string& key);
   LM_Result CheckOnce(bool allow_reactivate);
+  void SendEvents(const std::string& activation_id);  // POST /api/v1/events after a check
   LM_Result AcceptLease(const std::string& lease, const nlohmann::json& response,
                         const std::string& activation_id);
   LM_Result Failed(const Reply& reply, LM_Result fallback);

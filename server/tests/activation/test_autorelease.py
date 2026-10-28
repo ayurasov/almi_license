@@ -128,3 +128,48 @@ def test_hourly_schedule_and_worker(make: Any, clock: FrozenClock) -> None:
     assert row.status == "released_auto"
     # The next slot is the next hour at :05.
     assert schedule.next_run_at == clock.now().replace(hour=9, minute=5, second=0)
+
+
+def _offline_grace(days: int | None) -> None:
+    from apps.catalog.models import PolicyProfile
+
+    profile = PolicyProfile.objects.get(code="alteroffice-desktop.commercial")
+    profile.params = profile.params | {"offline_grace_days": days}
+    profile.save()
+
+
+def test_offline_activation_keeps_its_seat_while_the_lease_lasts(
+    make: Any, clock: FrozenClock
+) -> None:
+    """Question 39: an activation by files is released after its lease term, not before."""
+    _offline_grace(90)
+    offline = make(last_seen_at=clock.now() - timedelta(days=60), offline=True)
+    online = make(last_seen_at=clock.now() - timedelta(days=60))
+    assert release_stale_activations(now=clock.now()) == 1
+    offline.refresh_from_db()
+    online.refresh_from_db()
+    assert (offline.status, online.status) == ("active", "released_auto")
+    clock.advance(timedelta(days=30, seconds=1))
+    assert release_stale_activations(now=clock.now()) == 1
+    offline.refresh_from_db()
+    assert offline.status == "released_auto"
+    event = AuditEvent.objects.get(object_id=offline.external_id)
+    assert event.data["offline"] is True
+
+
+def test_offline_activation_uses_release_after_days_when_longer(
+    make: Any, clock: FrozenClock
+) -> None:
+    _offline_grace(7)
+    kept = make(last_seen_at=clock.now() - timedelta(days=DAYS - 1), offline=True)
+    assert release_stale_activations(now=clock.now()) == 0
+    kept.refresh_from_db()
+    assert kept.status == "active"
+
+
+def test_offline_activation_without_lease_term_is_not_released(
+    make: Any, clock: FrozenClock
+) -> None:
+    _offline_grace(None)  # the lease does not expire: the seat stays until a release
+    make(last_seen_at=clock.now() - timedelta(days=400), offline=True)
+    assert release_stale_activations(now=clock.now()) == 0

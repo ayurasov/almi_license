@@ -20,6 +20,7 @@ WINDOWS = {
     "check_ip": MINUTE,
     "check_activation": HOUR,
     "offline_ip": HOUR,
+    "offline_captcha_ip": HOUR,
 }
 
 
@@ -42,3 +43,8 @@ def limit_check(*, ip: str | None, activation_id: str, now: datetime) -> None:
 
 def limit_offline(*, ip: str | None, now: datetime) -> None:
     _hit("offline_ip", ip, now)
+
+
+def limit_captcha(*, ip: str | None, now: datetime) -> None:
+    """New captchas of the offline portal per IP an hour (question 45)."""
+    _hit("offline_captcha_ip", ip, now)

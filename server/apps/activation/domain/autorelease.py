@@ -1,8 +1,11 @@
 """Automatic release of activations without contact (E12-02, prompt I4-03).
 
 An active activation whose last contact is older than release_after_days of the policy profile
-of its licence becomes released_auto; the product learns it from 410 activation_released at its
-next check and activates again if a seat is free (section 5.4 of document 2). Rows are released
+of its licence becomes released_auto. An activation by files (last contact by .alk-req) holds a
+lease for offline_grace_days without contact, so it is released only after
+max(release_after_days, offline_grace_days), and never when the lease has no term (question 39).
+The product learns of the release from 410 activation_released at its next check and
+activates again if a seat is free (section 5.4 of document 2). Rows are released
 in batches of BATCH, each in its own transaction under the lock of the licence row (AGENTS.md,
 rule 6), with an audit event per activation. A repeated run finds nothing to release.
 """
@@ -11,6 +14,7 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from django.db import transaction
+from django.db.models import Q
 
 from apps.activation.domain.service import load_terms
 from apps.activation.models import Activation, ActivationStatus
@@ -24,11 +28,14 @@ TASK_KIND = "activation.release_stale"
 
 def _release_batch(license_id: UUID, now: datetime) -> int:
     with transaction.atomic():
-        terms = load_terms(lock_license(license_id), now)
-        cutoff = now - timedelta(days=terms.policy.release_after_days)
+        policy = load_terms(lock_license(license_id), now).policy
+        stale = Q(offline=False, last_seen_at__lt=now - timedelta(days=policy.release_after_days))
+        if policy.offline_grace_days is not None:
+            days = max(policy.release_after_days, policy.offline_grace_days)
+            stale |= Q(offline=True, last_seen_at__lt=now - timedelta(days=days))
         rows = list(
             Activation.objects.select_for_update()
-            .filter(license_id=license_id, status=ActivationStatus.ACTIVE, last_seen_at__lt=cutoff)
+            .filter(stale, license_id=license_id, status=ActivationStatus.ACTIVE)
             .order_by("last_seen_at")[:BATCH]
         )
         for row in rows:
@@ -41,7 +48,11 @@ def _release_batch(license_id: UUID, now: datetime) -> int:
                 "activation",
                 row.external_id,
                 at=now,
-                data={"license_id": str(license_id), "last_seen_at": row.last_seen_at.isoformat()},
+                data={
+                    "license_id": str(license_id),
+                    "last_seen_at": row.last_seen_at.isoformat(),
+                    "offline": row.offline,
+                },
             )
     return len(rows)
 

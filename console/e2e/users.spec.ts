@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { signIn } from './helpers'
+import { setOwnPassword, signIn } from './helpers'
 
 test('an administrator creates a user, blocks and resets the password', async ({ page, browser }) => {
   await signIn(page, '/users', 'admin')
@@ -23,6 +23,7 @@ test('an administrator creates a user, blocks and resets the password', async ({
   await other.getByLabel('Логин').fill(username)
   await other.locator('#password').fill(first)
   await other.getByRole('button', { name: 'Войти' }).click()
+  await setOwnPassword(other, first)
   await expect(other.getByTestId('current-user')).toHaveText(username)
   await expect(other.getByRole('menuitem', { name: 'Пользователи' })).toHaveCount(0)
 

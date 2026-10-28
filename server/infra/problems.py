@@ -19,6 +19,7 @@ CONTENT_TYPE = "application/problem+json"
 CATALOG: dict[str, tuple[int, str]] = {
     "invalid_request": (400, "Нарушен формат запроса"),
     "invalid_key_format": (400, "Неверный формат ключа"),
+    "captcha_required": (400, "Нужна капча"),
     "validation_failed": (400, "Ошибка в полях запроса"),
     "not_authenticated": (401, "Нужен вход в консоль"),
     "forbidden": (403, "Недостаточно прав"),
@@ -45,6 +46,10 @@ CATALOG: dict[str, tuple[int, str]] = {
 
 # Texts shown to the user (section 5 of document 5); {used}, {limit} come from data.
 USER_MESSAGES: dict[str, dict[str, str]] = {
+    "captcha_required": {
+        "ru": "Введите символы с картинки.",
+        "en": "Enter the characters from the picture.",
+    },
     "forbidden": {
         "ru": "Недостаточно прав для этого действия.",
         "en": "You do not have permission for this action.",

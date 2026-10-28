@@ -19,10 +19,8 @@ class RequestMetrics:
         # The route pattern, not the path: keys and ids never become label values.
         route = match.route if match is not None else "unmatched"
         status = str(response.status_code)
-        metrics.REQUESTS.inc(
-            (("method", request.method or ""), ("route", route), ("status", status))
-        )
+        metrics.REQUESTS.labels(method=request.method or "", route=route, status=status).inc()
         if response.status_code >= 500:
-            metrics.ERRORS.inc((("route", route),))
-        metrics.DURATION.observe(monotonic() - start, (("route", route),))
+            metrics.ERRORS.labels(route=route).inc()
+        metrics.DURATION.labels(route=route).observe(monotonic() - start)
         return response

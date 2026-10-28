@@ -39,10 +39,20 @@ def _window_start(now: datetime, window: timedelta) -> datetime:
     return datetime.fromtimestamp(start, UTC)
 
 
+def count(name: str, value: str, window: timedelta, *, now: datetime) -> int:
+    """Count one request of the key in its window; the number in the window including it."""
+    return _count(key_of(name, value), _window_start(now, window))
+
+
 def hit(limit: Limit, value: str, *, now: datetime) -> None:
     """Count one request; Limited when the window already had limit.count requests."""
-    key = key_of(limit.name, value)
     start = _window_start(now, limit.window)
+    total = _count(key_of(limit.name, value), start)
+    if total > limit.count:
+        raise Limited(math.ceil((start + limit.window - now).total_seconds()))
+
+
+def _count(key: str, start: datetime) -> int:
     with connection.cursor() as cursor:
         cursor.execute(
             f"""
@@ -55,9 +65,7 @@ def hit(limit: Limit, value: str, *, now: datetime) -> None:
             [key, start],
         )
         row = cursor.fetchone()
-    count = int(row[0]) if row else 1
-    if count > limit.count:
-        raise Limited(math.ceil((start + limit.window - now).total_seconds()))
+    return int(row[0]) if row else 1
 
 
 def block(name: str, value: str, *, until: datetime) -> None:

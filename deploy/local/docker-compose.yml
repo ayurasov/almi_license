@@ -8,8 +8,9 @@ x-server: &server
   environment: &server-env
     DEPLOYMENT_MODE: local
     DJANGO_SETTINGS_MODULE: almi_license.settings.prod
-    DATABASE_URL: postgres://almi@db:5432/almi_local
-    DATABASE_PASSWORD_FILE: /run/secrets/db_password
+    # api and worker: the application role without the rights of the owner (question 38).
+    DATABASE_URL: postgres://almi_app@db:5432/almi_local
+    DATABASE_PASSWORD_FILE: /run/secrets/app_db_password
     DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret
     DJANGO_ALLOWED_HOSTS: ${SERVER_NAME}
     DJANGO_CSRF_TRUSTED_ORIGINS: https://${SERVER_NAME}:${HTTPS_PORT}
@@ -21,7 +22,8 @@ x-server: &server
     RATE_LIMIT_ACTIVATE_IP: ${RATE_LIMIT_ACTIVATE_IP:-100}
     RATE_LIMIT_CHECK_IP: ${RATE_LIMIT_CHECK_IP:-1000}
     RATE_LIMIT_OFFLINE_IP: ${RATE_LIMIT_OFFLINE_IP:-100}
-  secrets: [db_password, django_secret]
+    OFFLINE_CAPTCHA_AFTER: ${OFFLINE_CAPTCHA_AFTER:-50}
+  secrets: [app_db_password, django_secret]
   volumes:
     - server-key:/var/lib/almi
     - ./backups:/var/backups/almi:ro
@@ -47,6 +49,14 @@ services:
     <<: *server
     command: ["migrate"]
     restart: "no"
+    # The owner of the tables migrates and grants the rights of almi_app.
+    environment:
+      <<: *server-env
+      DATABASE_URL: postgres://almi@db:5432/almi_local
+      DATABASE_PASSWORD_FILE: /run/secrets/db_password
+      APP_DATABASE_ROLE: almi_app
+      APP_DATABASE_PASSWORD_FILE: /run/secrets/app_db_password
+    secrets: [db_password, app_db_password, django_secret]
     depends_on:
       db: { condition: service_healthy }
   api:
@@ -98,6 +108,7 @@ services:
       - server-key:/var/lib/almi:ro
 secrets:
   db_password: { file: ./secrets/db_password }
+  app_db_password: { file: ./secrets/app_db_password }
   db_url: { file: ./secrets/db_url }
   django_secret: { file: ./secrets/django_secret }
   backup_passphrase: { file: ./secrets/backup_passphrase }

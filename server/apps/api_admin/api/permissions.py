@@ -7,7 +7,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.request import Request
 
-from apps.iam.domain import ADMIN_ROLE, OPERATOR_ROLES, VIEWER_ROLE, account_info
+from apps.iam.domain import ADMIN_ROLE, OPERATOR_ROLES, VIEWER_ROLE, AccountInfo, account_info
 
 
 class ConsoleSession(SessionAuthentication):
@@ -17,12 +17,18 @@ class ConsoleSession(SessionAuthentication):
         return "Session"
 
 
+def _account(request: Request) -> AccountInfo | None:
+    """The account of the session; none while a temporary password is not changed (question 31)."""
+    user = request.user
+    if user is None or not user.is_authenticated:
+        return None
+    account = account_info(user)
+    return None if account is None or account.must_change_password else account
+
+
 class IsOperator(BasePermission):
     def has_permission(self, request: Request, view: Any) -> bool:
-        user = request.user
-        if user is None or not user.is_authenticated:
-            return False
-        account = account_info(user)
+        account = _account(request)
         return account is not None and account.role in OPERATOR_ROLES
 
 
@@ -30,10 +36,7 @@ class CanRead(BasePermission):
     """Operators; a customer viewer reads only (E07-08); the data is limited to its customer."""
 
     def has_permission(self, request: Request, view: Any) -> bool:
-        user = request.user
-        if user is None or not user.is_authenticated:
-            return False
-        account = account_info(user)
+        account = _account(request)
         if account is None:
             return False
         if account.role in OPERATOR_ROLES:
@@ -45,10 +48,7 @@ class IsAdmin(BasePermission):
     """Console users are managed by an ALMI administrator only (E07-09)."""
 
     def has_permission(self, request: Request, view: Any) -> bool:
-        user = request.user
-        if user is None or not user.is_authenticated:
-            return False
-        account = account_info(user)
+        account = _account(request)
         return account is not None and account.role == ADMIN_ROLE
 
 

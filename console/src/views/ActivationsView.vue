@@ -198,6 +198,12 @@ async function release(): Promise<void> {
             severity="warn"
           />
           <Tag
+            v-if="(data as Activation).offline"
+            :value="t('activations.offline')"
+            severity="info"
+            data-testid="activation-offline"
+          />
+          <Tag
             v-if="(data as Activation).status === 'conflict'"
             :value="t('activations.conflict')"
             severity="danger"

@@ -30,6 +30,8 @@ const sections: RouteRecordRaw[] = SECTIONS.filter((name) => !READY.has(name)).m
 
 export const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue'), meta: { public: true } },
+  // Outside the layout: a temporary password is changed before anything else (question 31).
+  { path: '/password', name: 'password', component: () => import('@/views/PasswordView.vue') },
   { path: '/offline', name: 'offline', component: () => import('@/views/OfflinePortalView.vue'), meta: { public: true } },
   {
     path: '/',
@@ -61,6 +63,8 @@ router.beforeEach(async (to) => {
   const session = useSessionStore()
   if (!session.checked) await session.load()
   if (!session.user) return { name: 'login', query: { next: to.fullPath } }
+  if (to.name === 'password') return true
+  if (session.user.must_change_password) return { name: 'password', query: { next: to.fullPath } }
   const instance = useInstanceStore()
   await instance.load()
   // A local server works only after the first-run wizard (E09-01).

@@ -3,6 +3,7 @@
 from apps.activation.domain.autorelease import release_stale_activations
 from apps.activation.domain.check import CheckRequest, check
 from apps.activation.domain.directives import queue_directive
+from apps.activation.domain.events import ProductEventIn, accept_events
 from apps.activation.domain.keys import device_public_key
 from apps.activation.domain.offline import MAX_FILE_BYTES, OfflineRequest, answer, open_request
 from apps.activation.domain.release import ReleaseResult, release
@@ -30,6 +31,8 @@ from apps.activation.domain.usage import (
 )
 
 __all__ = [
+    "ProductEventIn",
+    "accept_events",
     "release_stale_activations",
     "recompute_states",
     "MAX_FILE_BYTES",

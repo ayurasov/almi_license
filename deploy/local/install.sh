@@ -32,6 +32,7 @@ umask 077
 mkdir -p secrets tls backups
 new_secret() { [[ -s "secrets/$1" ]] || openssl rand -hex 32 > "secrets/$1"; }
 new_secret db_password
+new_secret app_db_password
 new_secret django_secret
 new_secret backup_passphrase
 [[ -s secrets/db_url ]] || printf 'postgres://almi:%s@db:5432/almi_local\n' "$(< secrets/db_password)" > secrets/db_url

@@ -123,6 +123,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/offline/captcha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Капча портала офлайн-активации (изображение PNG, одна попытка, 10 минут) */
+        get: operations["getOfflineCaptcha"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/activations/{activation_id}/seats:acquire": {
         parameters: {
             query?: never;
@@ -642,6 +659,7 @@ export interface components {
                 id: string;
                 /**
                  * @example clock_rollback_detected
+                 * @example store_corrupted
                  * @example lease_verification_failed
                  * @example user_limit_exceeded
                  * @example state_changed
@@ -789,6 +807,7 @@ export interface components {
              * @example rate_limited
              * @example internal_error
              * @example maintenance
+             * @example captcha_required
              * @example validation_failed
              * @example not_authenticated
              * @example forbidden
@@ -1026,14 +1045,20 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Принято */
+            /** @description Принято; accepted — сколько событий новые (повтор id не сохраняется) */
             202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        accepted?: number;
+                    };
+                };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
         };
     };
     processOfflineRequest: {
@@ -1051,6 +1076,9 @@ export interface operations {
                      * @description Файл .alk-req
                      */
                     file: string;
+                    /** @description Капча из getOfflineCaptcha; нужна после 5 файлов с адреса за час (ответ 400 captcha_required) */
+                    captcha_id?: string;
+                    captcha_answer?: string;
                 };
             };
         };
@@ -1068,6 +1096,33 @@ export interface operations {
             403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+        };
+    };
+    getOfflineCaptcha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Новая капча */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        captcha_id: string;
+                        /** @description data:image/png;base64,… */
+                        image: string;
+                        /** Format: date-time */
+                        expires_at: string;
+                    };
+                };
+            };
             429: components["responses"]["Problem"];
         };
     };

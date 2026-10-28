@@ -28,7 +28,7 @@ from apps.packages.domain.servers import (
     server_public_key,
     set_allocations,
 )
-from apps.packages.domain.usage import UsageReceipt, accept_usage, local_active
+from apps.packages.domain.usage import UsageReceipt, accept_usage, gunzip_report, local_active
 from apps.packages.models import Allocation
 
 
@@ -38,6 +38,7 @@ def license_allocated(license_id: UUID) -> bool:
 
 
 __all__ = [
+    "gunzip_report",
     "ReportState",
     "UsageReceipt",
     "accept_usage",

@@ -8,6 +8,7 @@ with a receipt; in the files exchange the console saves the file and the receipt
 the next package.
 """
 
+import gzip
 import hashlib
 import json
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from typing import Any
 from django.conf import settings
 from django.db import transaction
 
-from apps.audit.domain import EventFilter, last_digest, record, search_events
+from apps.audit.domain import last_digest, record
 from apps.packages.domain.local import _invalid, _key_path, _signed_headers
 from apps.packages.models import Exchange, LocalIdentity
 from infra.crypto.ed25519 import load_key
@@ -26,8 +27,6 @@ from infra.http import send
 
 USAGE_TYP = "alm-usage+jws"
 TASK_KIND = "packages.usage_report"
-# Refusals kept in the audit journal of the local server, by error code of section 16.
-DENIALS = {"activation.conflict": "instance_conflict"}
 
 
 @dataclass(frozen=True)
@@ -54,7 +53,7 @@ def _claims(row: LocalIdentity, seq: int, since: datetime, now: datetime) -> dic
         usage_by_license,
     )
     from apps.licensing.domain import find_licenses
-    from apps.stats.domain import latest_usage
+    from apps.stats.domain import denials_between, latest_usage
 
     ids = [lic.id for lic in find_licenses()]
     usage = usage_by_license(ids)
@@ -93,11 +92,8 @@ def _claims(row: LocalIdentity, seq: int, since: datetime, now: datetime) -> dic
         for a in activations_of(ids)
         if a.status != "conflict"
     ]
-    denials = {}
-    for action, code in DENIALS.items():
-        count, _ = search_events(EventFilter(action=action, since=since, until=now), page_size=1)
-        if count:
-            denials[code] = count
+    # Every refusal of the products of this server by code (question 43).
+    denials = denials_between(since, now)
     return {
         "server_id": row.server_id,
         "seq": seq,
@@ -151,11 +147,12 @@ def send_report(*, now: datetime) -> int | None:
     if row is None or row.exchange != Exchange.ONLINE or not row.central_url:
         return None
     document, seq = build_report(actor="scheduler", now=now)
-    body = json.dumps(document, separators=(",", ":")).encode()
+    # Every activation goes into the report (question 43): gzip keeps a large one small; the
+    # signature covers the compressed body.
+    body = gzip.compress(json.dumps(document, separators=(",", ":")).encode(), mtime=0)
     path = f"/api/sync/v1/servers/{row.server_id}/usage"
-    reply = send(
-        "POST", row.central_url + path, body, _signed_headers(row, "POST", path, body, now)
-    )
+    headers = _signed_headers(row, "POST", path, body, now) | {"Content-Encoding": "gzip"}
+    reply = send("POST", row.central_url + path, body, headers)
     if reply.status != 200:
         # The report stays counted: the next one covers the period from its end (seq has a gap).
         raise _invalid(f"central server answered {reply.status}")

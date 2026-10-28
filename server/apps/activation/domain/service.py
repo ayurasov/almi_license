@@ -55,6 +55,7 @@ class ActivationRequest:
     fingerprint: dict[str, Any]
     device_pubkey: str
     ip: str | None = None
+    offline: bool = False  # by an .alk-req file (section 10 of document 2)
 
 
 @dataclass(frozen=True)
@@ -244,6 +245,7 @@ def _activate_locked(
         existing.os = request.os
         existing.instance_name = request.instance_name
         existing.last_seen_at = now
+        existing.offline = request.offline
         existing.save()
         token, result = issue_lease(existing, terms, now, issuer)
         record(
@@ -269,6 +271,7 @@ def _activate_locked(
         in_reserve=in_reserve,
         product_version=request.product_version,
         os=request.os,
+        offline=request.offline,
         activated_at=now,
         last_seen_at=now,
         created_at=now,

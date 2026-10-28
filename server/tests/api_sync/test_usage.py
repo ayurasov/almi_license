@@ -176,3 +176,42 @@ def test_seq_and_content_checks(
         with pytest.raises(DomainError) as unknown:
             accept_usage(json.dumps(second).encode(), now=clock.now())
         assert unknown.value.code == "signature_invalid"
+
+
+def test_report_counts_every_refusal_and_is_compressed(
+    licensed: Any,
+    issuer: Any,
+    clock: FrozenClock,
+    central_transport: list[str],  # noqa: F811
+    local_settings: None,  # noqa: F811
+) -> None:
+    """Question 43: all refusals by code; the online report goes gzip-compressed."""
+    from datetime import timedelta
+
+    from apps.packages.domain import send_report
+    from apps.packages.models import UsageReport
+
+    online(licensed, clock, issuer)
+    assert activate(request_body(license_key="2611-AAAA-BBBB-CCCC")).status_code == 404
+    assert activate(request_body(license_key="2611-AAAA-BBBB-CCCC")).status_code == 404
+    clock.advance(timedelta(hours=1))  # a report sums whole hours
+    assert send_report(now=clock.now()) == 1
+    assert UsageReport.objects.get().data["denials"] == {"key_not_found": 2}
+    # The hour of the report goes to the next one: nothing is counted twice.
+    assert send_report(now=clock.now()) == 2
+    assert UsageReport.objects.get(seq=2).data["denials"] == {}
+
+
+def test_compressed_report_is_limited(licensed: Any) -> None:
+    import gzip
+
+    from apps.packages.domain import gunzip_report
+    from infra.errors import DomainError
+
+    assert gunzip_report(gzip.compress(b"{}")) == b"{}"
+    with pytest.raises(DomainError) as large:
+        gunzip_report(gzip.compress(b" " * (16 * 1024 * 1024 + 1)))
+    assert large.value.code == "payload_too_large"
+    with pytest.raises(DomainError) as broken:
+        gunzip_report(b"not gzip")
+    assert broken.value.code == "invalid_request"

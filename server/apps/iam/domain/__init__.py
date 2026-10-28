@@ -2,16 +2,19 @@
 
 Passwords are Argon2id (PASSWORD_HASHERS); 10 failures in a row lock the account for 15 minutes
 (the right password does not help while locked); every attempt is audited without the password.
+A generated (temporary) password must be changed by the user before any other work (question 31).
 """
 
 import re
 import string
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 from uuid import UUID
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, password_validation
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser, User
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.audit.domain import record
@@ -31,6 +34,14 @@ USERNAME = re.compile(r"[a-z0-9][a-z0-9._-]{1,63}")
 # Letters and digits without the look-alikes 0, O, 1, l, I.
 GENERATED_ALPHABET = "".join(c for c in string.ascii_letters + string.digits if c not in "0O1lI")
 PASSWORD_LENGTH = 20
+MIN_OWN_PASSWORD = 12
+# Rules of a password chosen by the user (not of the generated one).
+OWN_PASSWORD_RULES: list[Any] = [
+    password_validation.MinimumLengthValidator(MIN_OWN_PASSWORD),
+    password_validation.UserAttributeSimilarityValidator(),
+    password_validation.CommonPasswordValidator(),
+    password_validation.NumericPasswordValidator(),
+]
 
 
 @dataclass(frozen=True)
@@ -38,6 +49,7 @@ class AccountInfo:
     username: str
     role: str
     customer_id: UUID | None = None
+    must_change_password: bool = False
 
 
 class LoginFailed(Exception):
@@ -145,7 +157,11 @@ def add_account(
             raise _invalid("username", "Пользователь с таким логином уже есть.")
         user = User.objects.create_user(username=username, password=password)
         account = Account.objects.create(
-            user=user, role=role, customer_id=customer_id, created_at=now
+            user=user,
+            role=role,
+            customer_id=customer_id,
+            must_change_password=True,
+            created_at=now,
         )
         data = {"role": role} | ({"customer_id": str(customer_id)} if customer_id else {})
         record(actor, "iam.account_created", "user", username, at=now, ip=ip, data=data)
@@ -229,7 +245,8 @@ def reset_password(
         account.user.save(update_fields=["password"])
         account.failed_logins = 0
         account.locked_until = None
-        account.save(update_fields=["failed_logins", "locked_until"])
+        account.must_change_password = True
+        account.save(update_fields=["failed_logins", "locked_until", "must_change_password"])
         record(actor, "iam.password_reset", "user", username, at=now, ip=ip)
     return IssuedPassword(_details(account), password)
 
@@ -238,7 +255,38 @@ def account_info(user: AbstractBaseUser) -> AccountInfo | None:
     account = Account.objects.filter(user_id=user.pk).first()
     if account is None:
         return None
-    return AccountInfo(user.get_username(), account.role, account.customer_id)
+    return AccountInfo(
+        user.get_username(), account.role, account.customer_id, account.must_change_password
+    )
+
+
+def change_own_password(
+    user: User, current: str, new: str, *, now: datetime, ip: str | None = None
+) -> AccountInfo:
+    """The user's own new password (question 31); the temporary one stops being required."""
+    if not user.check_password(current):
+        raise _invalid("current_password", "Текущий пароль неверен.")
+    if new == current:
+        raise _invalid("new_password", "Новый пароль должен отличаться от текущего.")
+    try:
+        password_validation.validate_password(new, user, OWN_PASSWORD_RULES)
+    except ValidationError as error:
+        raise _invalid("new_password", " ".join(error.messages)) from None
+    with transaction.atomic():
+        account = Account.objects.select_for_update().get(user_id=user.pk)
+        user.set_password(new)
+        user.save(update_fields=["password"])
+        account.must_change_password = False
+        account.save(update_fields=["must_change_password"])
+        record(
+            f"user:{user.get_username()}",
+            "iam.password_changed",
+            "user",
+            user.get_username(),
+            at=now,
+            ip=ip,
+        )
+    return AccountInfo(user.get_username(), account.role, account.customer_id, False)
 
 
 def viewer_customer(user: AbstractBaseUser | AnonymousUser) -> UUID | None:
@@ -307,6 +355,7 @@ __all__ = [
     "LoginFailed",
     "account_info",
     "add_account",
+    "change_own_password",
     "change_account",
     "create_account",
     "list_accounts",

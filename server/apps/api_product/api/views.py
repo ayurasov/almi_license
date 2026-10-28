@@ -1,7 +1,9 @@
 """Product API v1 views: parse, call the domain, shape the response (AGENTS.md, rule 2)."""
 
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime
 from typing import Any, cast
 
@@ -19,6 +21,8 @@ from apps.activation.domain import (
     ActivationResult,
     CheckRequest,
     OfflineRequest,
+    ProductEventIn,
+    accept_events,
     activate,
     answer,
     check,
@@ -29,11 +33,13 @@ from apps.activation.domain.leases import rfc3339
 from apps.api_product.api.serializers import (
     ActivateRequestSerializer,
     CheckRequestSerializer,
+    EventsRequestSerializer,
     OfflineActivateSerializer,
     OfflineDeviceSerializer,
     ReleaseRequestSerializer,
 )
 from apps.api_product.auth import DeviceSignatureAuthentication, SignedRequest
+from apps.api_product.domain.captcha import captcha_needed, issue_captcha, solved
 from apps.api_product.domain.idempotency import (
     InvalidKey,
     KeyConflict,
@@ -41,12 +47,22 @@ from apps.api_product.domain.idempotency import (
     remember,
     replay,
 )
-from apps.api_product.domain.limits import limit_activation, limit_check, limit_offline
+from apps.api_product.domain.limits import (
+    limit_activation,
+    limit_captcha,
+    limit_check,
+    limit_offline,
+)
 from apps.api_product.domain.ratelimit import Limited
 from apps.packages.domain import local_server_id
 from apps.signing.domain import TrustUnavailable, trust_document
+from apps.stats.domain import record_denial
+from infra import metrics
 from infra.clock import current_clock
+from infra.errors import DomainError
 from infra.problems import Problem
+
+logger = logging.getLogger(__name__)
 
 # Multipart boundaries and part headers around a file of at most MAX_FILE_BYTES.
 MULTIPART_OVERHEAD = 8 * 1024
@@ -81,7 +97,17 @@ class _Replayed(Exception):
         self.stored = stored
 
 
-class IdempotentView(APIView):
+class DeniedCounted(APIView):
+    """Refusals of a licence or a seat are counted by code for the usage report (question 43)."""
+
+    def handle_exception(self, exc: Exception) -> Response:
+        code = exc.problem_code if isinstance(exc, Problem) else getattr(exc, "code", None)
+        if isinstance(exc, Problem | DomainError) and isinstance(code, str):
+            record_denial(code, now=current_clock().now())
+        return super().handle_exception(exc)
+
+
+class IdempotentView(DeniedCounted):
     """Idempotency-Key (E05-02): the first response is kept 24 hours and returned to a repeat.
 
     The header is optional on the server (a tolerant reader); the DL module always sends it.
@@ -97,6 +123,15 @@ class IdempotentView(APIView):
 
     def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
         super().initial(request, *args, **kwargs)
+        if not request.META.get("HTTP_IDEMPOTENCY_KEY"):
+            # Accepted (old clients), but counted and logged to find them (question 37).
+            operation = type(self).__name__.removesuffix("View")
+            metrics.WITHOUT_IDEMPOTENCY_KEY.labels(operation=operation).inc()
+            logger.info(
+                "request without Idempotency-Key: %s, client %s",
+                operation,
+                request.META.get("HTTP_ALMI_CLIENT", "-")[:64],
+            )
         scope = self._idempotency(request)
         if scope is None:
             return
@@ -183,7 +218,7 @@ def _activation_request(data: dict[str, Any], ip: str | None) -> ActivationReque
     )
 
 
-class CheckView(APIView):
+class CheckView(DeniedCounted):
     """POST /api/v1/activations/{activation_id}/check (section 5.3 of document 2)."""
 
     authentication_classes = [DeviceSignatureAuthentication]
@@ -220,6 +255,25 @@ class CheckView(APIView):
         return _lease_response(result, now, 200)
 
 
+class EventsView(DeniedCounted):
+    """POST /api/v1/events (postEvents): events of the product, signed by its device key."""
+
+    authentication_classes = [DeviceSignatureAuthentication]
+
+    def post(self, request: Request) -> Response:
+        signed = cast(SignedRequest, request.auth)
+        data = _valid(EventsRequestSerializer, request)
+        if signed.keyid != data["activation_id"]:
+            raise Problem("signature_invalid")
+        accepted = accept_events(
+            data["activation_id"],
+            [ProductEventIn(e["id"], e["type"], e["at"], dict(e["data"])) for e in data["events"]],
+            now=current_clock().now(),
+            ip=request.META.get("REMOTE_ADDR"),
+        )
+        return Response({"accepted": accepted}, status=202)
+
+
 class ReleaseView(IdempotentView):
     """POST /api/v1/activations/{activation_id}/release (section 5.4 of document 2, E03-05)."""
 
@@ -245,7 +299,7 @@ class ReleaseView(IdempotentView):
         )
 
 
-class OfflineRequestView(APIView):
+class OfflineRequestView(DeniedCounted):
     """POST /api/v1/offline/requests (processOfflineRequest, section 10 of document 2, E08-01).
 
     No session and no request signature: the file itself is signed by the device key.
@@ -267,6 +321,10 @@ class OfflineRequestView(APIView):
         ip = request.META.get("REMOTE_ADDR")
         with _limited():
             limit_offline(ip=ip, now=now)
+        if captcha_needed(ip, now=now) and not solved(
+            request.data.get("captcha_id"), request.data.get("captcha_answer"), now=now
+        ):
+            raise Problem("captcha_required")
         offline = open_request(upload.read(), now=now)
         document, instance_id = _answer(offline, now, ip)
         response = Response(document)
@@ -278,7 +336,8 @@ def _answer(offline: OfflineRequest, now: datetime, ip: str | None) -> tuple[dic
     """The same domain services as online: activate, check (renew) and release."""
     if offline.type == "activate":
         data = _valid_data(OfflineActivateSerializer, offline.payload)
-        result = activate(_activation_request(data, ip), now=now, issuer=settings.LEASE_ISSUER)
+        request = replace(_activation_request(data, ip), offline=True)
+        result = activate(request, now=now, issuer=settings.LEASE_ISSUER)
         document = answer(offline, result.activation_id, now=now, lease=result.lease)
         return document, str(data["instance"]["instance_id"])
     data = _valid_data(OfflineDeviceSerializer, offline.payload)
@@ -305,6 +364,7 @@ def _answer(offline: OfflineRequest, now: datetime, ip: str | None) -> tuple[dic
             acked_directives=[],
             unsupported_directives=[],
             ip=ip,
+            offline=True,
         ),
         now=now,
         issuer=settings.LEASE_ISSUER,
@@ -326,6 +386,26 @@ def _lease_response(result: ActivationResult, now: datetime, status: int) -> Res
         },
         status=status,
     )
+
+
+class OfflineCaptchaView(APIView):
+    """GET /api/v1/offline/captcha (getOfflineCaptcha): a new portal captcha (question 45)."""
+
+    authentication_classes: list[type[Any]] = []
+    permission_classes: list[type[Any]] = []
+
+    def get(self, request: Request) -> Response:
+        now = current_clock().now()
+        with _limited():
+            limit_captcha(ip=request.META.get("REMOTE_ADDR"), now=now)
+        issued = issue_captcha(now=now)
+        return Response(
+            {
+                "captcha_id": issued.captcha_id,
+                "image": issued.image,
+                "expires_at": rfc3339(issued.expires_at),
+            }
+        )
 
 
 class TrustView(APIView):

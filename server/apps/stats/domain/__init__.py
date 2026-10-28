@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Any
 
+from apps.stats.domain.denials import DENIAL_CODES, denials_between, record_denial
 from apps.stats.domain.summary import LicenseStats, Summary, license_stats, stats_workbook
 from apps.stats.domain.usage import latest_usage
 from apps.stats.models import UsageRecord
@@ -14,6 +15,9 @@ def record_usage(activation_id: str, at: datetime, usage: dict[str, Any]) -> Non
 
 
 __all__ = [
+    "DENIAL_CODES",
+    "denials_between",
+    "record_denial",
     "LicenseStats",
     "Summary",
     "latest_usage",

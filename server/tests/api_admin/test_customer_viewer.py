@@ -57,7 +57,15 @@ def viewer(admin: Console, customer_id: Any, username: str = "client-admin") -> 
         "username": username,
         "role": "customer_viewer",
         "customer_id": str(customer_id),
+        "must_change_password": True,
     }
+    changed = client.post(
+        "/api/admin/session/password",
+        {"current_password": created.json()["password"], "new_password": "Ветер-над-Волгой-2026"},
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+    )
+    assert changed.status_code == 200, changed.content
     return Console(client, client.cookies["csrftoken"].value)
 
 

@@ -470,3 +470,20 @@ def test_stored_responses_are_purged_by_the_hourly_task(
     enqueue("api_product.idempotency_purge", {}, now=later)
     run_due(now=later)
     assert IdempotencyRecord.objects.count() == 0
+
+
+def test_requests_without_idempotency_key_are_counted(licensed: Any, issuer: Any) -> None:
+    """Accepted, but counted for /metrics (question 37)."""
+    from django.test import Client as _Client
+
+    from infra import metrics
+
+    metrics.reset()
+    assert activate(request_body()).status_code == 201
+    with_key = _Client(HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4()))
+    assert signed_post(with_key, PATH, request_body(), dev_device_key(), "device").status_code in {
+        200,
+        201,
+    }
+    text = metrics.render()
+    assert 'almi_product_requests_without_idempotency_key_total{operation="Activate"} 1.0' in text

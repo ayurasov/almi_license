@@ -69,3 +69,16 @@ class RateBlock(UUIDModel):
 
     def __str__(self) -> str:
         return self.key
+
+
+class Captcha(UUIDModel):
+    """A captcha of the offline portal (question 45): one attempt, then it is deleted.
+
+    Only a hash of the answer is kept; the id is the UUID primary key.
+    """
+
+    answer_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+
+    def __str__(self) -> str:
+        return f"captcha until {self.expires_at.isoformat()}"
