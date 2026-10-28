@@ -1,0 +1,4 @@
+# Central server of stage 1: /api/activate/ of АльтерОС is served by local servers only
+# (decision E11-03; section 12.1 of document 2). Included by ../local/gateway.conf.template.
+location = /api/activate/ { return 404; }
+location = /api/activate { return 404; }

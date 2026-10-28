@@ -106,29 +106,37 @@ LM_LicenseStatusEx Status() {
   return status;
 }
 
-// Messages of the lease for one placement; dialogs are shown once, then marked.
+// Messages of the lease for one placement. Section 15.2 of document 2: the product shows the
+// texts, then calls LM_MarkMessageShown for each, so once/daily messages are not repeated. The list
+// is copied first: marking changes it, and reading by index while marking would skip a message.
 void ShowMessages(const std::string& placement) {
+  struct Shown {
+    std::string id, severity, text, action;
+  };
+  std::vector<Shown> shown;
   const int count = LM_GetMessageCount();
   for (int i = 0; i < count; ++i) {
     LM_Message message{};
     message.struct_size = sizeof(message);
     if (LM_GetMessage(i, &message) != LM_OK || placement != message.placement) continue;
     // Copy before the next call: the strings live until then.
-    const std::string id = message.id;
-    const std::string severity = message.severity;
-    const std::string text = message.text;
-    const std::string action =
-        message.action_label != nullptr && message.action_url != nullptr && *message.action_label != '\0'
-            ? std::string(" [") + message.action_label + ": " + message.action_url + "]"
-            : std::string();
+    shown.push_back(
+        {message.id, message.severity, message.text,
+         message.action_label != nullptr && message.action_url != nullptr && *message.action_label != '\0'
+             ? std::string(" [") + message.action_label + ": " + message.action_url + "]"
+             : std::string()});
+  }
+  for (const auto& message : shown) {
     if (placement == "banner") {
-      std::cout << "| " << (severity == "critical" ? "!! " : "") << text << action << '\n';
+      std::cout << "| " << (message.severity == "critical" ? "!! " : "") << message.text << message.action
+                << '\n';
     } else if (placement == "dialog") {
-      std::cout << "+--- окно (" << severity << ") ---\n| " << text << action << "\n+---\n";
-      (void)LM_MarkMessageShown(id.c_str());
+      std::cout << "+--- окно (" << message.severity << ") ---\n| " << message.text << message.action
+                << "\n+---\n";
     } else {
-      std::cout << "  " << text << action << '\n';
+      std::cout << "  " << message.text << message.action << '\n';
     }
+    (void)LM_MarkMessageShown(message.id.c_str());
   }
 }
 

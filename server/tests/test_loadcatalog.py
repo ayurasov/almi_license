@@ -51,3 +51,37 @@ def test_profiles_are_valid_policies() -> None:
     for profile in document["profiles"]:
         params = {key: value for key, value in profile.items() if key != "code"}
         assert effective_policy(params, 1, "").version == 1
+
+
+def test_console_changes_survive_the_next_run() -> None:
+    """upgrade and reinstall run loadcatalog again: what the operator set in the console stays
+    (finding of v0.6.5: the next run put profiles, names and capabilities back silently)."""
+    from apps.audit.models import AuditEvent
+    from apps.catalog.domain.admin import save_edition, save_profile, update_product
+    from apps.catalog.models import Edition, PolicyProfile, Product
+    from infra.clock import current_clock
+
+    now = current_clock().now()
+    call_command("loadcatalog")
+    assert AuditEvent.objects.filter(action="catalog.loaded").count() == 1
+    product = Product.objects.get(code="alteroffice-desktop")
+    params = dict(PolicyProfile.objects.get(code="alteroffice-desktop.commercial").params)
+    params["grace_days"] = 21
+    save_profile("alteroffice-desktop.commercial", params, actor="user:op", now=now)
+    update_product(product.id, {"name": {"ru": "Настольный"}}, actor="user:op", now=now)
+    professional = Edition.objects.get(product=product, code="professional")
+    save_edition(
+        product.id,
+        {"code": "professional", "base_capabilities": ["view"]},
+        actor="user:op",
+        now=now,
+    )
+
+    call_command("loadcatalog")
+
+    latest = PolicyProfile.objects.filter(code="alteroffice-desktop.commercial").latest("version")
+    assert (latest.version, latest.params["grace_days"]) == (2, 21)
+    assert Product.objects.get(id=product.id).name == {"ru": "Настольный"}
+    professional.refresh_from_db()
+    assert list(professional.base_capabilities.values_list("code", flat=True)) == ["view"]
+    assert AuditEvent.objects.filter(action="catalog.loaded").count() == 1  # nothing new

@@ -184,7 +184,7 @@ class LicenseTransferView(_Operator):
             data["customer_id"],
             reason=data["reason"],
             document=data["document"],
-            allocated=license_allocated(license_id),
+            allocated=license_allocated,
             **self.context(request),
         )
         return Response(_license(result))

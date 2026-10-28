@@ -56,3 +56,13 @@ def test_tampering_breaks_the_chain() -> None:
 def test_naive_time_is_refused() -> None:
     with pytest.raises(ValueError):
         record("product", "x", "y", "z", at=datetime(2026, 1, 1))  # noqa: DTZ001
+
+
+@pytest.mark.parametrize("ip", ["2001:DB8:0:0::1", "2001:0db8::0001"])
+def test_address_in_any_spelling_keeps_the_chain(ip: str) -> None:
+    """An address is hashed as stored: the field keeps IPv6 in canonical form."""
+    from apps.audit.models import AuditEvent
+
+    record("anonymous", "iam.login_failed", "user", "admin", at=AT, ip=ip)
+    assert verify_chain() == 1
+    assert AuditEvent.objects.get().ip == "2001:db8::1"

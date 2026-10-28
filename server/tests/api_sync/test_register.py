@@ -111,6 +111,33 @@ def test_package_since_seq_and_new_seq_on_change(
     assert stranger.package().json()["code"] == "signature_invalid"
 
 
+def test_package_carries_a_renewed_certificate(
+    code: str, licensed: Any, issuer: Any, clock: FrozenClock
+) -> None:
+    """Section 13.3 of document 2: the package brings an up-to-date server certificate: a new scope
+    after the quotas change, and a new term before the old one would end inside a package."""
+    from apps.packages.domain import list_servers, set_allocations
+
+    local = LocalServerClient()
+    first = local.register(code).json()["certificate"]
+    [server] = list_servers()
+    set_allocations(server.id, {str(licensed.id): 2}, actor="user:op", now=clock.now())
+    package = claims(local.package(since_seq=1).json()["payload"])
+    renewed = package["trust"]["server_certificate"]
+    assert renewed != first
+    assert claims(renewed)["scope"]["quotas"] == {str(licensed.id): 2}
+    assert claims(renewed)["kid"] == local.server_id
+
+    # Unchanged rights: the same package and certificate until the certificate nears its end.
+    assert local.package(since_seq=package["seq"]).status_code == 204
+    clock.advance(timedelta(days=340))
+    later = claims(local.package(since_seq=package["seq"]).json()["payload"])
+    assert later["seq"] == package["seq"] + 1
+    certificate = claims(later["trust"]["server_certificate"])
+    assert certificate["exp"] > claims(later["trust"]["server_certificate"])["nbf"]
+    assert certificate["nbf"] == int(clock.now().timestamp())
+
+
 def test_allocated_seats_leave_the_central_server(
     licensed: Any, issuer: Any, clock: FrozenClock
 ) -> None:

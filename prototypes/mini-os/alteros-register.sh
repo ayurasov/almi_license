@@ -27,6 +27,8 @@ while [[ $# -gt 0 && "$1" == --* ]]; do
   esac
 done
 command="${1:-status}"
+# The key travels to the server only over TLS (the module and mini-web never turn it off either).
+[[ "$server" == https://* ]] || { echo "Адрес сервера должен начинаться с https://" >&2; exit 2; }
 
 # The machine: MD5 of /etc/machine-id (32 hex, as data of the LK); it stays the same across
 # reinstalls of the registration and changes with the OS installation.
@@ -45,17 +47,20 @@ except Exception: print("")' "$1" "$2"
 
 register() {
   local key="${ALMI_LICENSE_KEY:-}"
-  if [[ -z "$key" ]]; then read -rsp "Ключ лицензии: " key; echo; fi
+  if [[ -z "$key" ]]; then read -rsp "Ключ лицензии: " key || true; echo; fi
   [[ -n "$key" ]] || { echo "Ключ не указан." >&2; exit 2; }
+  local data
+  data="$(machine_data)"  # a separate assignment: a missing machine-id stops here
   mkdir -p "$state" && chmod 700 "$state"
   local answer status
   answer="$(mktemp)"
   trap 'rm -f "$answer"' RETURN
+  # lic@- : curl reads the key from stdin, so it never appears in the process list.
   local args=(-sS -G --max-time 30 -o "$answer" -w '%{http_code}' "$server/api/activate/"
-    --data-urlencode "data=$(machine_data)" --data-urlencode "host=$(hostname)" --data-urlencode "lic=$key")
+    --data-urlencode "data=$data" --data-urlencode "host=$(hostname)" --data-urlencode "lic@-")
   [[ -n "$cacert" ]] && args+=(--cacert "$cacert")
   [[ "$html" == 0 ]] && args+=(--data-urlencode "format=json")
-  if ! status="$(curl "${args[@]}")"; then
+  if ! status="$(printf '%s' "$key" | curl "${args[@]}")"; then
     echo "Нет связи с сервером лицензирования $server. Система работает, регистрацию можно повторить позже."
     return 1
   fi
@@ -73,20 +78,23 @@ register() {
   echo "$message${total:+ (использовано $used из $total)}"
   if [[ "$ok" == "True" ]]; then
     umask 077
+    # Plain key=value lines, read back as data (never sourced): values come from the server.
     printf 'registered_at=%s\nkey_tail=%s\nserver=%s\nused=%s\ntotal=%s\n' \
-      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${key: -4}" "$server" "$used" "$total" > "$state/registration"
+      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${key: -4}" "$server" "${used//[^0-9]/}" "${total//[^0-9]/}" \
+      > "$state/registration"
     return 0
   fi
   if [[ "$status" == 429 ]]; then echo "Повторите через несколько минут."; fi
   return 1
 }
 
+state_field() {  # state_field NAME: a value of the state file
+  sed -n "s/^$1=//p" "$state/registration" | head -n 1
+}
+
 show_status() {
   if [[ -s "$state/registration" ]]; then
-    # shellcheck disable=SC1091
-    source "$state/registration"
-    # shellcheck disable=SC2154 # registered_at, server, key_tail come from the state file
-    echo "Система зарегистрирована $registered_at на $server (ключ …$key_tail)."
+    echo "Система зарегистрирована $(state_field registered_at) на $(state_field server) (ключ …$(state_field key_tail))."
   else
     echo "Система не зарегистрирована. Выполните: alteros-register.sh register"
     return 1

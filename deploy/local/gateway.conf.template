@@ -1,4 +1,19 @@
 # TLS gateway of the local server: products, console and the Sync/Product APIs on one name.
+# The central server uses it too, with its own locations in /etc/nginx/almi/*.locations.
+
+# Access log without licence keys (AGENTS.md, rule 9): the key of the Nextcloud adapter is a path
+# segment, the key of /api/activate/ the lic parameter; both are written as ***.
+map $request_uri $almi_uri_path {
+    "~^(?<almi_sp>/apps/zammad_organisation_management/api/query/subscription/)[^/?]*(?<almi_sr>.*)$" "${almi_sp}***${almi_sr}";
+    default $request_uri;
+}
+map $almi_uri_path $almi_uri {
+    "~^(?<almi_lp>[^?]*\?(?:[^#]*&)?lic=)[^&]*(?<almi_lr>.*)$" "${almi_lp}***${almi_lr}";
+    default $almi_uri_path;
+}
+log_format almi '$remote_addr - $remote_user [$time_local] "$request_method $almi_uri $server_protocol" '
+                '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+
 server {
     listen 443 ssl;
     http2 on;
@@ -7,11 +22,14 @@ server {
     ssl_certificate_key /etc/nginx/tls/server.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     resolver 127.0.0.11 valid=10s ipv6=off;
+    access_log /var/log/nginx/access.log almi;
     set $api http://api:8000;
     set $console http://console:80;
 
     proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    # The gateway is the edge: the address of the client is the address of the connection. A value
+    # sent by the client is not passed on (section 4.7 of document 2: limits by IP).
+    proxy_set_header X-Forwarded-For $remote_addr;
     proxy_set_header X-Forwarded-Proto https;
     proxy_set_header X-Request-ID $request_id;
     add_header Strict-Transport-Security "max-age=31536000" always;
@@ -23,4 +41,5 @@ server {
     location = /health { proxy_pass $api; }
     location = /ready { proxy_pass $api; }
     location / { proxy_pass $console; }
+    include /etc/nginx/almi/*.locations;
 }

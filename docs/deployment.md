@@ -46,7 +46,7 @@
 | `api` | `almi-license` | Product API, Admin API, Sync API, адаптеры совместимости. Gunicorn и Uvicorn на `:8000` внутри сети compose |
 | `worker` | `almi-license` | Очередь задач: автоосвобождение, пересчёт состояний, отчёты и обмен с центральным сервером |
 | `console` | `almi-license-console` | Статика консоли (Nginx) |
-| `gateway` | `nginx:1.27` | TLS на `HTTPS_PORT` (443). Маршруты `/api/`, `/apps/`, `/.well-known/`, `/health`, `/ready` ведут к API, остальное — к консоли |
+| `gateway` | `nginx:1.27` | TLS на `HTTPS_PORT` (443). Маршруты `/api/`, `/apps/`, `/.well-known/`, `/health`, `/ready` ведут к API, остальное — к консоли. На центральном сервере `/api/activate/` отвечает 404: регистрацию АльтерОС этапа 1 обслуживают локальные серверы (решение E11-03, `legacy-activate.locations`) |
 | `backup` | `postgres:17` | Профиль `ops`: запускается только из `./backup.sh` и `./restore.sh` |
 
 Наружу открыт только `gateway`. База, API и `/metrics` доступны лишь внутри сети compose.
@@ -424,7 +424,7 @@ uv run almi-keytool export-trust --root ./root/root.key.json --issuers ./issuers
 | Остановить и запустить сервер | `docker compose stop` / `docker compose start` |
 | Новый администратор | `docker compose run --rm api manage create_account --username <имя> --role admin` |
 | Проверить цепочку журнала аудита | `docker compose run --rm api manage verify_audit` |
-| Загрузить каталог заново (после обновления каталога) | `docker compose run --rm api manage loadcatalog` |
+| Загрузить каталог заново (после обновления каталога) | `docker compose run --rm api manage loadcatalog` — добавляет недостающие продукты, редакции и версии профилей; изменения, сделанные в консоли, не трогает |
 | Консоль базы (только чтение, для разбора) | `docker compose exec db psql -U almi -d almi_license` |
 | Место на диске | `df -h /var/lib/docker`, `docker system df` |
 | Удалить старые образы после обновления | `docker image prune` |
@@ -457,7 +457,8 @@ uv run almi-keytool export-trust --root ./root/root.key.json --issuers ./issuers
   - `almi_task_failed > 0`.
 
   Без Prometheus подойдёт задание cron: `*/5 * * * * cd /opt/almi/almi_license/deploy/central && ./check.sh > /dev/null || <отправка письма>`.
-- **Журналы** — JSON в stdout контейнеров, хранятся 14 дней по настройке раздела 3.2. Ключи лицензий, аренды, подписи, nonce и пароли в журналы не пишутся (AGENTS.md, правило 9).
+- **Журналы** — JSON в stdout контейнеров, хранятся 14 дней по настройке раздела 3.2. Ключи лицензий, аренды, подписи, nonce и пароли в журналы не пишутся (AGENTS.md, правило 9). Ключ в адресе запроса (параметр `lic` у `/api/activate/`, путь `/subscription/<ключ>` у адаптера Nextcloud) шлюз и API записывают как `***`.
+- **Адрес клиента.** Лимиты запросов и капча считаются по IP. Шлюз — граница сервера: он передаёт API адрес соединения и не пересылает `X-Forwarded-For` клиента. Если перед шлюзом стоит балансировщик, все запросы придут с его адреса; тогда лимиты на IP нужно поднять (`RATE_LIMIT_*_IP`) или подключиться к шлюзу напрямую.
 
 ## 13. Безопасность хоста
 

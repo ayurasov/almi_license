@@ -231,6 +231,7 @@ def _check_package(document: Any, row: LocalIdentity, now: datetime) -> dict[str
             roots=_roots(),
             now=now,
             revoked=frozenset(row.revoked_kids),
+            leaf_roles=frozenset({"issuer"}),  # only the central server issues packages
         )
     except ChainInvalid as error:
         raise _invalid(

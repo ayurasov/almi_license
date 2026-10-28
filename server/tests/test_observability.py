@@ -95,3 +95,58 @@ def test_backup_age(db: None, clock: FrozenClock, settings: Any, tmp_path: Any) 
         assert "almi_backup_age_seconds -1" in Client().get("/metrics").content.decode()
         status.write_text(str(int(clock.now().timestamp()) - 3600), encoding="ascii")
         assert "almi_backup_age_seconds 3600" in Client().get("/metrics").content.decode()
+
+
+KEY = "-".join(("4426", "AB12", "CD34", "EF56"))  # the format of a key, not a real one
+
+
+@pytest.mark.parametrize(
+    ("message", "args", "expected"),
+    [
+        # uvicorn access line (gunicorn worker): the client, method, full path with the query.
+        (
+            '%s - "%s %s HTTP/%s" %d',
+            ("10.0.0.5:0", "GET", f"/api/activate/?data=m&host=h&lic={KEY}", "1.1", 200),
+            '10.0.0.5:0 - "GET /api/activate/?data=m&host=h&lic=*** HTTP/1.1" 200',
+        ),
+        # django.request on a 404 of the Nextcloud adapter: the key is a path segment.
+        (
+            "Not Found: %s",
+            ("/apps/zammad_organisation_management/api/query/subscription/legacy-KEY-1",),
+            "Not Found: /apps/zammad_organisation_management/api/query/subscription/***",
+        ),
+        ("activation of %s", (KEY,), "activation of ***"),
+        ("nothing to hide: %s", ("act_01J",), "nothing to hide: act_01J"),
+    ],
+)
+def test_licence_keys_are_masked_in_log_lines(message: str, args: Any, expected: str) -> None:
+    """AGENTS.md, rule 9: the full licence key never reaches a log line (finding of v0.6.5)."""
+    from infra.logs import RedactKeys
+
+    record = logging.LogRecord("uvicorn.access", logging.INFO, __file__, 1, message, args, None)
+    assert RedactKeys().filter(record)
+    assert record.getMessage() == expected
+
+
+def test_key_filter_is_on_the_stdout_handler_and_the_workers() -> None:
+    from almi_license import gunicorn_conf
+    from infra.logs import RedactKeys
+
+    [handler] = [h for h in logging.getLogger().handlers if isinstance(h.formatter, JsonFormatter)]
+    assert any(isinstance(f, RedactKeys) for f in handler.filters)
+    gunicorn_conf.post_worker_init(None)
+    assert any(isinstance(f, RedactKeys) for f in logging.getLogger("uvicorn.access").filters)
+
+
+def test_every_answer_has_server_time_and_request_id(db: None, clock: FrozenClock) -> None:
+    """Section 4.3 of document 2: ALMI-Server-Time always; X-Request-Id is returned or made."""
+    with use_clock(clock):
+        answer = Client().get("/health")
+        problem = Client().post(
+            "/api/v1/activations", data="{}", content_type="application/json",
+            headers={"X-Request-Id": "req-42"},
+        )  # fmt: skip
+    assert answer["ALMI-Server-Time"] == "2026-11-02T08:15:00Z"
+    assert len(answer["X-Request-Id"]) == 26
+    assert problem["X-Request-Id"] == "req-42" and problem.json()["request_id"] == "req-42"
+    assert problem["ALMI-Server-Time"] == "2026-11-02T08:15:00Z"

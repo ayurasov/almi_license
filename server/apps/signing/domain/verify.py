@@ -4,6 +4,10 @@ The same rules as LeaseVerifier of the DL module (contracts/vectors/README.md, s
 certificate of header.chain is signed by the next one or by a root, the leaf certifies the kid of
 the header, certificates are valid at now, the signature is checked with the leaf key before the
 payload is parsed. A local server checks its packages this way.
+
+Roles of the chain (section 6.3 of document 2, «ограниченный сертификат» of document 1, §12):
+only a root or an issuer signs certificates, an issuer signs local_server certificates only, a
+local_server key signs no certificate, and a certificate never replaces a kid already known.
 """
 
 import json
@@ -16,6 +20,9 @@ from infra.crypto.encoding import b64url_decode
 
 CERT_TYP = "alm-cert+jws"
 SIGNATURE_SIZE = 64
+ROOT, ISSUER, LOCAL_SERVER = "root", "issuer", "local_server"
+# Role of the signer -> roles of the certificates it may sign.
+SIGNS = {ROOT: frozenset({ISSUER, LOCAL_SERVER}), ISSUER: frozenset({LOCAL_SERVER})}
 
 
 class ChainInvalid(ValueError):
@@ -59,7 +66,9 @@ def verify_signed(
     roots: dict[str, bytes],
     now: datetime,
     revoked: frozenset[str] = frozenset(),
+    leaf_roles: frozenset[str] = frozenset({ISSUER, LOCAL_SERVER}),
 ) -> Verified:
+    """leaf_roles: roles allowed to sign the token itself (a package: issuer only)."""
     header, signing_input, signature, payload = _parts(token)
     if header.get("alg") != "EdDSA":
         raise ChainInvalid("alg_unsupported")
@@ -71,10 +80,12 @@ def verify_signed(
     if not isinstance(chain, list) or not all(isinstance(item, str) for item in chain):
         raise ChainInvalid("malformed")
     keys = dict(roots)
+    roles = dict.fromkeys(roots, ROOT)
     certificates: list[dict[str, Any]] = []
     for item in reversed(chain):
         cert_header, cert_input, cert_signature, cert_payload = _parts(item)
-        signer = keys.get(str(cert_header.get("kid", "")))
+        signer_kid = str(cert_header.get("kid", ""))
+        signer = keys.get(signer_kid)
         if (
             cert_header.get("alg") != "EdDSA"
             or len(cert_signature) != SIGNATURE_SIZE
@@ -87,15 +98,23 @@ def verify_signed(
         try:
             pub = b64url_decode(str(claims["pub"]))
             kid, nbf, exp = str(claims["kid"]), int(claims["nbf"]), int(claims["exp"])
+            role = str(claims["role"])
         except (KeyError, TypeError, ValueError):
             raise ChainInvalid("chain_invalid") from None
-        if len(pub) != 32:
+        if (
+            len(pub) != 32
+            or kid in keys
+            or role not in SIGNS.get(roles.get(signer_kid, ""), frozenset())
+        ):
             raise ChainInvalid("chain_invalid")
         keys[kid] = pub
+        roles[kid] = role
         certificates.insert(0, claims | {"nbf": nbf, "exp": exp})
     kid = str(header.get("kid", ""))
     leaf = certificates[0] if certificates else None
-    if (leaf is not None and leaf["kid"] != kid) or (leaf is None and kid not in roots):
+    if (leaf is not None and (leaf["kid"] != kid or leaf["role"] not in leaf_roles)) or (
+        leaf is None and kid not in roots
+    ):
         raise ChainInvalid("chain_invalid")
     if kid in revoked or any(c["kid"] in revoked for c in certificates):
         raise ChainInvalid("kid_revoked")
