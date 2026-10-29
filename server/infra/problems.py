@@ -28,6 +28,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "clock_skew": (401, "Отклонение времени"),
     "license_revoked": (403, "Лицензия отозвана"),
     "license_expired": (403, "Срок лицензии истёк"),
+    "license_suspended": (403, "Лицензия приостановлена"),
     "product_mismatch": (403, "Ключ другого продукта"),
     "key_not_found": (404, "Ключ не найден"),
     "activation_not_found": (404, "Активация не найдена"),
@@ -73,6 +74,10 @@ USER_MESSAGES: dict[str, dict[str, str]] = {
     "license_revoked": {
         "ru": "Лицензия отозвана. Обратитесь к администратору.",
         "en": "The license has been revoked. Contact your administrator.",
+    },
+    "license_suspended": {
+        "ru": "Лицензия приостановлена. Обратитесь к администратору.",
+        "en": "The license is suspended. Contact your administrator.",
     },
     "product_mismatch": {
         "ru": "Этот ключ предназначен для другого продукта или редакции.",

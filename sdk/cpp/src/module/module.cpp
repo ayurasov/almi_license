@@ -618,8 +618,8 @@ LM_Result Module::Failed(const Reply& reply, LM_Result fallback) {
     result = LM_ERR_DEVICE_LIMIT;
   } else if (reply.code == "license_expired") {
     result = LM_ERR_EXPIRED;
-  } else if (reply.code == "license_revoked") {
-    result = LM_ERR_REVOKED;
+  } else if (reply.code == "license_revoked" || reply.code == "license_suspended") {
+    result = LM_ERR_REVOKED;  // suspended: no activation until the operator resumes the licence
   } else if (reply.code == "instance_conflict") {
     result = LM_ERR_INSTANCE_CONFLICT;
   } else if (reply.code == "rate_limited") {

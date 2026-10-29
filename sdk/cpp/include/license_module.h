@@ -23,7 +23,7 @@ typedef enum {
     LM_ERR_NETWORK = -3,              /* нет связи, 5xx, 503 maintenance */
     LM_ERR_INVALID_SIGNATURE = -4,    /* аренда или файл не прошли проверку */
     LM_ERR_EXPIRED = -5,              /* license_expired */
-    LM_ERR_REVOKED = -6,              /* license_revoked */
+    LM_ERR_REVOKED = -6,              /* license_revoked; license_suspended (активация отклонена) */
     LM_ERR_CLOCK_ROLLBACK = -7,
     LM_ERR_REBIND_REQUIRED = -8,      /* v1+ 412; модуль повторяет активацию сам */
     LM_ERR_RELEASED = -9,             /* v1+ 410 */

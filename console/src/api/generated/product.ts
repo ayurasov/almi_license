@@ -792,6 +792,7 @@ export interface components {
              * @example signature_invalid
              * @example clock_skew
              * @example license_revoked
+             * @example license_suspended
              * @example license_expired
              * @example product_mismatch
              * @example key_not_found

@@ -140,10 +140,14 @@ def load_terms(license_: LicenseRecord, now: datetime) -> Terms:
 
 
 def _terms(license_: LicenseRecord, request: ActivationRequest, now: datetime) -> Terms:
-    """Checks of a new activation in the order of prompt I2-04: revoked, product, term; then the
-    version of the product against the licence (422)."""
+    """Checks of a new activation in the order of prompt I2-04: revoked, suspended, product, term;
+    then the version of the product against the licence (422)."""
     if license_.status == "revoked":
         raise DomainError("license_revoked")
+    if license_.status == "suspended":
+        # Suspended by the operator, or left out of the package of a local server: no new
+        # activations; the activations there keep their leases (decision of 29.10.2026).
+        raise DomainError("license_suspended")
     terms = load_terms(license_, now)
     if terms.product_code != request.product_code or (
         request.edition is not None and request.edition != terms.edition

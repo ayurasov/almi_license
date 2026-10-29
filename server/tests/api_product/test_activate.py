@@ -244,6 +244,27 @@ def test_revoked_license(licensed: Any, issuer: Any) -> None:
     assert response.status_code == 403 and code_of(response) == "license_revoked"
 
 
+def test_suspended_license_takes_no_activation(licensed: Any, issuer: Any) -> None:
+    """Decision of 29.10.2026 (question В2 of the review v0.6.5): a suspended licence refuses
+    activations with 403 license_suspended; activations made before keep their seats."""
+    from apps.activation.models import Activation
+
+    assert activate(request_body()).status_code == 201
+    licensed.status = "suspended"
+    licensed.save()
+
+    other = request_body(instance_id="00000000-0000-4000-8000-000000000077")
+    response = activate(other)
+    assert response.status_code == 403 and code_of(response) == "license_suspended"
+    assert response.json()["user_message"]["ru"].startswith("Лицензия приостановлена")
+    assert code_of(activate(request_body())) == "license_suspended"  # the same instance too
+    assert Activation.objects.filter(license=licensed, status="active").count() == 1
+
+    licensed.status = "active"
+    licensed.save()
+    assert activate(other).status_code == 201
+
+
 @pytest.mark.parametrize("presented", [{"code": "alteros"}, {"edition": "professional"}])
 def test_other_product_or_edition(licensed: Any, issuer: Any, presented: dict[str, str]) -> None:
     response = activate(request_body(product=presented))

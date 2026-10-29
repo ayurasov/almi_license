@@ -144,6 +144,14 @@ def test_key_of_another_product_is_not_found(alteros: Any) -> None:
     assert send(fixture("activated-json")).status_code == 404
 
 
+def test_suspended_licence_is_not_registered(alteros: Any) -> None:
+    alteros.status = "suspended"
+    alteros.save()
+    response = send(fixture("activated-json"))
+    assert response.status_code == 404
+    assert response.json()["message"] == "Лицензия не найдена или недействительна"
+
+
 def test_expired_licence(alteros: Any, clock: FrozenClock) -> None:
     alteros.enforcement = "enforce"
     alteros.valid_from = NOW - timedelta(days=500)
