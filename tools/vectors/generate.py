@@ -40,6 +40,7 @@ KEY_NAMES = ("dev-root", "dev-issuer", "dev-local-server", "dev-device")
 ROOT_KID = "dev-root"
 ISSUER_KID = "dev-issuer-1"
 EXPIRED_ISSUER_KID = "dev-issuer-0"
+ROGUE_KID = "rogue-1"
 SERVER_ID = "srv_01JAB3K9M2N4P6Q8R0S2T4V6W8"
 LOCAL_KID = f"{SERVER_ID}-1"
 ACTIVATION_ID = "act_01JABF8Q4W2N8C1R7ZB0Y5K6M3"
@@ -207,6 +208,24 @@ def build(keys: dict[str, SigningKey]) -> dict[str, dict[str, Any]]:
         },
     )
 
+    # A key outside the hierarchy (not saved in keys/): what an attacker certifies with a key
+    # that must not sign certificates (section 6.3 of document 2; document 1, §12).
+    rogue = signing_key("dev-rogue")
+    rogue_issuer_cert, _ = certificate(
+        local, LOCAL_KID, rogue, kid=ROGUE_KID, role="issuer",
+        iat=NOW - DAY, nbf=NOW - DAY, exp=NOW + 365 * DAY,
+    )  # fmt: skip
+    rogue_by_issuer_cert, _ = certificate(
+        issuer, ISSUER_KID, rogue, kid=ROGUE_KID, role="issuer",
+        iat=NOW - DAY, nbf=NOW - DAY, exp=NOW + 365 * DAY,
+    )  # fmt: skip
+    shadow_root_cert, _ = certificate(
+        issuer, ISSUER_KID, rogue, kid=ROOT_KID, role="local_server",
+        iat=NOW - DAY, nbf=NOW - DAY, exp=NOW + 365 * DAY,
+        scope={"server_id": SERVER_ID, "customer_id": CUSTOMER_ID, "products": [PRODUCT],
+               "quotas": {LICENSE_ID: 1}},
+    )  # fmt: skip
+
     def lease_header(
         kid: str, chain: list[str], typ: str = "alm-lease+jws", alg: str = "EdDSA"
     ) -> dict:
@@ -326,6 +345,29 @@ def build(keys: dict[str, SigningKey]) -> dict[str, dict[str, Any]]:
             "К подписи дописан лишний байт: 65 байт вместо 64.",
             f"{head}.{payload}.{padded_signature}",
             "malformed",
+        ),
+        vector(
+            "13-local-server-issues-issuer",
+            "Ключ локального сервера выпустил себе сертификат issuer и подписал им аренду: "
+            "сертификаты подписывают только корень и issuer.",
+            jws(
+                lease_header(ROGUE_KID, [rogue_issuer_cert, local_cert, issuer_cert]),
+                central,
+                rogue,
+            ),
+            "chain_invalid",
+        ),
+        vector(
+            "14-issuer-issues-issuer",
+            "Ключ выпуска выпустил сертификат issuer: issuer подписывает только local_server.",
+            jws(lease_header(ROGUE_KID, [rogue_by_issuer_cert, issuer_cert]), central, rogue),
+            "chain_invalid",
+        ),
+        vector(
+            "15-certificate-replaces-root-kid",
+            "Сертификат от ключа выпуска с kid корня подменил бы ключ корня в цепочке.",
+            jws(lease_header(ROOT_KID, [shadow_root_cert, issuer_cert]), central, rogue),
+            "chain_invalid",
         ),
     ]
 
