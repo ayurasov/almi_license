@@ -30,6 +30,7 @@
         "signature_invalid",
         "clock_skew",
         "license_revoked",
+        "license_suspended",
         "license_expired",
         "product_mismatch",
         "key_not_found",

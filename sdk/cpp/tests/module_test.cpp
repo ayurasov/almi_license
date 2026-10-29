@@ -173,6 +173,11 @@ class FakeServer {
       const json body = json::parse(request.body);
       last_body = body;
       idempotency_key = request.get_header_value("Idempotency-Key");
+      if (activate_status != 0) {
+        response.status = activate_status;
+        response.set_content(activate_problem, "application/problem+json");
+        return;
+      }
       if (refuse_seats) {
         response.status = 409;
         response.set_content(
@@ -262,6 +267,8 @@ class FakeServer {
   int seq = 0;
   int activations = 0;
   bool refuse_seats = false;
+  int activate_status = 0;  // a problem answer of the activation instead of a lease
+  std::string activate_problem;
   bool released = false;
   json directives = json::array();  // sent with the next lease only
   json trust_body = json::object();
@@ -384,6 +391,20 @@ TEST_F(ModuleTest, ServerErrorsMapToResultsWithTheUserMessage) {
   EXPECT_EQ(module->Activate(kLicense), LM_ERR_DEVICE_LIMIT);
   EXPECT_EQ(module->LastError(), "Все 10 мест заняты.");
   EXPECT_EQ(module->GetStatus().state, State::kTrial);
+}
+
+// Decision of 29.10.2026: a suspended licence refuses activations (403 license_suspended); the
+// product gets LM_ERR_REVOKED with the text of the server and keeps its state.
+TEST_F(ModuleTest, SuspendedLicenseRefusesTheActivation) {
+  FakeServer server(clock_);
+  server.activate_status = 403;
+  server.activate_problem =
+      R"({"code":"license_suspended","user_message":{"ru":"Лицензия приостановлена. Обратитесь к администратору."}})";
+  auto module = Open(server.Url());
+  EXPECT_EQ(module->Activate(kLicense), LM_ERR_REVOKED);
+  EXPECT_EQ(module->LastError(), "Лицензия приостановлена. Обратитесь к администратору.");
+  EXPECT_EQ(module->GetStatus().state, State::kTrial);
+  EXPECT_EQ(server.calls, (std::vector<std::string>{"activate"}));  // no repeat
 }
 
 TEST_F(ModuleTest, ReleasedActivationIsActivatedAgainOnce) {

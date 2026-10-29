@@ -142,6 +142,7 @@
 | `key_not_found` | `err.key_not_found` | Ключ не найден. Проверьте ключ или обратитесь к поставщику лицензии. | The key was not found. Check it or contact your license supplier. |
 | `license_expired` | `err.license_expired` | Срок действия этой лицензии истёк. Обратитесь к администратору для продления. | This license has expired. Contact your administrator to renew it. |
 | `license_revoked` | `err.license_revoked` | Лицензия отозвана. Обратитесь к администратору. | The license has been revoked. Contact your administrator. |
+| `license_suspended` | `err.license_suspended` | Лицензия приостановлена. Обратитесь к администратору. | The license is suspended. Contact your administrator. |
 | `product_mismatch` | `err.product_mismatch` | Этот ключ предназначен для другого продукта или редакции. | This key is for a different product or edition. |
 | `seats_exhausted` | `err.seats_exhausted` | Все лицензии по этому ключу уже используются ({used} из {limit}). Освободите лицензию на другом компьютере или обратитесь к администратору. | All licenses for this key are in use ({used} of {limit}). Release a license on another computer or contact your administrator. |
 | `instance_conflict` | `err.instance_conflict` | Этот компьютер похож на копию уже активированного. Нажмите «Активировать заново», чтобы зарегистрировать его как новый. | This computer looks like a copy of an already activated one. Click "Activate again" to register it as a new computer. |

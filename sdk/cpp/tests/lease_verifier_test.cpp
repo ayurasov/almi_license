@@ -102,7 +102,7 @@ std::string VectorName(const testing::TestParamInfo<fs::path>& info) {
 INSTANTIATE_TEST_SUITE_P(Vectors, JwsVector, testing::ValuesIn(VectorFiles()), VectorName);
 INSTANTIATE_TEST_SUITE_P(Issued, JwsVector, testing::ValuesIn(IssuedFiles()), VectorName);
 
-TEST(JwsVectorSet, HasAllTwelveVectors) { EXPECT_EQ(VectorFiles().size(), 12U); }
+TEST(JwsVectorSet, HasAllFifteenVectors) { EXPECT_EQ(VectorFiles().size(), 15U); }
 
 TEST(LeaseVerifierLimits, RejectsTokensOver64KiB) {
   const lm::crypto::LeaseVerifier verifier({});

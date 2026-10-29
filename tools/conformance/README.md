@@ -19,7 +19,7 @@
 | 3 | Онлайн и файлами, повтор без нового места | `OfflineRequestAndAnswerFile` | `test_02_03_…` — онлайн, повтор, портал `.alk-req` → `.alk-lic` |
 | 4 | Проверка в фоне и по `next_check_at` | `BackgroundCheckRunsWhenDue`, `Transport.*` (повторы) | `test_04_…` — `refresh_now` из консоли выполняет фоновая проверка |
 | 5 | Работа без сети по аренде | `CheckRenewsTheLeaseAndWorksWithoutNetworkAfterRestart` | `test_05_…` |
-| 6 | Отклонение чужой или изменённой аренды | 12 векторов `jws/`, `LeaseVerifierCases.*`, `AnswerFileOfAnotherDeviceOrAnOldLeaseIsRefused` | `test_06_…` — повреждённое хранилище не принимается |
+| 6 | Отклонение чужой или изменённой аренды | 15 векторов `jws/`, `LeaseVerifierCases.*`, `AnswerFileOfAnotherDeviceOrAnOldLeaseIsRefused` | `test_06_…` — повреждённое хранилище не принимается |
 | 7 | Перевод часов назад | `ClockStateTest.*`, `ClockRollbackDoesNotMoveTheLicenseBack` | `test_07_…` — GRACE остаётся после возврата часов |
 | 8 | Все состояния | 39 векторов политики, `ModuleHelpers.ModesAndFeatures` | `test_08_09_…` — NOTICE → GRACE → RESTRICTED; `test_10_…` — наблюдение |
 | 9 | Функции только через `LM_HasFeature` | — | `test_08_09_…`, `test_09_…` — отключаемые функции профиля и функции вне редакции |

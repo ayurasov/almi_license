@@ -18,6 +18,7 @@ import { useRoute } from 'vue-router'
 
 import DirectiveDialog from '@/components/DirectiveDialog.vue'
 import LicenseActionDialog from '@/components/LicenseActionDialog.vue'
+import { licenseActions } from '@/lib/licenseActions'
 import { canChange } from '@/lib/roles'
 import { stateSeverity } from '@/lib/states'
 import { type Activation, DEFAULT_ACTIVATION_QUERY, useActivationsStore } from '@/stores/activations'
@@ -28,12 +29,14 @@ import {
   type Usage,
   useLicensesStore,
 } from '@/stores/licenses'
+import { useInstanceStore } from '@/stores/instance'
 import { useSessionStore } from '@/stores/session'
 
 const { t, d } = useI18n()
 const route = useRoute()
 const store = useLicensesStore()
 const session = useSessionStore()
+const instance = useInstanceStore()
 const activations = useActivationsStore()
 const license = ref<License | null>(null)
 const usage = ref<Usage | null>(null)
@@ -59,18 +62,9 @@ const productName = computed(() => {
   const product = store.products.find((item) => item.id === license.value?.product_id)
   return product ? (product.name.ru ?? product.code) : ''
 })
-const actions = computed<LicenseAction[]>(() => {
-  const status = license.value?.status
-  if (status === 'revoked' || !canChange(session.user?.role)) return []
-  return [
-    'renew',
-    status === 'suspended' ? 'resume' : 'suspend',
-    'liftBlock',
-    'settings',
-    'transfer',
-    'revoke',
-  ]
-})
+const actions = computed<LicenseAction[]>(() =>
+  licenseActions(license.value?.status, canChange(session.user?.role), instance.local),
+)
 
 const userLimit = computed(() => {
   const limits = license.value?.limits
@@ -237,7 +231,7 @@ function closeKey(): void {
             {{ t('licenses.key.empty') }}
           </p>
           <Button
-            v-if="canChange(session.user?.role)"
+            v-if="canChange(session.user?.role) && !instance.local"
             :label="t('licenses.actions.issueKey')"
             icon="pi pi-key"
             :disabled="license.status === 'revoked'"

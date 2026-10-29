@@ -316,7 +316,7 @@ ALMI-REQ-V1
 }
 ```
 
-Ошибки: `400 invalid_request`, `400 invalid_key_format`, `401 signature_invalid`, `401 clock_skew`, `403 license_revoked`, `403 license_expired`, `403 product_mismatch`, `404 key_not_found`, `409 seats_exhausted`, `409 instance_conflict`, `409 idempotency_conflict`, `422 unsupported_product_version`, `426 upgrade_required`, `429 rate_limited`.
+Ошибки: `400 invalid_request`, `400 invalid_key_format`, `401 signature_invalid`, `401 clock_skew`, `403 license_revoked`, `403 license_suspended`, `403 license_expired`, `403 product_mismatch`, `404 key_not_found`, `409 seats_exhausted`, `409 instance_conflict`, `409 idempotency_conflict`, `422 unsupported_product_version`, `426 upgrade_required`, `429 rate_limited`.
 
 Правила сервера:
 
@@ -906,7 +906,7 @@ typedef enum {
     LM_ERR_NETWORK = -3,              /* нет связи, 5xx, 503 maintenance */
     LM_ERR_INVALID_SIGNATURE = -4,    /* аренда или файл не прошли проверку */
     LM_ERR_EXPIRED = -5,              /* license_expired */
-    LM_ERR_REVOKED = -6,              /* license_revoked */
+    LM_ERR_REVOKED = -6,              /* license_revoked; license_suspended (активация отклонена) */
     LM_ERR_CLOCK_ROLLBACK = -7,
     LM_ERR_REBIND_REQUIRED = -8,      /* v1+ 412; модуль повторяет активацию сам */
     LM_ERR_RELEASED = -9,             /* v1+ 410 */
@@ -1092,6 +1092,7 @@ LM_API LM_Result LM_GetVersion(char* buffer, int buffer_size);  /* v1+ верс�
 | 401 | `signature_invalid` | Подпись запроса неверна | Повторная активация (ключ устройства мог быть утрачен) | — | 1 раз |
 | 401 | `clock_skew` | Отклонение времени | Поправка, повтор | — | 1 раз |
 | 403 | `license_revoked` | Лицензия отозвана | `LM_ERR_REVOKED`, состояние по аренде из ответа | `user_message` | нет |
+| 403 | `license_suspended` | Лицензия приостановлена оператором (или убрана из пакета локального сервера): новые активации не выполняются, действующие продолжают работать по аренде | `LM_ERR_REVOKED`, состояние не меняется | `user_message` | нет (до возобновления) |
 | 403 | `license_expired` | Новая активация после срока | `LM_ERR_EXPIRED` | `user_message` | нет |
 | 403 | `product_mismatch` | Ключ другого продукта | `LM_ERR_INVALID_KEY` | `user_message` | нет |
 | 404 | `key_not_found` | Ключ не найден | `LM_ERR_INVALID_KEY` | `user_message` | нет |
