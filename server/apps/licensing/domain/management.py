@@ -26,6 +26,7 @@ from apps.licensing.models import (
 )
 from infra.crypto.random import random_text
 from infra.errors import DomainError
+from infra.modes import require_central
 
 ORDERINGS = frozenset(
     {"valid_until", "-valid_until", "created_at", "-created_at", "status", "-status"}
@@ -243,6 +244,7 @@ def create_license(
     values: dict[str, Any], *, actor: str, now: datetime, ip: str | None = None
 ) -> LicenseData:
     """values: customer_id, product_id, edition_id?, metric_id, type, limit, valid_from, …"""
+    require_central("create_license")
     errors = _check_terms(values)
     customer_id = values.get("customer_id")
     customer = Customer.objects.filter(id=customer_id).first() if customer_id else None
@@ -300,6 +302,7 @@ def renew_license(
     now: datetime,
     ip: str | None = None,
 ) -> LicenseData:
+    require_central("renew_license")
     with transaction.atomic():
         row = _locked(license_id)
         if row.status == LicenseStatus.REVOKED:
@@ -330,6 +333,8 @@ def set_license_status(
     license_id: UUID, status: str, *, reason: str, actor: str, now: datetime, ip: str | None = None
 ) -> LicenseData:
     """suspended (приостановить), active (возобновить), revoked (отозвать — навсегда)."""
+    if status == LicenseStatus.ACTIVE:
+        require_central("resume")  # a licence left out of the package stays suspended
     text = (
         _reason(reason)
         if status in (LicenseStatus.REVOKED, LicenseStatus.SUSPENDED)
@@ -360,6 +365,7 @@ def lift_block(
     ip: str | None = None,
 ) -> LicenseData:
     """Снять блок: monitor until the date (section 8.3 of document 1); rights_version + 1."""
+    require_central("lift_block")
     text = _reason(reason)
     if until <= now:
         raise _invalid({"until": ["Дата должна быть в будущем."]})
@@ -384,6 +390,7 @@ def update_settings(
 ) -> LicenseData:
     """E01-07: limit, reserve_pct, metric_id, enforcement (monitor / enforce / "" = profile);
     limits of users of a server product (E11-01)."""
+    require_central("update_settings")
     allowed = {"limit", "reserve_pct", "metric_id", "enforcement", "limits", "max_product_version"}
     changes = {key: value for key, value in values.items() if key in allowed}
     with transaction.atomic():
@@ -427,6 +434,7 @@ def transfer_license(
     """E01-08: keys, activations and terms stay; refused while seats are with a local server.
 
     allocated(license_id) is asked under the row lock: quotas are given under the same lock."""
+    require_central("transfer_license")
     text = _reason(reason)
     with transaction.atomic():
         row = _locked(license_id)
